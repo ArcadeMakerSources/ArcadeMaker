@@ -39,7 +39,7 @@ public static class SeperatingAxisTheorem
             var projection2 = ProjectOntoAxis(corners2, axis);
 
             // If projections don't overlap, rectangles don't intersect
-            if (projection1.Max < projection2.Min || projection2.Max < projection1.Min)
+            if (projection1.Max <= projection2.Min || projection2.Max <= projection1.Min)
                 return false;
         }
 
@@ -57,8 +57,8 @@ public static class SeperatingAxisTheorem
         (double x, double y)[] localCorners =
         [
             (-rect.OriginX,                      -rect.OriginY),
-            ( rect.Width - rect.OriginX,         -rect.OriginY),
-            ( rect.Width - rect.OriginX,          rect.Height - rect.OriginY),
+            ( rect.Width - rect.OriginX - 1,         -rect.OriginY),
+            ( rect.Width - rect.OriginX - 1,          rect.Height - rect.OriginY - 1),
             (-rect.OriginX,                       rect.Height - rect.OriginY)
         ];
 

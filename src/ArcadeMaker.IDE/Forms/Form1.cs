@@ -668,7 +668,8 @@ namespace ArcadeMaker.IDE
                                                                                                  // and second would return the folder that was selected in
                                                                                                  // the dialog when the project was first saved.
             
-            Environment.project.name = Environment.project.projectFilePath.FileNameWithoutExtension();
+            if (Environment.project.projectFilePath != null)
+                Environment.project.name = Environment.project.projectFilePath.FileNameWithoutExtension();
             Environment.project.Save(rootFolder);
         }
 
@@ -759,7 +760,7 @@ namespace ArcadeMaker.IDE
                 }
             }
 
-            OpenProject(new GameProject("GameStudio Project"));
+            OpenProject(new GameProject($"{Global.ProgramName} Project"));
         }
 
         private void projectTree_AfterLabelEdit(object sender, NodeLabelEditEventArgs e)

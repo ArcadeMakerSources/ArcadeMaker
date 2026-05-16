@@ -93,6 +93,9 @@ public partial interface IGame
 
             bool result = SeperatingAxisTheorem.AreRectanglesIntersecting(instRect, otherRect);
 
+            if (result)
+                _=0;
+
             return result;
         }
     }

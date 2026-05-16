@@ -12,6 +12,9 @@ internal static class TextureAtlas
 {
     internal static Bitmap FromImages(ImageRect[] textures)
     {
+        if (textures.Length == 0)
+            return new Bitmap(1, 1);
+
         // pack
         var rects = textures.Map(r => r.Rect).ToArray();
         RectanglePacker.Pack(rects, out PackingRectangle bounds);
