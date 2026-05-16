@@ -226,23 +226,26 @@ namespace ArcadeMaker.IDE
         string gameSettings = null;
         private string GetGameSettings()
         {
-            if (gameSettings == null)
-            {
-#if DEBUG
-                using (var tr = new StreamReader(@"C:\Users\vsprojs\GameStudio\Settings.cs"))
-                {
-                    gameSettings = tr.ReadToEnd();
-                    tr.Close();
-                }
-#else
-                gameSettings = Properties.Resources.Settings;
-#endif
-            }
-            return gameSettings;
+            throw new NotImplementedException();
+//            if (gameSettings == null)
+//            {
+//#if DEBUG
+//                using (var tr = new StreamReader(@"C:\Users\vsprojs\GameStudio\Settings.cs"))
+//                {
+//                    gameSettings = tr.ReadToEnd();
+//                    tr.Close();
+//                }
+//#else
+//                gameSettings = Properties.Resources.Settings;
+//#endif
+//            }
+//            return gameSettings;
         }
         string gameResources = null;
         private string GetGameResources()
         {
+            throw new NotImplementedException();
+            /*
             if (gameResources == null)
             {
 #if DEBUG
@@ -256,6 +259,7 @@ namespace ArcadeMaker.IDE
 #endif
             }
             return gameResources;
+            */
         }
 
         private void ColorScriptEditor()

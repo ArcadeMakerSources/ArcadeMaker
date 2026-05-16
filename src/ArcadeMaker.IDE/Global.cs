@@ -151,17 +151,18 @@ namespace ArcadeMaker.IDE
         {
             get
             {
-                if (part2script == null)
-                {
-#if DEBUG
-                    TextReader tr = new StreamReader(@"C:\Users\איתן\Desktop\GameStudio\res\GameObjectUserPart.cs");
-                    part2script = tr.ReadToEnd();
-                    tr.Close();
-#else
-                    part2script = Properties.Resources.GameObjectUserPart;
-#endif
-                }
-                return part2script;
+                throw new NotImplementedException();
+//                if (part2script == null)
+//                {
+//#if DEBUG
+//                    TextReader tr = new StreamReader(@"C:\Users\איתן\Desktop\GameStudio\res\GameObjectUserPart.cs");
+//                    part2script = tr.ReadToEnd();
+//                    tr.Close();
+//#else
+//                    part2script = Properties.Resources.GameObjectUserPart;
+//#endif
+//                }
+//                return part2script;
             }
         }
 

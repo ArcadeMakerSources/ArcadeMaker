@@ -201,7 +201,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         private bool isOnError;
 
 #if !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private void Try(Action action) // TODO: consider using a more efficient way to handle this, as this might cause performance issues when used in Update and Draw methods.
         {
