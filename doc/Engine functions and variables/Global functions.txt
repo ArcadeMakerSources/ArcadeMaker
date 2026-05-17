@@ -5,6 +5,27 @@ They control room transitions, sound playback, drawing, input, and view/viewport
 
 ---
 
+Gameplay
+
+createInstance(x, y, objectType)
+Creates a new instance of the given object type and adding it to the room at the given location, and executing its Create event.
+
+---
+
+instanceCount(objectTypeOrNull)
+Returns the number of instances of the given object type in the room. If objectTypeOrNull is null, returns the total number of instances of any type.
+
+---
+
+nearestInstance(x, y, objectTypeOrNull)
+Returns the instance with the lowest distance to the given location.
+
+---
+
+FurthestInstance(x, y, objectTypeOrNull)
+
+---
+
 Room Control
 
 goToNextRoom()
@@ -117,5 +138,13 @@ Returns false otherwise.
 mouseButtonDown(mb)
 Returns true if the given mouse button is currently held down.  
 Returns false otherwise.
+
+---
+
+getMouseX()
+
+---
+
+getMouseY()
 
 ---
