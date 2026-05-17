@@ -1,27 +1,46 @@
 Object Properties
 
 x — the instance’s horizontal position in the room (in pixels).  
+
 y — the instance’s vertical position in the room (in pixels).  
+
 speed — the overall movement speed, derived from hspeed and vspeed.  
+
 hspeed — horizontal movement speed; positive moves right, negative moves left.  
+
 vspeed — vertical movement speed; positive moves down, negative moves up.  
+
 direction — movement direction in degrees (0=right, 90=down, 180=left, 270=up).  
+
 imageAngle — rotation of the sprite in degrees; does not affect movement direction.  
+
 imageIndex — the current animation frame of the sprite.  
+
 imageSpeed — how many game frames must pass before imageIndex increases by 1.  
+
 imageXScale — horizontal scale of the sprite (1=normal, -1=flipped, etc.).  
+
 imageYScale — vertical scale of the sprite.  
 solid — whether the instance is treated as solid for collision checks.  
+
 depth — draw order; lower depth draws on top, higher depth draws behind.
 
+(currentViewIndex - this is not a property but an argument passed to Draw event. When views are enabled, this holds the index of the current view being drawn. When views are disabled, the value is -1).
 ---
 
 Object Functions
 
 drawSelf() — draws the instance’s sprite using its current visual properties.  
+
 startPath(pathId, speed, endAction, absolute) — moves the instance along a path (call it once, e.g. in Create event, and not every frame).
+You can access the path ID by "Paths.pathName", e.g. "startPath(Paths.PathGuardPatrol, 4, PathEndAction.reverse, true)
+
 stopPath() - stops the currently activated path.
-placeMeeting(x, y, objectTypeOrInstance) — returns true if moving to (x, y) would collide with the given object or instance.  
+
+placeMeeting(x, y, objectTypeOrInstance) — returns true if moving to (x, y) would collide with the given object or instance(imageAngle is took in account).  
+
 instanceMeeting(x, y, objectType) — returns the first instance of the given object type at (x, y), or null if none exists.  
+
 placeFree(x, y) — returns true if the instance can move to (x, y) without colliding with anything solid.  
+
 destroy() — destroys the instance so it no longer updates or draws.
