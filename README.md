@@ -12,7 +12,7 @@ ArcadeMaker is based on GameMaker 8, so if you’ve ever used it, you’ll find 
 
 ---
 
-Project Background
+# Project Background
 
 ArcadeMaker has been built in several stages over the span of a few years, and different parts of it were written at very different points in my programming journey.
 
@@ -32,7 +32,7 @@ The long‑term goal is to bring the new engine up to feature parity with the ol
 
 ---
 
-Planned Features
+# Planned Features
 
 - Full implementation of the missing IDE features in the engine  
 - KNI-engine backend for web export  
@@ -44,7 +44,7 @@ Planned Features
 
 ---
 
-About the GitHub Release
+# About the GitHub Release
 
 The build available in the Releases section is not a real release. It’s extremely early, contains many bugs, and is missing major features. There is no “Create Standalone Executable” option for exporting finished games — and realistically, you won’t be able to finish a full game with the current state of the engine anyway.
 
@@ -52,7 +52,7 @@ I uploaded this build only so you can see what the project currently looks like 
 
 ---
 
-Why Open Source?
+# Why Open Source?
 
 I love working on ArcadeMaker, but I don’t have enough time to develop it at the pace it deserves.  
 By open‑sourcing it, I hope others will:
@@ -67,7 +67,7 @@ If you enjoy GameMaker‑style workflows or want to contribute to a lightweight,
 
 ---
 
-How to Build
+# How to Build
 
 1. Clone the repository.  
 2. Open the solution in your preferred C# IDE (Visual Studio, Rider, or VS Code).  
@@ -77,7 +77,7 @@ How to Build
 
 ---
 
-Contributing
+# Contributing
 
 Contributions of all kinds are appreciated:
 
@@ -92,14 +92,14 @@ Before submitting a pull request, please open an issue to discuss your idea.
 
 ---
 
-License
+# License
 
 This project is licensed under the MIT License.  
 See the LICENSE file for details.
 
 ---
 
-Note About This README and AI Usage
+# Note About This README and AI Usage
 
 I used GPT to help write this README file.
 
