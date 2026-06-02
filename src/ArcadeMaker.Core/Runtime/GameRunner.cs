@@ -287,7 +287,25 @@ namespace ArcadeMaker.Core.Runtime
                 throw new Exception("The specified room is not part of the game.");
 
             Game.CurrentRoom = room;
-            Game.SetWindowsSize(room.Model.Width, room.Model.Height);
+
+
+            // window size is:
+            //    when views disabed: room width and height
+            //    when views enabled: the minimum size that can contain all views (so the max of (view port x + view port width) and (view port y + view port height))
+            int winWidth, winHeight;
+            if (room.Model.Views.Count > 0)
+            {
+                winWidth = (int)room.Model.Views.Where(v => v.Visible).Max(v => v.PortX + v.PortWidth);
+                winHeight = (int)room.Model.Views.Where(v => v.Visible).Max(v => v.PortY + v.PortHeight);
+            }
+            else
+            {
+                winWidth = (int)room.Model.Width;
+                winHeight = (int)room.Model.Height;
+            }
+            Game.SetWindowsSize(winWidth, winHeight);
+
+
             Game.SetCaption(room.Model.Caption);
 
             // run all create events for the new room

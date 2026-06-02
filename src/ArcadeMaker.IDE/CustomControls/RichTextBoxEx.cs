@@ -177,6 +177,7 @@ namespace ArcadeMaker.IDE.CustomControls
 
 
         public bool _lineNumbers;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool ShowLineNumbers
         {
             get
@@ -205,6 +206,7 @@ namespace ArcadeMaker.IDE.CustomControls
         }
 
         private Font _NumberFont;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Font NumberFont
         {
             get { return _NumberFont; }
@@ -218,6 +220,7 @@ namespace ArcadeMaker.IDE.CustomControls
         }
 
         private LineCounting _NumberLineCounting;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public LineCounting NumberLineCounting
         {
             get { return _NumberLineCounting; }
@@ -231,6 +234,7 @@ namespace ArcadeMaker.IDE.CustomControls
         }
 
         private StringAlignment _NumberAlignment;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public StringAlignment NumberAlignment
         {
             get { return _NumberAlignment; }
@@ -244,6 +248,7 @@ namespace ArcadeMaker.IDE.CustomControls
         }
 
         private Color _NumberColor;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Color NumberColor
         {
             get { return _NumberColor; }
@@ -256,6 +261,7 @@ namespace ArcadeMaker.IDE.CustomControls
         }
 
         private bool _NumberLeadingZeroes;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool NumberLeadingZeroes
         {
             get { return _NumberLeadingZeroes; }
@@ -268,6 +274,7 @@ namespace ArcadeMaker.IDE.CustomControls
         }
 
         private Color _NumberBorder;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Color NumberBorder
         {
             get { return _NumberBorder; }
@@ -281,6 +288,7 @@ namespace ArcadeMaker.IDE.CustomControls
         }
 
         private int _NumberPadding;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public int NumberPadding
         {
             get { return _NumberPadding; }
@@ -294,6 +302,7 @@ namespace ArcadeMaker.IDE.CustomControls
         }
 
         public Single _NumberBorderThickness;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Single NumberBorderThickness
         {
             get { return _NumberBorderThickness; }
@@ -308,6 +317,7 @@ namespace ArcadeMaker.IDE.CustomControls
         }
 
         private Color _NumberBackground1;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Color NumberBackground1
         {
             get { return _NumberBackground1; }
@@ -320,6 +330,7 @@ namespace ArcadeMaker.IDE.CustomControls
         }
 
         private Color _NumberBackground2;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Color NumberBackground2
         {
             get { return _NumberBackground2; }
