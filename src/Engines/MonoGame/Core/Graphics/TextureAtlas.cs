@@ -17,6 +17,7 @@ public class TextureAtlas
         public Sprite Sprite => sprite;
         public int Index => index;
     }
+
     private readonly Dictionary<SpriteAndImageIndex, TextureRegion> _regions;
 
     /// <summary>
@@ -62,10 +63,10 @@ public class TextureAtlas
     /// </summary>
     /// <param name="sprite">The sprite containing the image of the region to retrieve.</param>
     /// <param name="imageIndex">The image index.</param>
-    /// <returns>The TextureRegion with the specified name.</returns>
-    public TextureRegion GetRegion(Sprite sprite, int imageIndex)
+    /// <returns>The TextureRegion with the specified name, or <c>null</c> if not found.</returns>
+    public TextureRegion? GetRegion(Sprite sprite, int imageIndex)
     {
-        return _regions.First(reg => reg.Key.Sprite == sprite && reg.Key.Index == imageIndex).Value;
+        return _regions.FirstOrDefault(reg => reg.Key.Sprite == sprite && reg.Key.Index == imageIndex).Value;
     }
 
     /// <summary>

@@ -392,27 +392,26 @@ namespace ArcadeMaker.IDE
             }
         }
 
-        private static System.Drawing.Bitmap noSpriteIcon = null;
         public static System.Drawing.Bitmap NoSpriteIcon
         {
             get
             {
                 // create "no sprite" icon
-                if (noSpriteIcon == null)
+                if (field == null)
                 {
-                    noSpriteIcon = new System.Drawing.Bitmap(15, 15);
-                    using (Graphics g = Graphics.FromImage(noSpriteIcon))
+                    field = new System.Drawing.Bitmap(15, 15);
+                    using (Graphics g = Graphics.FromImage(field))
                     {
                         Pen pen = new Pen(Color.Blue);
-                        g.FillEllipse(pen.Brush, 0, 0, noSpriteIcon.Size.Width, noSpriteIcon.Size.Height);
+                        g.FillEllipse(pen.Brush, 0, 0, field.Size.Width, field.Size.Height);
                         pen.Color = Color.Black;
-                        g.DrawEllipse(pen, 0, 0, noSpriteIcon.Size.Width, noSpriteIcon.Size.Height);
+                        g.DrawEllipse(pen, 0, 0, field.Size.Width, field.Size.Height);
                         pen.Color = Color.Red;
                         Font font = new Font("Arial", 8);
                         g.DrawString("?", font, pen.Brush, 2, 2);
                     }
                 }
-                return noSpriteIcon;
+                return field;
             }
         }
 

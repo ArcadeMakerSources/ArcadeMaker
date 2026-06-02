@@ -205,12 +205,15 @@ namespace ArcadeMaker.IDE
             foreach (RoomObject ro in objsToDraw)
             {
                 bool hasSprite = ro.obj.sprite != null;
-                Bitmap image = hasSprite ? ro.obj.sprite.image : noSpriteIcon;
-                if (image.HorizontalResolution != e.Graphics.DpiX || image.VerticalResolution != e.Graphics.DpiY)
+                Bitmap? image = hasSprite ? ro.obj.sprite!.image : noSpriteIcon;
+                if (image != null)
                 {
-                    image.SetResolution(e.Graphics.DpiX, e.Graphics.DpiY);
+                    if (image.HorizontalResolution != e.Graphics.DpiX || image.VerticalResolution != e.Graphics.DpiY)
+                    {
+                        image.SetResolution(e.Graphics.DpiX, e.Graphics.DpiY);
+                    }
+                    e.Graphics.DrawImage(image, new Point(ro.x - (hasSprite ? ro.obj.sprite.originX : 0), ro.y - (hasSprite ? ro.obj.sprite.originY : 0)));
                 }
-                e.Graphics.DrawImage(image, new Point(ro.x - (hasSprite ? ro.obj.sprite.originX : 0), ro.y - (hasSprite ? ro.obj.sprite.originY : 0)));
             }
 
             // draw foreground backgrounds
