@@ -32,12 +32,12 @@ namespace ArcadeMaker.Engines.MonoGame.Core
     /// </summary>
     public partial class ArcadeMakerMonoGame : Game, IGame
     {
-        public event EventHandler<RuntimeException> OnExpRuntimeError;
-        public event EventHandler<Exception> OnCsError;
+        public event EventHandler<RuntimeException>? OnExpRuntimeError;
+        public event EventHandler<Exception>? OnCsError;
 
         // resources
         private readonly GraphicsDeviceManager graphicsDeviceManager;
-        private SpriteBatch SpriteBatch { get; set; }
+        private SpriteBatch SpriteBatch { get; set; } = null!;
         private List<Sprite> Sprites { get; } = [];
         private Dictionary<Background, Texture2D> BackgroundTextures { get; } = [];
         public List<Background> Backgrounds { get; } = [];
@@ -110,7 +110,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             ((IGame)this).LoadFromProjectFile(projectFile);
             foreach (var obj in Objects)
             {
-                if (!Sprites.Contains(obj.Sprite))
+                if (obj.Sprite != null && !Sprites.Contains(obj.Sprite))
                     Sprites.Add(obj.Sprite);
             }
         }
@@ -313,7 +313,8 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             Vector2 position = new((float)inst.X.Value!.Number, (float)inst.Y.Value!.Number);
             Vector2 origin = new(inst.Model.Sprite.OriginX, inst.Model.Sprite.OriginY);
             Vector2 scale = new((float)inst.ImageXScale.Value.Number, (float)inst.ImageYScale.Value.Number);
-            MainTextureAtlas.GetRegion(inst.Model.Sprite, (int)inst.ImageIndex.Value.Number).Draw(
+            
+            MainTextureAtlas.GetRegion(inst.Model.Sprite, (int)inst.ImageIndex.Value.Number)?.Draw(
                 SpriteBatch,
                 position,
                 Color.White,

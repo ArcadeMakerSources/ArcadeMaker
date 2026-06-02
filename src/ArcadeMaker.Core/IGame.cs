@@ -53,7 +53,7 @@ public partial interface IGame
                 if (item is SerializeableGameSprite ssprite)
                 {
                     var mask = new SpriteMask(ssprite.maskTop, ssprite.maskLeft, ssprite.maskRight, ssprite.maskBottom);
-                    var sprite = new Sprite(item.name, ssprite.pathes[0], ssprite.numOfImages, ssprite.originX, ssprite.originY, mask)
+                    var sprite = new Sprite(item.name, ssprite.pathes.FirstOrDefault(), ssprite.numOfImages, ssprite.originX, ssprite.originY, mask)
                     {
                         //preciseMask = ssprite.preciseMask,
                         //separateMask = ssprite.separateMask,
