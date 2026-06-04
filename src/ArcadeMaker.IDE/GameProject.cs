@@ -802,6 +802,7 @@ namespace ArcadeMaker.IDE
         public SerializeableGameFont() { }
         public SerializeableGameFont(GameFont font)
         {
+            name = font.name;
             this.font = font;
             this.ttf = font.GetTTF();
         }

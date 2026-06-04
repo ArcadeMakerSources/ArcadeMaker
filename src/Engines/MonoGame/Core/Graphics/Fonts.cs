@@ -10,7 +10,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core.Graphics
 {
     internal static class Fonts
     {
-        internal static List<SpriteFont> All { get; } = [];
+        internal static Dictionary<GameFont, SpriteFont> All { get; } = [];
         internal static SpriteFont? Current { get; set; }
         internal static SpriteFont FromTTF(string ttfPath, float size, GraphicsDevice graphicsDevice)
         {

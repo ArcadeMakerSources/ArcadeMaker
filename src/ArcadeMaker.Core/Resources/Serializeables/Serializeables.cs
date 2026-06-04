@@ -164,15 +164,17 @@ public class SerializeableColor
     public int A, R, G, B;
 }
 
-public class GameFont
+public class GameFont : ISetsID
 {
+    private static int idCounter = 0;
+    public int ID { get; set; } = idCounter++;
+    public string Name { get; set; }
+
     public string family;
     public float size = 12;
     public bool bold = false, italic = false;
     public string ttf;
     public float heightInPixels;
-
-    public GameFont() { }
 }
 
 public enum ObjectEvent

@@ -164,9 +164,12 @@ namespace ArcadeMaker.Engines.MonoGame.Core
                 Fonts.All.Clear();
                 Fonts.Current = null;
                 foreach (var fontd in FontsData)
-                    Fonts.All.Add(Fonts.FromGameFont(fontd, GraphicsDevice));
+                {
+                    var spriteFont = Fonts.FromGameFont(fontd, GraphicsDevice);
+                    Fonts.All.Add(fontd, spriteFont);
+                }
                 if (Fonts.All.Count > 0)
-                    Fonts.Current = Fonts.All[0];
+                    Fonts.Current = Fonts.All.Values.First();
 
                 // load main texture atlas
                 var mainAtlasTexture = Texture2D.FromFile(GraphicsDevice, MainTextureAtlasMap.AtlasFilePath);
@@ -437,17 +440,29 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             args[0].ThrowIfNull();
             args[1].ThrowIfNull();
 
-            // TODO: let user select font (by implementing setFont(fontId) function)
             if (Fonts.Current == null)
                 throw new InvalidOperationException("Game must have at least 1 font to draw text.");
 
-            SpriteBatch.DrawString(Fonts.Current, args[2]?.ToString() ?? "NULL", new((float)args[0]!.Number, (float)args[1]!.Number), Color.White);
+            SpriteBatch.DrawString(Fonts.Current, args[2]?.ToString() ?? "NULL", new((float)args[0]!.Number, (float)args[1]!.Number), drawColor);
             return Exp.Void.Return;
         }
 
-        public void DrawLine(double x1, double y1, double x2, double y2, int col, double thickness = 1f)
+        public Exp.Void SetFont(Exp.Instance? _, IValue?[] args)
         {
-            SpriteBatch.DrawLine(new Vector2((float)x1, (float)y1), new Vector2((float)x2, (float)y2), new Color((uint)col), (float)thickness);
+            Fonts.Current = Fonts.All.FirstOrDefault(f => f.Key.ID == args[0].ThrowIfNull().Number).Value ?? throw new ArgumentException($"No font with ID {args[0]?.Number} found.");
+            return Exp.Void.Return;
+        }
+
+        private Color drawColor = Color.White;
+        public Exp.Void SetColor(Exp.Instance? _, IValue?[] args)
+        {
+            drawColor = new Color((uint)args[0].ThrowIfNull().Number);
+            return Exp.Void.Return;
+        }
+
+        public void DrawLine(double x1, double y1, double x2, double y2, double thickness = 1f)
+        {
+            SpriteBatch.DrawLine(new Vector2((float)x1, (float)y1), new Vector2((float)x2, (float)y2), drawColor, (float)thickness);
         }
 
         public IValue GetMouseX(Exp.Instance? _, IValue?[] args) => MouseState.Value.X.ToExp();
@@ -467,7 +482,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             BackgroundTextures.ForEach(tex => { if (!tex.Value.IsDisposed) tex.Value.Dispose(); });
             if (MainTextureAtlas?.Texture?.IsDisposed == false)
                 MainTextureAtlas.Texture.Dispose();
-            Fonts.All.ForEach(f => { if (!f.Texture.IsDisposed) f.Texture.Dispose(); });
+            Fonts.All.ForEach(f => { if (!f.Value.Texture.IsDisposed) f.Value.Texture.Dispose(); });
 
             base.Dispose(disposing);
         }

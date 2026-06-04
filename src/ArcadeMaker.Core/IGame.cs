@@ -35,7 +35,7 @@ public partial interface IGame
 
     void Init();
     Exp.Void DrawInstance(Runtime.Instance inst);
-    void DrawLine(double x1, double y1, double x2, double y2, int col, double thickness);
+    void DrawLine(double x1, double y1, double x2, double y2, double thickness);
     void SetWindowsSize(int w, int h);
     void SetCaption(string caption);
 
@@ -112,6 +112,7 @@ public partial interface IGame
                 }
                 else if (item is SerializeableGameFont sfont)
                 {
+                    sfont.font.Name = sfont.name;
                     sfont.font.ttf = sfont.ttf;
                     sfont.font.heightInPixels = sfont.heightInPixels;
                     FontsData.Add(sfont.font);

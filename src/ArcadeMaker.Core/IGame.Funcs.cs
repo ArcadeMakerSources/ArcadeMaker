@@ -216,44 +216,45 @@ public partial interface IGame
     [ExpFunc(3)]
     Exp.Void DrawText(Exp.Instance? _, IValue?[] args);
 
-    [ExpFunc(6)]
+    [ExpFunc(1)]
+    Exp.Void SetFont(Exp.Instance? _, IValue?[] args);
+
+    [ExpFunc(1)]
+    Exp.Void SetColor(Exp.Instance? _, IValue?[] args);
+
+    [ExpFunc(5)]
     Exp.Void DrawLine(Exp.Instance? _, IValue?[] args)
     {
         double x1 = args[0].ThrowIfNull().Number;
         double y1 = args[1].ThrowIfNull().Number;
         double x2 = args[2].ThrowIfNull().Number;
         double y2 = args[3].ThrowIfNull().Number;
-        int col = (int)args[4].ThrowIfNull().Number;
-        double thickness = args[5].ThrowIfNull().Number;
+        double thickness = args[4].ThrowIfNull().Number;
 
-        DrawLine(x1, y1, x2, y2, col, thickness);
+        DrawLine(x1, y1, x2, y2, thickness);
 
         return Exp.Void.Return;
     }
 
-    [ExpFunc(3, 5)]
+    [ExpFunc(2, 4)]
     Exp.Void DrawPath(Exp.Instance? _, IValue?[] args)
     {
         // get parameters
         Resources.Path path = Paths.FirstOrDefault(p => p.ID == (int)args[0].ThrowIfNull().Number) ?? throw new ArgumentException($"No path with ID {(int)args[4].ThrowIfNull().Number} was found.");
 
         double x = path.StartPositionX, y = path.StartPositionY;
-        int col;
         if (args.Length == 4)
         {
             x = args[1].ThrowIfNull().Number;
             y = args[2].ThrowIfNull().Number;
-            col = (int)args[3].ThrowIfNull().Number;
         }
-        else
-            col = (int)args[1].ThrowIfNull().Number;
 
         double thickness = args.Last().ThrowIfNull().Number;
 
         // draw path
         foreach (var point in path.Steps)
         {
-            DrawLine(x, y, x + point.Width, y - point.Height, col, thickness);
+            DrawLine(x, y, x + point.Width, y - point.Height, thickness);
             x += point.Width;
             y -= point.Height;
         }

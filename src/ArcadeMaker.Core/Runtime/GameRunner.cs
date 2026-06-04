@@ -102,7 +102,10 @@ namespace ArcadeMaker.Core.Runtime
             ClassDefSpan roomsStaticClass = new("Rooms", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
             roomsStaticClass.Funcs = roomsStaticClass.Funcs.Append(new ConstructorDefSpan([], [], roomsStaticClass, Interpreter) { Private = true }).ToArray();
             roomsStaticClass.Vars.AddRange(Game.Rooms.Map(r => new Variable(r.Name, r.ID.ToExp(), cons: true)));
-            Interpreter.definations.AddRange([instanceStaticClass, soundsStaticClass, pathsStaticClass, roomsStaticClass, SoundPlaybackInstance.Class]);
+            ClassDefSpan fontsStaticClass = new("Fonts", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
+            fontsStaticClass.Funcs = fontsStaticClass.Funcs.Append(new ConstructorDefSpan([], [], fontsStaticClass, Interpreter) { Private = true }).ToArray();
+            fontsStaticClass.Vars.AddRange(Game.FontsData.Map(f => new Variable(f.Name, f.ID.ToExp(), cons: true)));
+            Interpreter.definations.AddRange([instanceStaticClass, soundsStaticClass, pathsStaticClass, roomsStaticClass, fontsStaticClass, SoundPlaybackInstance.Class]);
 
             // add all methods with [ExpFunc] attribute
             void AddMarkedFuncs(object instance, Type? type = null)

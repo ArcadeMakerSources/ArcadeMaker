@@ -26,7 +26,7 @@ internal class FutileGame : ArcadeMaker.Core.IGame
     public void Init() { }
     public Exp.Void DrawInstance(ArcadeMaker.Core.Runtime.Instance instance) => Exp.Void.Return;
     public void DrawBackgrounds() { }
-    public void DrawLine(double x1, double y1, double x2, double y2, int col, double thickness) { }
+    public void DrawLine(double x1, double y1, double x2, double y2, double thickness) { }
     public void SetWindowsSize(int w, int h) { }
     public void SetCaption(string caption) { }
 
@@ -45,6 +45,8 @@ internal class FutileGame : ArcadeMaker.Core.IGame
     public BoolValue GamepadButtonDown(Exp.Instance? _, IValue?[] args) => false;
 
     public Exp.Void DrawText(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
+    public Exp.Void SetFont(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
+    public Exp.Void SetColor(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
 
     public Exp.Instance? PlaySound(Exp.Instance? _, IValue?[] args) => null;
 
