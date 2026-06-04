@@ -35,7 +35,6 @@ public partial interface IGame
 
     void Init();
     Exp.Void DrawInstance(Runtime.Instance inst);
-    void DrawBackground();
     void DrawLine(double x1, double y1, double x2, double y2, int col, double thickness);
     void SetWindowsSize(int w, int h);
     void SetCaption(string caption);
@@ -102,7 +101,7 @@ public partial interface IGame
                             goto Beginning;
                         }
                     }
-                    Paths.Add(new(spath.name, startX, startY, [..steps]));
+                    Paths.Add(new(spath.name, startX, startY, [.. steps]));
                 }
                 else if (item is SerializeableGameScript script)
                 {
@@ -136,7 +135,7 @@ public partial interface IGame
                         evscripts.Scripts.ForEach(script => { if (!string.IsNullOrWhiteSpace(script.Script)) list.Add(ExpSrc.ExpSrc.CreateInstanceScriptDocument($"{evscripts.Event} event of {sobj.name}", null, script.Script, evscripts.Event == ObjectEvent.Draw ? [ExpSrc.ExpSrc.CURRENT_VIEW_INDEX_ARG_NAME] : [])); });
                     }
 
-                    ObjectModel obj = new(sobj.name, sprites.FirstOrDefault(spr => spr.Name == sobj.sprite), new([..createEv], [..stepEv], [..drawEv]), sobj.extraProperties)
+                    ObjectModel obj = new(sobj.name, sprites.FirstOrDefault(spr => spr.Name == sobj.sprite), new([.. createEv], [.. stepEv], [.. drawEv]), sobj.extraProperties)
                     {
                         InitValues = (Depth: sobj.depth, Visible: true, Solid: sobj.solid)
                     };
@@ -189,6 +188,17 @@ public partial interface IGame
                         }
                     }
 
+                    // add backgrounds
+                    foreach (var srbg in sroom.backgrounds)
+                    {
+                        if (srbg.background == null)
+                            continue;
+
+                        RoomBackground view = new(Backgrounds.First(bg => bg.Name == srbg.background), srbg.visible, srbg.tileHor, srbg.tileVer, srbg.stretch, srbg.horSpd, srbg.verSpd) { X = srbg.x, Y = srbg.y };
+
+                        room.Backgrounds.Add(view);
+                    }
+
                     Rooms.Add(room);
                 }
             }
@@ -219,7 +229,7 @@ public partial interface IGame
                     typeof(SerializeableGameObject),
                     typeof(SerializeableGameRoom),
                     typeof(SerializeableRoomObject),
-                    typeof(RoomBackground),
+                    typeof(SerializeableRoomBackground),
                     typeof(SerializeableRoomView),
                     typeof(SerializeableColor),
                     typeof(Point),

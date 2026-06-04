@@ -25,7 +25,7 @@ internal class FutileGame : ArcadeMaker.Core.IGame
 
     public void Init() { }
     public Exp.Void DrawInstance(ArcadeMaker.Core.Runtime.Instance instance) => Exp.Void.Return;
-    public void DrawBackground() { }
+    public void DrawBackgrounds() { }
     public void DrawLine(double x1, double y1, double x2, double y2, int col, double thickness) { }
     public void SetWindowsSize(int w, int h) { }
     public void SetCaption(string caption) { }
