@@ -57,9 +57,13 @@ namespace ArcadeMaker.IDE
             }
         }
 
-        public SpriteDesigner(Bitmap image)
+        public SpriteDesigner(Bitmap? image = null)
         {
             InitializeComponent();
+
+            // default image
+            image ??= new(100, 100);
+
             this.image = image;
             zoomWidth = image.Width;
             zoomHeight = image.Height;

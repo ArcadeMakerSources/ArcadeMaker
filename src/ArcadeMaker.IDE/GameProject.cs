@@ -133,7 +133,7 @@ namespace ArcadeMaker.IDE
             }
             foreach (GameBackground background in backgrounds)
             {
-                string p = null, gspPath = null;
+                string? p = null, gspPath = null;
                 if (background.image != null)
                 {
                     p = res + @"\" + background.name + ".png";
@@ -155,7 +155,7 @@ namespace ArcadeMaker.IDE
                         System.Windows.Forms.MessageBox.Show(ex.ToString(), "Error: Cannot save background image (" + background.name + ")");
                     }
                 }
-                sitems.Add(new SerializeableBackground { name = background.name, path = gspPath });
+                sitems.Add(new SerializeableBackground { name = background.name, path = p });
             }
             foreach (GameSound sound in sounds)
             {
@@ -263,6 +263,23 @@ namespace ArcadeMaker.IDE
                         followVSp = view.FollowVSp
                     });
                 }
+                List<SerializeableRoomBackground> bgs = new List<SerializeableRoomBackground>();
+                foreach (RoomBackground bg in room.backgrounds)
+                {
+                    bgs.Add(new SerializeableRoomBackground
+                    {
+                        background = bg.gameBackgroundName,
+                        visible = bg.visible,
+                        x = bg.x,
+                        y = bg.y,
+                        tileHor = bg.tileHor,
+                        tileVer = bg.tileVer,
+                        stretch = bg.stretch,
+                        foreground = bg.foreground,
+                        horSpd = bg.horSpd,
+                        verSpd = bg.verSpd
+                    });
+                }
                 sitems.Add(new SerializeableGameRoom
                 {
                     index = room.index,
@@ -272,13 +289,12 @@ namespace ArcadeMaker.IDE
                     height = room.size.height,
                     speed = room.speed,
                     persistent = room.persistent,
-                    //background = room.background == null ? null : room.background.name,
+                    backgrounds = bgs.ToArray(),
                     scriptPath = gspPath,
                     objects = robjs,
                     caption = room.caption,
                     enableViews = room.viewsEnabled,
-                    views = views.ToArray(),
-                    backgrounds = room.backgrounds
+                    views = views.ToArray()
                 });
             }
             sproject.items = sitems.ToArray();
@@ -541,7 +557,7 @@ namespace ArcadeMaker.IDE
                         }
                         catch
                         {
-                            System.Windows.Forms.MessageBox.Show(string.Format("Error loading code for object \"{0}\" from location {1}", obj.name, projectFileLocation));
+                            MessageBox.Show(string.Format("Error loading code for object \"{0}\" from location {1}", obj.name, projectFileLocation));
                         }
                         project.items.Add(obj);
                     }
@@ -556,7 +572,19 @@ namespace ArcadeMaker.IDE
                         room.backColor = Color.FromArgb(sroom.backColor.A, sroom.backColor.R, sroom.backColor.G, sroom.backColor.B);
                         if (sroom.backgrounds != null)
                         {
-                            room.backgrounds = sroom.backgrounds;
+                            room.backgrounds = sroom.backgrounds.Select(bg => new RoomBackground
+                            {
+                                gameBackgroundName = bg.background,
+                                visible = bg.visible,
+                                x = bg.x,
+                                y = bg.y,
+                                tileHor = bg.tileHor,
+                                tileVer = bg.tileVer,
+                                stretch = bg.stretch,
+                                foreground = bg.foreground,
+                                horSpd = bg.horSpd,
+                                verSpd = bg.verSpd
+                            }).ToArray();
                         }
                         room.size = new RoomSize(sroom.width, sroom.height);
                         room.speed = sroom.speed;
@@ -795,7 +823,7 @@ namespace ArcadeMaker.IDE
     {
         public int index = -1;
         public SerializeableColor backColor;
-        public RoomBackground[] backgrounds;
+        public SerializeableRoomBackground[] backgrounds;
         public string scriptPath;
         public int width, height;
         public int speed = 30;

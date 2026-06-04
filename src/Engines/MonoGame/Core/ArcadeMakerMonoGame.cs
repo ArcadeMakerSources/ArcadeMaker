@@ -39,7 +39,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         private readonly GraphicsDeviceManager graphicsDeviceManager;
         private SpriteBatch SpriteBatch { get; set; } = null!;
         private List<Sprite> Sprites { get; } = [];
-        private Dictionary<Background, Texture2D> BackgroundTextures { get; } = [];
+        private Dictionary<Background, Texture2D?> BackgroundTextures { get; } = [];
         public List<Background> Backgrounds { get; } = [];
         public List<Sound> Sounds { get; } = [];
         public List<Path> Paths { get; } = [];
@@ -158,7 +158,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
                 base.LoadContent();
 
                 // load background textures
-                Backgrounds.ForEach(bg => BackgroundTextures.Add(bg, Texture2D.FromFile(GraphicsDevice, bg.FilePath)));
+                Backgrounds.ForEach(bg => { if (bg.FilePath != null) BackgroundTextures.Add(bg, Texture2D.FromFile(GraphicsDevice, bg.FilePath)); });
 
                 // load fonts
                 Fonts.All.Clear();
@@ -199,10 +199,8 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         }
 
         private bool isOnError;
-
-#if !DEBUG
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Try(Action action) // TODO: consider using a more efficient way to handle this, as this might cause performance issues when used in Update and Draw methods.
         {
             try
@@ -262,7 +260,9 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             var bc = CurrentRoom.Model.BackgroundColor;
             GraphicsDevice.Clear(new(bc.R, bc.G, bc.B, bc.A));
 
-            if (CurrentRoom.Model.Views.Count > 0)
+            // if views are defined, we need to draw the room for each view, applying the corresponding camera transformations.
+            // otherwise, we can just draw the room once without any transformations
+            if (CurrentRoom.Model.Views.Count > 0) // views are defined
             {
                 CurrentViewIndex = 0;
                 try
@@ -274,7 +274,11 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
                         GraphicsDevice.Viewport = Cameras[CurrentViewIndex].port;
 
-                        SpriteBatch.Begin(transformMatrix: Cameras[CurrentViewIndex].camera.GetViewMatrix());
+                        Matrix transformMatrix = Cameras[CurrentViewIndex].camera.GetViewMatrix();
+
+                        DrawBackgrounds(view.PortWidth, view.PortHeight, transformMatrix);
+
+                        SpriteBatch.Begin(transformMatrix: transformMatrix);
 
                         Try(GameRunner.FireDraw);
 
@@ -288,8 +292,10 @@ namespace ArcadeMaker.Engines.MonoGame.Core
                     CurrentViewIndex = -1;
                 }
             }
-            else
+            else // no views defined, just draw the room once with default view
             {
+                DrawBackgrounds(Window.ClientBounds.Width, Window.ClientBounds.Height, Matrix.Identity);
+
                 SpriteBatch.Begin();
 
                 Try(GameRunner.FireDraw);
@@ -300,9 +306,30 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             base.Draw(gameTime);
         }
 
-        public void DrawBackground()
+        public void DrawBackgrounds(int w, int h, Matrix transformMatrix)
         {
+            // rooms can have multiple backgrounds, so we need to draw all of them
+            RoomInstance room = CurrentRoom!;
+            foreach (var background in room.Backgrounds)
+            {
+                if (!background.Visible)
+                    continue;
 
+                // get the texture for the background, if it exists. if the background doesn't have a texture, we skip drawing it
+                if (BackgroundTextures.TryGetValue(background.Background, out var texture) && texture != null)
+                {
+                    SpriteBatch.Begin(transformMatrix: transformMatrix, samplerState: SamplerState.PointWrap); // point wrap = repeat (tile) when texture coordinates (in source rectangle) are outside of 0-1 range, which is what we need for drawing tiled backgrounds
+
+                    // draw with the following logic for source and destination rectangles:
+                    SpriteBatch.Draw(
+                        texture,
+                        destinationRectangle: new Rectangle(0, 0, background.TileHor || background.Stretch ? room.Model.Width : texture.Width, background.TileVer || background.Stretch ? room.Model.Height : texture.Height),
+                        sourceRectangle:      new Rectangle((int)background.X, (int)background.Y, background.TileHor && !background.Stretch ? w : texture.Width, background.TileVer && !background.Stretch ? h : texture.Height),
+                        Color.White
+                    ); 
+                    SpriteBatch.End();
+                }
+            }
         }
 
         public Exp.Void DrawInstance(ArcadeMaker.Core.Runtime.Instance inst)
@@ -376,11 +403,8 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
         public BoolValue GamepadButtonDown(Exp.Instance? _, IValue?[] args)
         {
-            if (args == null || args.Length != 1 || !args[0].IsNumber)
-                throw new ArgumentException("2 arguments of type number were expected.");
-
             // check if the specified key is currently pressed.
-            GamePadState? gamepad = args[0].Number switch
+            GamePadState? gamepad = args[0].ThrowIfNull().Number switch
             {
                 1 => Gamepad1State,
                 2 => Gamepad2State,
@@ -441,7 +465,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
             // dispose textures
             BackgroundTextures.ForEach(tex => { if (!tex.Value.IsDisposed) tex.Value.Dispose(); });
-            if (!MainTextureAtlas.Texture.IsDisposed)
+            if (MainTextureAtlas?.Texture?.IsDisposed == false)
                 MainTextureAtlas.Texture.Dispose();
             Fonts.All.ForEach(f => { if (!f.Texture.IsDisposed) f.Texture.Dispose(); });
 

@@ -126,7 +126,7 @@ public class SerializeableGameRoom : SerializeableGameItem
 {
     public int index = -1;
     public SerializeableColor backColor;
-    public RoomBackground[] backgrounds;
+    public SerializeableRoomBackground[] backgrounds;
     public string scriptPath;
     public int width, height;
     public int speed = 30;
@@ -196,11 +196,12 @@ public class PathPoint
     public int x = 0, y = 0, speed = 100;
 }
 
-public class RoomBackground
+public class SerializeableRoomBackground
 {
     private static int count = 0;
     private readonly int index = 0;
 
+    public string background;
     public bool visible = false;
     public bool foreground = false;
     public bool tileHor = true, tileVer = true;
@@ -208,7 +209,7 @@ public class RoomBackground
     public bool stretch = false;
     public int horSpd = 0, verSpd = 0;
 
-    public RoomBackground()
+    public SerializeableRoomBackground()
     {
         index = count++;
     }

@@ -228,6 +228,13 @@ namespace ArcadeMaker.Core.Runtime
                     }
                 }
             }
+
+            // scroll backgrounds
+            foreach (var bg in Game.CurrentRoom.Backgrounds)
+            {
+                bg.X += bg.HorSpeed;
+                bg.Y += bg.VerSpeed;
+            }
         }
 
         private static void UpdateImageIndex(Instance instance)

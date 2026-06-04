@@ -9,6 +9,7 @@ namespace ArcadeMaker.Core.Runtime
     public class RoomInstance
     {
         public RoomModel Model { get; }
+        public List<RoomBackground> Backgrounds { get; } = [];
         private readonly List<Instance> instances = [];
         public List<Instance> Instances => instances;
         public IEnumerable<Instance> SortedInstances
@@ -37,6 +38,12 @@ namespace ArcadeMaker.Core.Runtime
                 instance.Y.Value = item.Y.ToExp();
                 instance.DepthChanged += MarkDepthChanged;
                 AddInstance(instance);
+            }
+
+            // copy all backgrounds from the model
+            foreach (var background in model.Backgrounds)
+            {
+                Backgrounds.Add(background with { });
             }
         }
 
