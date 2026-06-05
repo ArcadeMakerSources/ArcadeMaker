@@ -38,7 +38,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         // resources
         private readonly GraphicsDeviceManager graphicsDeviceManager;
         private SpriteBatch SpriteBatch { get; set; } = null!;
-        private List<Sprite> Sprites { get; } = [];
+        public List<Sprite> Sprites { get; } = [];
         private Dictionary<Background, Texture2D?> BackgroundTextures { get; } = [];
         public List<Background> Backgrounds { get; } = [];
         public List<Sound> Sounds { get; } = [];
@@ -108,11 +108,6 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
             // load game data
             ((IGame)this).LoadFromProjectFile(projectFile);
-            foreach (var obj in Objects)
-            {
-                if (obj.Sprite != null && !Sprites.Contains(obj.Sprite))
-                    Sprites.Add(obj.Sprite);
-            }
         }
 
         /// <summary>
@@ -432,6 +427,27 @@ namespace ArcadeMaker.Engines.MonoGame.Core
                 2d => MouseState!.Value.RightButton == ButtonState.Pressed,
                 _ => throw new ArgumentException($"{args[0]!.Number} is not a valid mouse button input. Use '{ExpSrc.EngineNamespace}{Exp.Spans.NamespaceSpecificationSpan.Symbol}MouseButton' enum to pass valid values.")
             };
+        }
+
+        public Exp.Void DrawSprite(Exp.Instance? _, IValue?[] args)
+        {
+            // parameters
+            Vector2 pos = new((float)args[0].ThrowIfNull().Number, (float)args[1].ThrowIfNull().Number);
+            Sprite sprite = Sprites.FirstOrDefault(s => s.ID == args[2].ThrowIfNull().Number) ?? throw new ArgumentException($"No sprite with ID '{args[2]}' found.");
+            double imageIndex = args[3].ThrowIfNull().Number;
+
+            int angle = 0;
+            Color alpha = Color.White;
+            if (args.Length > 5)
+            {
+                angle = (int)args[4].ThrowIfNull().Number;
+                alpha = new Color((uint)args[5].ThrowIfNull().Number);
+            }
+
+            // get the texture region for the sprite and draw it
+            MainTextureAtlas.GetRegion(sprite, (int)imageIndex)?.Draw(SpriteBatch, pos, alpha, (float)ArcadeMaker.Core.Math.Formulas.DegreesToRadians(angle), new(sprite.OriginX, sprite.OriginY), 1f, SpriteEffects.None, 0);
+
+            return Exp.Void.Return;
         }
 
         public Exp.Void DrawText(Exp.Instance? inst, IValue?[] args)

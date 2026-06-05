@@ -33,6 +33,30 @@ public partial interface IGame
     [ExpFunc(1)]
     BoolValue GamepadButtonDown(Exp.Instance? _, IValue?[] args);
 
+    [ExpFunc(2, IsNonStaticFuncOfGameObjects = true)]
+    IValue PointMeeting(Exp.Instance? expinst, IValue?[] args)
+    {
+        // arguments
+        var inst = (Runtime.Instance)expinst!;
+        var x = args[0].ThrowIfNull().Number;
+        var y = args[1].ThrowIfNull().Number;
+
+        // create a Rect
+        var instMask = inst.Model.Sprite!.Mask;
+        var instRect = new Rect
+        {
+            X = inst.X.Value!.Number,
+            Y = inst.Y.Value!.Number,
+            Width = instMask.Right - instMask.Left + 1,
+            Height = instMask.Bottom - instMask.Top + 1,
+            OriginX = inst.Model.Sprite.OriginX - instMask.Left + 1,
+            OriginY = inst.Model.Sprite.OriginY - instMask.Top + 1,
+            Angle = inst.ImageAngle.Value!.Number
+        };
+
+        return SeperatingAxisTheorem.IsPointInRectangle(x, y, instRect).ToExp();
+    }
+
     [ExpFunc(3, IsNonStaticFuncOfGameObjects = true)]
     BoolValue PlaceMeeting(Exp.Instance? expinst, IValue?[] args)
     {
@@ -212,6 +236,9 @@ public partial interface IGame
         GetActivatedRoom().AddInstance(inst);
         return inst;
     }
+
+    [ExpFunc(4, 6)]
+    Exp.Void DrawSprite(Exp.Instance? _, IValue?[] args);
 
     [ExpFunc(3)]
     Exp.Void DrawText(Exp.Instance? _, IValue?[] args);

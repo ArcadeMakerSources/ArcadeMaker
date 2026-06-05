@@ -12,6 +12,7 @@ namespace ArcadeMaker.IDE.Debugging;
 
 internal class FutileGame : ArcadeMaker.Core.IGame
 {
+    public List<Sprite> Sprites { get; } = [];
     public List<ObjectModel> Objects { get; } = [];
     public List<Sound> Sounds { get; } = [];
     public List<Background> Backgrounds { get; } = [];
@@ -44,6 +45,7 @@ internal class FutileGame : ArcadeMaker.Core.IGame
 
     public BoolValue GamepadButtonDown(Exp.Instance? _, IValue?[] args) => false;
 
+    public Exp.Void DrawSprite(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
     public Exp.Void DrawText(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
     public Exp.Void SetFont(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
     public Exp.Void SetColor(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;

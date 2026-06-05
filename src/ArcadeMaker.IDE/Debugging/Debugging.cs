@@ -51,6 +51,7 @@ internal static class Debug
                 model.EventScripts.Step?.ForEach(script => script?.Def = model.Class);
                 model.EventScripts.Draw?.ForEach(script => script?.Def = model.Class);
             });
+            futileGame.Sprites.AddRange(Environment.project.items.OfType<GameSprite>().Map(s => new Core.Resources.Sprite(s.name, null, 0, 0, 0, null)));
             futileGame.FontsData.AddRange(Environment.project.items.OfType<GameFont>().Map(r => new Core.Resources.Serializeables.GameFont() { Name = r.name }));
             futileGame.Sounds.AddRange(Environment.project.items.OfType<GameSound>().Map(s => new Core.Resources.Sound(s.name, "", 0, 0, 0, Core.Resources.Sound.Types.SoundEffect)));
             futileGame.Scripts.AddRange(Environment.project.items.OfType<GameScript>().Map(script => ScriptDocument.FromString(script.Script, script.name)));

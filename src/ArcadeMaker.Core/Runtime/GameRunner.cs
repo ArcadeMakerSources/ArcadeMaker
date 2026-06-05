@@ -77,7 +77,7 @@ namespace ArcadeMaker.Core.Runtime
                 int i = 0;
                 foreach (var name in names)
                 {
-                    code += $"    {name.StartWithLowerCase()} = {(int)Enum.Parse(type, name)}{(i++ < names.Length - 1 ? "," : "")}\n";
+                    code += $"    {name.StartWithLowerCase()} = {(type.GetEnumUnderlyingType() == typeof(uint) ? (uint)Enum.Parse(type, name) : (int)Enum.Parse(type, name))}{(i++ < names.Length - 1 ? "," : "")}\n";
                 }
 
                 code += "}";
@@ -93,6 +93,9 @@ namespace ArcadeMaker.Core.Runtime
             // static classes to add
             ClassDefSpan instanceStaticClass = new("Instance", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
             instanceStaticClass.Funcs = instanceStaticClass.Funcs.Append(new ConstructorDefSpan([], [], instanceStaticClass, Interpreter) { Private = true }).ToArray();
+            ClassDefSpan spritesStaticClass = new("Sprites", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
+            spritesStaticClass.Funcs = spritesStaticClass.Funcs.Append(new ConstructorDefSpan([], [], spritesStaticClass, Interpreter) { Private = true }).ToArray();
+            spritesStaticClass.Vars.AddRange(Game.Sprites.Map(s => new Variable(s.Name, s.ID.ToExp(), cons: true)));
             ClassDefSpan soundsStaticClass = new("Sounds", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
             soundsStaticClass.Funcs = instanceStaticClass.Funcs.Append(new ConstructorDefSpan([], [], soundsStaticClass, Interpreter) { Private = true }).ToArray();
             soundsStaticClass.Vars.AddRange(Game.Sounds.Map(s => new Variable(s.Name, s.ID.ToExp(), cons: true)));
@@ -105,7 +108,7 @@ namespace ArcadeMaker.Core.Runtime
             ClassDefSpan fontsStaticClass = new("Fonts", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
             fontsStaticClass.Funcs = fontsStaticClass.Funcs.Append(new ConstructorDefSpan([], [], fontsStaticClass, Interpreter) { Private = true }).ToArray();
             fontsStaticClass.Vars.AddRange(Game.FontsData.Map(f => new Variable(f.Name, f.ID.ToExp(), cons: true)));
-            Interpreter.definations.AddRange([instanceStaticClass, soundsStaticClass, pathsStaticClass, roomsStaticClass, fontsStaticClass, SoundPlaybackInstance.Class]);
+            Interpreter.definations.AddRange([spritesStaticClass, instanceStaticClass, soundsStaticClass, pathsStaticClass, roomsStaticClass, fontsStaticClass, SoundPlaybackInstance.Class]);
 
             // add all methods with [ExpFunc] attribute
             void AddMarkedFuncs(object instance, Type? type = null)

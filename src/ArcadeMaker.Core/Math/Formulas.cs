@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using static System.Math;
 
 namespace ArcadeMaker.Core.Math;
@@ -23,8 +24,10 @@ public static class Formulas
     }
     // ---------------------------------------------------------------------------------------------------------------------------------
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double RadiansToDegrees(double radians) => radians * (180 / PI);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double DegreesToRadians(double degrees) => degrees * (PI / 180);
 
     /// <summary>

@@ -4,8 +4,11 @@ using System.Text;
 
 namespace ArcadeMaker.Core.Resources;
 
-public class Sprite(string name, string? imageFile, int numOfImages, int originX, int originY, SpriteMask mask) : IItem
+public class Sprite(string name, string? imageFile, int numOfImages, int originX, int originY, SpriteMask mask) : ISetsID
 {
+    private static int idCounter = 0;
+    public int ID { get; } = idCounter++;
+
     public string Name => name;
     public string? ImageFile => imageFile;
     public int NumberOfImages => numOfImages;

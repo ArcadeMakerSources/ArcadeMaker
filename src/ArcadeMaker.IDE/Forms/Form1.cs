@@ -645,7 +645,7 @@ namespace ArcadeMaker.IDE
                     string loc = dialog.FileName;
                     if (!string.IsNullOrWhiteSpace(loc))
                     {
-                        projectName = loc.FileNameWithoutExtension();
+                        Environment.project.name = loc.FileNameWithoutExtension();
                         rootFolder = loc.FileLocation();
                     }
                     else
@@ -654,7 +654,7 @@ namespace ArcadeMaker.IDE
                         if (res == DialogResult.Yes)
                         {
                             loc = Microsoft.VisualBasic.Interaction.InputBox("Location to save the project to:");
-                            projectName = loc.FileNameWithoutExtension();
+                            Environment.project.name = loc.FileNameWithoutExtension();
                             rootFolder = loc.FileLocation();
                         }
                         else return;
@@ -668,7 +668,7 @@ namespace ArcadeMaker.IDE
                                                                                                  // and second would return the folder that was selected in
                                                                                                  // the dialog when the project was first saved.
             
-            if (Environment.project.projectFilePath != null)
+            if (Environment.project.projectFilePath != null && string.IsNullOrWhiteSpace(Environment.project.name))
                 Environment.project.name = Environment.project.projectFilePath.FileNameWithoutExtension();
             Environment.project.Save(rootFolder);
         }

@@ -22,6 +22,7 @@ namespace ArcadeMaker.Core;
 
 public partial interface IGame
 {
+    List<Sprite> Sprites { get; }
     List<ObjectModel> Objects { get; }
     List<Sound> Sounds { get; }
     List<Background> Backgrounds { get; }
@@ -46,7 +47,6 @@ public partial interface IGame
         try
         {
             string projectFileLocation = filePath.Substring(0, filePath.LastIndexOf('\\'));
-            List<Sprite> sprites = [];
             foreach (SerializeableGameItem item in sproject.items)
             {
                 if (item is SerializeableGameSprite ssprite)
@@ -61,7 +61,7 @@ public partial interface IGame
                         //maskBounding_manual = ssprite.maskBounding_manual,
                         //maskAlphaTolerance = ssprite.maskAlphaTolerance
                     };
-                    sprites.Add(sprite);
+                    Sprites.Add(sprite);
                 }
                 else if (item is SerializeableBackground sbg)
                 {
@@ -136,7 +136,7 @@ public partial interface IGame
                         evscripts.Scripts.ForEach(script => { if (!string.IsNullOrWhiteSpace(script.Script)) list.Add(ExpSrc.ExpSrc.CreateInstanceScriptDocument($"{evscripts.Event} event of {sobj.name}", null, script.Script, evscripts.Event == ObjectEvent.Draw ? [ExpSrc.ExpSrc.CURRENT_VIEW_INDEX_ARG_NAME] : [])); });
                     }
 
-                    ObjectModel obj = new(sobj.name, sprites.FirstOrDefault(spr => spr.Name == sobj.sprite), new([.. createEv], [.. stepEv], [.. drawEv]), sobj.extraProperties)
+                    ObjectModel obj = new(sobj.name, Sprites.FirstOrDefault(spr => spr.Name == sobj.sprite), new([.. createEv], [.. stepEv], [.. drawEv]), sobj.extraProperties)
                     {
                         InitValues = (Depth: sobj.depth, Visible: true, Solid: sobj.solid)
                     };

@@ -46,6 +46,24 @@ public static class SeperatingAxisTheorem
         return true;
     }
 
+    public static bool IsPointInRectangle(double pointX, double pointY, Rect rect)
+    {
+        var corners = GetRotatedCorners(rect);
+
+        var axes = GetAxes(corners);
+
+        foreach (var axis in axes)
+        {
+            var projection = ProjectOntoAxis(corners, axis);
+            double pointProjection = pointX * axis.X + pointY * axis.Y;
+
+            if (pointProjection < projection.Min || pointProjection >= projection.Max)
+                return false;
+        }
+
+        return true;
+    }
+
     private static (double X, double Y)[] GetRotatedCorners(Rect rect)
     {
         double radians = rect.Angle * System.Math.PI / 180.0;
