@@ -50,6 +50,42 @@ namespace ArcadeMaker.IDE.Items
                 }
             }
         }
+
+        private Image collisionIconSpriteImage;
+        private static readonly Image emptyCollisionIcon = ObjectEditor.GetIcon(ObjectEvent.EventType.Collision)!;
+        internal Image CollisionIcon
+        {
+            get
+            {
+                // if the sprite preview was changed since last get, recreate the icon
+                if (field == null || collisionIconSpriteImage != sprite?.image)
+                {
+                    if (sprite?.image == null)
+                        return emptyCollisionIcon;
+
+                    try
+                    {
+                        Bitmap bundle = new(emptyCollisionIcon.Width * 2, emptyCollisionIcon.Height);
+                        using Graphics bg = Graphics.FromImage(bundle);
+                        bg.DrawImage(emptyCollisionIcon, 0, 0);
+                        bg.DrawImage(sprite.image, emptyCollisionIcon.Width, 0, emptyCollisionIcon.Width, emptyCollisionIcon.Height);
+
+                        collisionIconSpriteImage = sprite.image;
+                        field = bundle;
+
+                        return bundle;
+                    }
+                    catch (Exception ex)
+                    {
+                        _ = ex;
+                    }
+                }
+
+                return field ?? emptyCollisionIcon;
+            }
+        }
+
+
         public new ObjectEditor editor
         {
             get

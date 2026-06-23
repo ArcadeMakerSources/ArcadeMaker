@@ -38,6 +38,8 @@ namespace ArcadeMaker.IDE
             this.name = name;
         }
 
+        public T? GetItem<T>(string name) where T : GameItem => items.OfType<T>().FirstOrDefault(i => i.name == name);
+
         public void Save(string path, bool successMsg = true, string fileName = null)
         {
             fileName ??= name;

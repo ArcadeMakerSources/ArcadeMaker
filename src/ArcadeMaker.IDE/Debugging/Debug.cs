@@ -13,9 +13,10 @@ namespace ArcadeMaker.IDE.Debugging;
 internal static class Debug
 {
     internal static GameRunner<FutileGame>? GameRunner { get; private set; }
-    internal static bool TryBuild(out HashSet<ExpError> errors)
+    internal static event EventHandler<HashSet<ProjectError>>? OnDebugBuild;
+    internal static bool TryBuild()
     {
-        HashSet<ExpError> _errors = [];
+        HashSet<ProjectError> errors = [];
         try
         {
             //List<ScriptDocument> sources = Environment.project.items.OfType<GameScript>().Map(gs => {
@@ -35,7 +36,6 @@ internal static class Debug
 
             if (Environment.isGameRunning)
             {
-                errors = [];
                 return true;
             }
 
@@ -68,7 +68,7 @@ internal static class Debug
             // catch errors in event scripts
             futileGame.Objects.ForEach(model =>
             {
-                model.Events.ForEach(e => e.Docs?.ForEach(script => { ExpError[]? errors = null; script?.TryPrepare(GameRunner.Interpreter, out errors); CatchErrors(errors); }));
+                model.Events.ForEach(e => e.Docs?.ForEach(script => { ExpError[]? errors = null; script?.TryPrepare(GameRunner.Interpreter, out errors); CatchErrors(errors.Map(e => new ProjectError(e))); }));
             });
 
             //Interpreter.Build(ScriptDocument.FromString("", "main.script"), defs, [..sources]);
@@ -89,22 +89,90 @@ internal static class Debug
             //    CatchErrors(stepErrors);
             //    CatchErrors(drawErrors);
             //}
+
+            // validate object events:
+            foreach (var obj in Environment.project.items.OfType<GameObject>())
+            {
+                // collision events
+                foreach (var colEv in obj.Events.OfType<CollisionEvent>())
+                {
+                    if (!Environment.project.items.OfType<GameObject>().Any(other => other.name == colEv.Param))
+                    {
+                        Solutions.RemoveCollisionWithDeletedObjectsSolution solution = new(colEv.Param);
+                        CatchErrors(new ProjectError(ProjectError.Source_Engine, $"Object {obj.name} subsribes a collision events with an object that does not exists anymore ('{colEv.Param}')", obj.name + ".Events", 0, solution));
+                    }
+                }
+            }
         }
         catch (BuildFailureException ex)
         {
-            CatchErrors(ex.Errors);
+            CatchErrors(ex.Errors.Map(e => new ProjectError(e)));
         }
         catch (Exception ex) when (false)
         {
-            CatchErrors([new("Debugger", 0, 0, $"Uncaught build exception: {ex.Message}.")]);
+            CatchErrors([new("Debugger", $"Uncaught build exception: {ex.Message}.", "", 0, [])]);
         }
 
-        void CatchErrors(IEnumerable<ExpError>? ex)
+        void CatchErrors(params IEnumerable<ProjectError> ex)
         {
-            _errors.AddRange(ex ?? []);
+            errors.AddRange(ex ?? []);
         }
 
-        errors = _errors;
+        OnDebugBuild?.Invoke(Environment.project, errors);
+
         return errors.Count == 0;
+    }
+
+    internal static void FillErrors(this ListView errorsBox, IEnumerable<ProjectError> errors)
+    {
+        errorsBox.InvokeIfRequired(errorsBox.Items.Clear);
+
+        foreach (var err in errors)
+        {
+            ListViewItem errItem = new(err.In) { Tag = err };
+            errItem.SubItems.Add(err.Message);
+            errItem.SubItems.Add(err.File);
+            errItem.SubItems.Add(err.Line.ToString());
+            errorsBox.InvokeIfRequired(() => errorsBox.Items.Add(errItem));
+        }
+    }
+
+    private static ContextMenuStrip? errorsMenu;
+    internal static void AttachMenu(this ListView errorsBox)
+    {
+        errorsBox.MouseClick += (s, e) =>
+        {
+            if (e.Button != MouseButtons.Right || errorsBox.SelectedItems.Count == 0)
+                return;
+
+            // get the error instance
+            ProjectError error = (ProjectError)errorsBox.SelectedItems[0].Tag!;
+
+            // create solve menu
+            ToolStripMenuItem solveMenu = new("Solve");
+            foreach (var solution in error.Solutions)
+            {
+                ToolStripMenuItem solveBtn = new(solution.ButtonText);
+                solveBtn.Click += (ss, ee) => solution.Apply();
+                solveMenu.DropDownItems.Add(solveBtn);
+            }
+            solveMenu.Enabled = solveMenu.DropDownItems.Count >= 1;
+
+            // create the main menu
+            errorsMenu?.Dispose();
+            errorsMenu = new();
+            errorsMenu.Items.AddRange([solveMenu]);
+
+            // show main menu
+            errorsMenu.Show(errorsBox, e.Location);
+        };
+    }
+
+    internal static void InvokeIfRequired(this Control control, Action action)
+    {
+        if (control.InvokeRequired)
+            control.Invoke(action);
+        else
+            action();
     }
 }

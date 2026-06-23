@@ -1,4 +1,5 @@
-﻿using ArcadeMaker.IDE.Items;
+﻿using ArcadeMaker.IDE.Debugging;
+using ArcadeMaker.IDE.Items;
 using ArcadeMaker.IDE.Properties;
 using System;
 using System.Linq;
@@ -528,6 +529,9 @@ namespace ArcadeMaker.IDE
             }
 #endif
             LoadRecentProjectsMenu();
+
+            Debugging.Debug.OnDebugBuild += OnDebugBuild;
+            errorsBox.AttachMenu();
         }
 
         private void LoadRecentProjectsMenu()
@@ -948,6 +952,11 @@ namespace ArcadeMaker.IDE
         private void OpenAssemblyManager()
         {
             (new AssemblyManagerForm()).ShowDialog();
+        }
+
+        private void OnDebugBuild(object? sender, HashSet<ProjectError> e)
+        {
+            errorsBox.FillErrors(e);
         }
     }
 

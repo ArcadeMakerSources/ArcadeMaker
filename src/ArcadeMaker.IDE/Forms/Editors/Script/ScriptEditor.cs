@@ -102,6 +102,8 @@ namespace ArcadeMaker.IDE
             for (int i = 0; i < columns.Length; i++)
                 columns[i] = (ColumnHeader)Global.form1.errorsBox.Columns[i].Clone();
             errorsBox.Columns.AddRange(columns);
+            Debugging.Debug.OnDebugBuild += (s, errors) => errorsBox.FillErrors(errors);
+            errorsBox.AttachMenu();
 
             scriptBox.Enabled = true;
             scriptBox.Loading = false;
@@ -175,7 +177,7 @@ namespace ArcadeMaker.IDE
             textChangedTimer.Tick += textChangedTimer_Tick;
         }
 
-        private System.Windows.Forms.Timer textChangedTimer = new() { Interval = 5000 };
+        private System.Windows.Forms.Timer textChangedTimer = new() { Interval = 3000 };
         private void scriptBox_TextChanged(object sender, SpansTextBox2TextChangedEventArgs e)
         {
             textChangedTimer.Stop();
@@ -193,23 +195,8 @@ namespace ArcadeMaker.IDE
             HashSet<ExpError>? errors = null;
             await Task.Run(() =>
             {
-                Debugging.Debug.TryBuild(out errors);
+                Debugging.Debug.TryBuild();
             });
-
-            Global.form1.errorsBox.Items.Clear();
-            errorsBox.Items.Clear();
-            if (errors?.Count >= 1)
-            {
-                foreach (var err in errors)
-                {
-                    ListViewItem errItem = new("Exp");
-                    errItem.SubItems.Add(err.Message);
-                    errItem.SubItems.Add(err.Doc);
-                    errItem.SubItems.Add(err.Line.ToString());
-                    errorsBox.Items.Add(errItem);
-                    Global.form1.errorsBox.Items.Add((ListViewItem)errItem.Clone());
-                }
-            }
 
             obj.Script = scriptBu;
         }

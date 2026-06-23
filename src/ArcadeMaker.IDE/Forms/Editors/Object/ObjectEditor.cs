@@ -344,29 +344,13 @@ namespace ArcadeMaker.IDE
             e.DrawBackground();
 
             // Get the current item object
-            var item = eventsListView.Items[e.Index];
+            var item = (ObjectEvent)eventsListView.Items[e.Index];
 
             // Get the icon
-            Image? icon = GetIcon(item as ObjectEvent);
-
-            // Get second icon (for Collision events - we display both the Collision event icon and the object associated to it)
-            Image? icon2 = item is CollisionEvent ev ? Environment.project.items.OfType<GameObject>().FirstOrDefault(obj => obj.name == ev.Param)?.sprite?.image : null;
-
-            if (icon != null && icon2 != null)
-            {
-                try
-                {
-                    Bitmap bundle = new(icon.Width * 2, icon.Height);
-                    using Graphics bg = Graphics.FromImage(bundle);
-                    bg.DrawImage(icon, 0, 0);
-                    bg.DrawImage(icon2, icon.Width, 0, icon.Width - 1, icon.Height - 1);
-                    icon = bundle;
-                }
-                catch (Exception ex)
-                {
-                    _ = ex; // it's OK, it'll draw the first icon alone
-                }
-            }
+            Image? icon = null;
+            if (item is CollisionEvent colEv)
+                icon = Environment.project.GetItem<GameObject>(colEv.Param)?.CollisionIcon;
+            icon ??= GetIcon(item.Type);
 
             // Calculate vertical alignment positions
             int iconX = e.Bounds.Left + 4;
@@ -378,7 +362,7 @@ namespace ArcadeMaker.IDE
 
             // 2. Calculate text boundaries (shifting right to prevent overlapping the icon)
             int textX = iconX + (icon?.Width ?? 24) + 6;
-            Rectangle textRect = new Rectangle(textX, e.Bounds.Top, e.Bounds.Width - textX, e.Bounds.Height);
+            Rectangle textRect = new(textX, e.Bounds.Top, e.Bounds.Width - textX, e.Bounds.Height);
 
             // 3. Draw the item text natively
             TextRenderer.DrawText(e.Graphics, item?.ToString() ?? "null", e.Font, textRect, e.ForeColor,
@@ -388,9 +372,9 @@ namespace ArcadeMaker.IDE
             e.DrawFocusRectangle();
         }
 
-        private Image? GetIcon(ObjectEvent? ev)
+        internal static Image? GetIcon(ObjectEvent.EventType ev)
         {
-            return Resources.ResourceManager.GetObject("evicon24_" + ev?.Type) as Image;
+            return Resources.ResourceManager.GetObject("evicon24_" + ev) as Image;
         }
 
         private void eventsListView_MeasureItem(object sender, MeasureItemEventArgs e)
