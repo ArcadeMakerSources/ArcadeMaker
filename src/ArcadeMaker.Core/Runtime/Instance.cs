@@ -5,12 +5,15 @@ using Exp.Spans;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ArcadeMaker.Core.Runtime;
 
 public class Instance : Exp.Instance
 {
+    public const int NUMBER_OF_ALARMS = 11;
+
     public ObjectModel Model { get; }
     public int FramesSinceLastImageIndex { get; set; }
 
@@ -57,6 +60,8 @@ public class Instance : Exp.Instance
     [ExpProperty]
     public TypeVariable Solid { get; }
 
+    public (int number, ObjectEvent? ev)[] Alarm { get; } = new (int, ObjectEvent)[NUMBER_OF_ALARMS];
+
     internal PathDrive? CurrentPathDrive { get; set; }
 
     public static readonly Dictionary<PropertyInfo, ExpPropertyAttribute> csProperties;
@@ -98,6 +103,13 @@ public class Instance : Exp.Instance
         depth = ((double)model.InitValues.Depth);
         Depth = new CustomVariable("depth", () => depth.ToExp(), SetDepth);
         Solid = InitVar("solid", model.InitValues.Solid.ToExp(), isBoolChecker, ValueHelper.tbool);
+
+        // init alarms
+        for (int alarmIndex = 0; alarmIndex < NUMBER_OF_ALARMS; alarmIndex++)
+        {
+            Alarm[alarmIndex].number = -1;
+            Alarm[alarmIndex].ev = Model.AlarmEvents.FirstOrDefault(ev => ev.Param == alarmIndex);
+        }
 
         AssignExtraProperties();
     }
@@ -179,5 +191,24 @@ public class Instance : Exp.Instance
 
         depth = value.Number;
         DepthChanged?.Invoke(this, depth);
+    }
+
+    // consider: [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void TickAlarms(Interpreter runner)
+    {
+        for (uint i = 0; i < NUMBER_OF_ALARMS; i++)
+        {
+            if (Alarm[i].number >= 0)
+            {
+                if (Alarm[i].number == 0)
+                {
+                    // trigger the event
+                    foreach (var script in Alarm[i].ev?.Docs ?? [])
+                        script.Run(runner, this);
+                }
+
+                Alarm[i].number--;
+            }
+        }
     }
 }

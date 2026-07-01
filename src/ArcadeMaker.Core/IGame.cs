@@ -42,9 +42,10 @@ public partial interface IGame
     void DrawLine(double x1, double y1, double x2, double y2, double thickness);
     void SetWindowsSize(int w, int h);
     void SetCaption(string caption);
+    Color BackColor { get; set; }
 
     internal RoomInstance GetActivatedRoom() => CurrentRoom ?? throw new NoActivatedRoomException();
-    private static event EventHandler OnProjectLoadingComplete;
+    private static event EventHandler? OnProjectLoadingComplete;
     public void LoadFromProject(SerializeableGameProject sproject, string filePath)
     {
         try
@@ -243,6 +244,7 @@ public partial interface IGame
                     typeof(ParameterizedObjectEvent<Keys>),
                     typeof(ParameterizedObjectEvent<MouseButton>),
                     typeof(ParameterizedObjectEvent<GamepadButton>),
+                    typeof(ParameterizedObjectEvent<int>),
                     typeof(CollisionEvent),
                     typeof(AssemblyReference),
                     typeof(ObjectProperty),

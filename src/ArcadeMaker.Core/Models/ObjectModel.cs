@@ -23,6 +23,7 @@ namespace ArcadeMaker.Core.Models
         internal ObjectEvent? CreateEvent { get; }
         internal ObjectEvent? StepEvent { get; }
         internal ObjectEvent? DrawEvent { get; }
+        internal ObjectEvent? DestroyEvent { get; }
         internal ParameterizedObjectEvent<Keys>[] KeyDownEvents { get; }
         internal ParameterizedObjectEvent<Keys>[] KeyPressEvents { get; }
         internal ParameterizedObjectEvent<Keys>[] KeyReleaseEvents { get; }
@@ -30,6 +31,7 @@ namespace ArcadeMaker.Core.Models
         internal ParameterizedObjectEvent<MouseButton>[] MousePressEvents { get; }
         internal ParameterizedObjectEvent<MouseButton>[] MouseReleaseEvents { get; }
         internal CollisionEvent[] CollisionEvents { get; }
+        internal ParameterizedObjectEvent<int>[] AlarmEvents { get; }
 
         public ObjectModel(string name, Sprite? sprite, ObjectEvent[] events, ObjectProperty[] extraProperties)
         {
@@ -42,9 +44,10 @@ namespace ArcadeMaker.Core.Models
             
             this.Events = [..events];
 
-            CreateEvent = GetEvent(ObjectEvent.EventType.Create);
-            StepEvent   = GetEvent(ObjectEvent.EventType.Step);
-            DrawEvent   = GetEvent(ObjectEvent.EventType.Draw);
+            CreateEvent  = GetEvent(ObjectEvent.EventType.Create);
+            StepEvent    = GetEvent(ObjectEvent.EventType.Step);
+            DrawEvent    = GetEvent(ObjectEvent.EventType.Draw);
+            DestroyEvent = GetEvent(ObjectEvent.EventType.Destroy);
             KeyDownEvents      = [.. GetEvents<Keys>(ObjectEvent.EventType.KeyDown)];
             KeyPressEvents     = [.. GetEvents<Keys>(ObjectEvent.EventType.KeyPress)];
             KeyReleaseEvents   = [.. GetEvents<Keys>(ObjectEvent.EventType.KeyRelease)];
@@ -52,6 +55,7 @@ namespace ArcadeMaker.Core.Models
             MousePressEvents   = [.. GetEvents<MouseButton>(ObjectEvent.EventType.MousePress)];
             MouseReleaseEvents = [.. GetEvents<MouseButton>(ObjectEvent.EventType.MouseRelease)];
             CollisionEvents    = [.. Events.OfType<CollisionEvent>()];
+            AlarmEvents        = [.. GetEvents<int>(ObjectEvent.EventType.Alarm)];
         }
 
         private static ClassDefSpan CreateClass(string name, ObjectProperty[] extraProps)
@@ -106,6 +110,7 @@ namespace ArcadeMaker.Core.Models
             Create,
             Step,
             Draw,
+            Destroy,
             Collision,
             KeyDown,
             KeyPress,
@@ -113,7 +118,6 @@ namespace ArcadeMaker.Core.Models
             MouseDown,
             MousePress,
             MouseRelease,
-            //MouseMove,
             MouseWheel,
             Alarm
         }
@@ -134,7 +138,7 @@ namespace ArcadeMaker.Core.Models
             Docs = [];
             for (int i = 0; i < Scripts.Count; i++)
             {
-                Docs.Add(new InstanceScriptDocument($"{def.Name}.Events.{Type}{(GetParam(out var param) ? $"<{param}>" : "")}.{i}", def, Scripts[i] ?? throw new NullReferenceException($"{nameof(Scripts)}[{i}]"), ScriptArgs));
+                Docs.Add(ExpSrc.ExpSrc.CreateInstanceScriptDocument($"{def.Name}.Events.{Type}{(GetParam(out var param) ? $"<{param}>" : "")}.{i}", def, Scripts[i] ?? throw new NullReferenceException($"{nameof(Scripts)}[{i}]"), ScriptArgs));
             }
         }
 

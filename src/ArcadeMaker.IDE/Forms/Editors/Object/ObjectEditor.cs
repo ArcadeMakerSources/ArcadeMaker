@@ -93,13 +93,11 @@ namespace ArcadeMaker.IDE
                 ObjectEvent? existing = obj.Events.FirstOrDefault(e => e.Type == ea.Type && e.GetParam(out var existingParam) == ea.GetParam(out var newParam) && object.Equals(existingParam, newParam));
                 if (existing == null)
                 {
+                    existing = ea;
                     obj.Events.Add(ea);
                     eventsListView.Items.Add(ea);
                 }
-                else
-                {
-                    eventsListView.SelectedItem = existing;
-                }
+                eventsListView.SelectedItem = existing;
             };
             LoadSpriteBox();
             parentBox.Resource = obj.parent;
@@ -308,7 +306,7 @@ namespace ArcadeMaker.IDE
             if (scriptsListView.SelectedItem is not EventScript script)
                 return;
 
-            script.Event.Scripts.Remove(script.Script);
+            script.Event.Scripts.Remove(script.Pointer);
             scriptsListView.Items.Remove(script);
         }
 

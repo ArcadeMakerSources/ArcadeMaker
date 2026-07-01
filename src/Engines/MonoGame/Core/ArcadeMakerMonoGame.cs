@@ -256,6 +256,13 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
         public int CurrentViewIndex { get; private set; } = -1;
 
+        private Color backColor;
+        public System.Drawing.Color BackColor
+        {
+            get => System.Drawing.Color.FromArgb(backColor.A, backColor.R, backColor.G, backColor.B);
+            set => backColor = new(value.R, value.G, value.B, value.A);
+        }
+
         /// <summary>
         /// Draws the game's graphics, called once per frame.
         /// </summary>
@@ -267,8 +274,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             if (isOnError || CurrentRoom == null)
                 return;
 
-            var bc = CurrentRoom.Model.BackgroundColor;
-            GraphicsDevice.Clear(new(bc.R, bc.G, bc.B, bc.A));
+            GraphicsDevice.Clear(backColor);
 
             // if views are defined, we need to draw the room for each view, applying the corresponding camera transformations.
             // otherwise, we can just draw the room once without any transformations

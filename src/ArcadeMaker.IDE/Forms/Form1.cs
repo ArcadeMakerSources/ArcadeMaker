@@ -730,7 +730,7 @@ namespace ArcadeMaker.IDE
             {
                 foreach (GameItem item in Environment.project.items)
                 {
-                    if (item.name == name)
+                    if (item.name.Equals(name, StringComparison.CurrentCultureIgnoreCase))
                     {
                         try
                         {

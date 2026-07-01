@@ -137,7 +137,7 @@ namespace ArcadeMaker.Core.Runtime
                         if (attr.IsNonStaticFuncOfGameObjects)
                             objClasses.ForEach(objCls => Interpreter.AddExternFunc(new(invoker, attr.ParamsCounts, invokerName), objCls));
                         else
-                            Interpreter.AddExternFunc(new(invoker, attr.ParamsCounts, invokerName, ExpSrc.ExpSrc.GameNamespace));
+                            Interpreter.AddExternFunc(new(invoker, attr.ParamsCounts, invokerName, ExpSrc.ExpSrc.EngineNamespace));
                     }
                 }
             }
@@ -277,6 +277,9 @@ namespace ArcadeMaker.Core.Runtime
                     }
                 }
 
+                // tick alarms
+                instance.TickAlarms(Interpreter);
+
                 if (instance.Model.StepEvent != null)
                     foreach (var script in instance.Model.StepEvent.Docs!)
                         script.Run(Interpreter, instance);
@@ -357,6 +360,24 @@ namespace ArcadeMaker.Core.Runtime
             return Exp.Void.Return;
         }
 
+
+        [ExpFunc(IsNonStaticFuncOfGameObjects = true)]
+        public Exp.Void Destroy(Exp.Instance? expinst, IValue?[] args)
+        {
+            var inst = (Runtime.Instance)expinst!;
+
+            // remove from room
+            Game.GetActivatedRoom().RemoveInstance(inst);
+
+            // run Destroy event
+            foreach (var script in inst.Model.DestroyEvent?.Docs ?? [])
+            {
+                script.Run(Interpreter, inst);
+            }
+
+            return Exp.Void.Return;
+        }
+
         public void Run(bool invokeInit = true)
         {
             // initialize the game
@@ -393,6 +414,7 @@ namespace ArcadeMaker.Core.Runtime
             Game.CurrentRoom = room;
             Game.SetWindowsSize(room.Model.Width, room.Model.Height);
             Game.SetCaption(room.Model.Caption);
+            Game.BackColor = room.Model.BackgroundColor;
 
             // run all create events for the new room
             foreach (var instance in room.Instances)

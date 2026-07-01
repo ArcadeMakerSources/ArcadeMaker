@@ -68,14 +68,16 @@ namespace ArcadeMaker.IDE
             {
                 Menu.Items.Clear();
 
+                LoadFolderMenu(Global.form1.GetProjectStruct<T>(), null);
+
                 noResItem = new ToolStripMenuItem(defaultItemTitle);
                 noResItem.Click += (s, e) =>
                 {
                     SelectResource(null);
                 };
+                if (Menu.Items.Count >= 1)
+                    Menu.Items.Add(new ToolStripSeparator());
                 Menu.Items.Add(noResItem);
-
-                LoadFolderMenu(Global.form1.GetProjectStruct<T>(), null);
             }
             catch (Exception ex)
             {
@@ -114,7 +116,7 @@ namespace ArcadeMaker.IDE
                 else if (str is ProjectFolderTreeStruct<T> folderStr)
                 {
                     ToolStripMenuItem newFolder = new ToolStripMenuItem(folderStr.Name);
-                    newFolder.Image = null;// Properties.Resources.folder;
+                    newFolder.Image = Properties.Resources.folder;
                     LoadFolderMenu(folderStr, newFolder);
 
                     if (menuItem != null)

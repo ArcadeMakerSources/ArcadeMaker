@@ -164,13 +164,6 @@ public partial interface IGame
         return true;
     }
 
-    [ExpFunc(IsNonStaticFuncOfGameObjects = true)]
-    Exp.Void Destroy(Exp.Instance? expinst, IValue?[] args)
-    {
-        GetActivatedRoom().RemoveInstance((Runtime.Instance)expinst!);
-        return Exp.Void.Return;
-    }
-
     /// <summary>
     /// Returns the instance in the room which is the nearest to a given point.
     /// </summary>
@@ -357,6 +350,19 @@ public partial interface IGame
         inst.CurrentPathDrive = null;
         inst.Speed.Value = 0d.ToExp();
 
+        return Exp.Void.Return;
+    }
+
+    [ExpFunc(1, IsNonStaticFuncOfGameObjects = true)]
+    IValue GetAlarm(Exp.Instance? expinst, IValue?[] args)
+    {
+        return ((Runtime.Instance)expinst!).Alarm[(int)args[0].ThrowIfNull().Number].number.ToExp();
+    }
+
+    [ExpFunc(2, IsNonStaticFuncOfGameObjects = true)]
+    Exp.Void SetAlarm(Exp.Instance? expinst, IValue?[] args)
+    {
+        ((Runtime.Instance)expinst!).Alarm[(int)args[0].ThrowIfNull().Number].number = (int)args[1].ThrowIfNull().Number;
         return Exp.Void.Return;
     }
 

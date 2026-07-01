@@ -45,6 +45,7 @@ namespace ArcadeMaker.IDE
             alarmBtn = new Button();
             mouseMenuBtn = new Button();
             collisionBtn = new Button();
+            destroyBtn = new Button();
             mouseMenu.SuspendLayout();
             SuspendLayout();
             // 
@@ -212,11 +213,25 @@ namespace ArcadeMaker.IDE
             collisionBtn.UseVisualStyleBackColor = true;
             collisionBtn.Click += collisionBtn_Click;
             // 
+            // destroyBtn
+            // 
+            destroyBtn.Image = Properties.Resources.evicon24_Destroy;
+            destroyBtn.ImageAlign = ContentAlignment.MiddleLeft;
+            destroyBtn.Location = new Point(178, 166);
+            destroyBtn.Margin = new Padding(4, 3, 4, 3);
+            destroyBtn.Name = "destroyBtn";
+            destroyBtn.Size = new Size(157, 32);
+            destroyBtn.TabIndex = 11;
+            destroyBtn.Text = "Destroy";
+            destroyBtn.UseVisualStyleBackColor = true;
+            destroyBtn.Click += destroyBtn_Click;
+            // 
             // SelectEventDialog
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(353, 279);
+            Controls.Add(destroyBtn);
             Controls.Add(collisionBtn);
             Controls.Add(alarmBtn);
             Controls.Add(cancelBtn);
@@ -257,5 +272,6 @@ namespace ArcadeMaker.IDE
         private System.Windows.Forms.ToolStripMenuItem mouseWheelBtn;
         private System.Windows.Forms.Button mouseMenuBtn;
         private Button collisionBtn;
+        private Button destroyBtn;
     }
 }

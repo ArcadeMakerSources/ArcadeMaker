@@ -181,7 +181,7 @@ public class ScriptDocument
 public class InstanceScriptDocument(string name, ClassDefSpan def, string script, params string[] args) : ScriptDocument(script, name)
 {
     public ClassDefSpan Def { get; set; } = def;
-    internal FuncDefSpan Runner { get; private set; }
+    internal FuncDefSpan? Runner { get; private set; }
     public string[] Args => args;
 
     public override bool TryPrepare(Interpreter compiler, out ExpError[] errors)

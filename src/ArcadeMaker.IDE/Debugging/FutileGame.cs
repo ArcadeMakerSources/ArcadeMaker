@@ -32,6 +32,7 @@ internal sealed class FutileGame : ArcadeMaker.Core.IGame
     public void DrawLine(double x1, double y1, double x2, double y2, double thickness) { }
     public void SetWindowsSize(int w, int h) { }
     public void SetCaption(string caption) { }
+    public Color BackColor { get; set; }
 
     public Exp.Void ShowMessage(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
 

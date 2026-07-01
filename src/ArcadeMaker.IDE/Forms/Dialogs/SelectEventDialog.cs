@@ -140,7 +140,7 @@ namespace ArcadeMaker.IDE
 
         private void drawBtn_Click(object sender, EventArgs e)
         {
-            SelectEvent(new(ObjectEvent.EventType.Draw, []));
+            SelectEvent(new(ObjectEvent.EventType.Draw, [], ExpSrc.CURRENT_VIEW_INDEX_ARG_NAME));
         }
 
         private readonly GameObjectPickerBox collisionObjPicker = new();
@@ -158,9 +158,24 @@ namespace ArcadeMaker.IDE
         {
             SelectEvent(new(ObjectEvent.EventType.MouseWheel, []));
         }
+
+        private ContextMenuStrip? alarmsMenu;
         private void alarmBtn_Click(object sender, EventArgs e)
         {
-            SelectEvent(new(ObjectEvent.EventType.Alarm, []));
+            if (alarmsMenu == null)
+            {
+                alarmsMenu = new();
+
+                for (int i = 0; i < Core.Runtime.Instance.NUMBER_OF_ALARMS; i++)
+                {
+                    ToolStripMenuItem alarmIndexBtn = new("Alarm " + i);
+                    int ii = i; // in Click event, capture this instead of i, or it would always be NUMBER_OF_ALARMS
+                    alarmIndexBtn.Click += (s, e) => SelectEvent(new ParameterizedObjectEvent<int>(ObjectEvent.EventType.Alarm, [], ii));
+                    alarmsMenu.Items.Add(alarmIndexBtn);
+                }
+            }
+
+            alarmsMenu.Show(alarmBtn, Point.Empty);
         }
 
         private void cancelBtn_Click(object sender, EventArgs e)
@@ -172,6 +187,11 @@ namespace ArcadeMaker.IDE
         {
             if (e.Button != MouseButtons.Right) // else the menu will automatically open
                 mouseMenuBtn.ContextMenuStrip?.Show(mouseMenuBtn, Point.Empty);
+        }
+
+        private void destroyBtn_Click(object sender, EventArgs e)
+        {
+            SelectEvent(new(ObjectEvent.EventType.Destroy, []));
         }
     }
 }

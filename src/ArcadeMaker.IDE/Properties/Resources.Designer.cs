@@ -163,6 +163,16 @@ namespace ArcadeMaker.IDE.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap evicon24_Destroy {
+            get {
+                object obj = ResourceManager.GetObject("evicon24_Destroy", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap evicon24_Draw {
             get {
                 object obj = ResourceManager.GetObject("evicon24_Draw", resourceCulture);
