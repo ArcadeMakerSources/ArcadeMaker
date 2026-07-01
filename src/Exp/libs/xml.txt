@@ -1,0 +1,220 @@
+﻿using system
+using reflection
+
+namespace xml:
+
+// define an interface for overriding the serialization logic
+@ExpectFunc("toXmlString", 1, false)
+@ExpectFunc("fromXmlString", 1, true)
+@AllowFor(true, false, false, false, false)
+attribute OverridesXmlSerialization()
+
+// define an attribute that allows discluding specific properties from the serialization
+@AllowFor(false, true, false, false, false)
+attribute XmlIgnore()
+
+// define xml object class
+@OverridesXmlSerialization
+class XmlObject (type, attr, values)
+{
+    constructor(type)
+    {
+        this.type = type
+        attr = new Dictionary()
+        values = new List()
+    }
+    
+    static func fromObject(obj)
+    {
+        // init with attributre type = object
+        const xml = new XmlObject("object")
+        xml.attr.set("type", Type.get(obj).fullName)
+        
+        // fill values as properties
+        foreach property in getProperties(obj)
+        {
+            if true // getAttr(Type.get(obj), property.name).first(func(attr) => attr.type == <XmlIgnore>) == null
+            {
+                const pobj = new XmlObject("property")
+                pobj.attr.set("name", property.name)
+                pobj.attr.set("type", getValueType(property.value))
+                pobj.values.add(property.value)
+                
+                xml.values.add(pobj)
+            }
+        }
+        
+        return xml
+    }
+    
+    func toXmlString(depth)
+    {
+        // a function returns x tabs
+        func tabs(num)
+        {
+            var str = ""
+            foreach x from 0 to num
+            {
+                str += "   "
+            }
+            return str
+        }
+        
+        // xml header
+        var xml = (depth > 0 ? "\n" : "") + tabs(depth) + "<" + type
+        
+        // add attributes
+        foreach attr in this.attr.pairs()
+        {
+            xml += " " + attr.key + "=\"" + attr.value + "\""
+        }
+        
+        xml += ">"
+        
+        // values
+        foreach val in values
+        {
+            // new line
+            xml += getXmlString(val, depth + 1)
+        }
+        
+        // close xml
+        xml += "</" + type + ">" + (depth > 0 ? "\n" + tabs(depth - 1) : "")
+        return xml
+    }
+    
+    func toXmlString() => toXmlString(0)
+    
+    static func fromXmlString(xml)
+    {
+        func spc(str, i)
+        {
+            const whites = [' ', '\n', '\t']
+            while (whites.contains(str.charAt(i)))
+            {
+                i++
+            }
+            return i
+        }
+        
+        func expect(str, i, c)
+        {
+            if str.charAt(i) != c
+                { throw new Exception("Invalid XML format: '" + c + "' expected.") }
+        }
+        
+        // skip spaces
+        var i = spc(xml, 0)
+        
+        expect(xml, i, '<')
+        
+    }
+    
+    func deserialize()
+    {
+        // find class type
+        const cls = getTypeByName(type) ?? throw new Exception("Class " + type + " could not be found.", Exception.NOT_FOUND)
+        
+        // get ctor list
+        const ctors = getConstructors(type).where(func(c) => !c.isStatic)
+        
+        // if there are none - try setting all properties manually
+        if ctors.length() == 0
+        {
+            const obj = createInstance(cls)
+            
+            foreach property in values
+            {
+                setProperty(obj, property.attr.get("name"), property.values.get(0))
+            }
+        }
+        
+        // if there are, find one that its param list match the properties
+        else
+        {
+            var ctor
+            foreach x in ctors
+            {
+                if x.params.length() == values.length()
+                {
+                    foreach p in values
+                    {
+                    
+                    }
+                }
+            }
+        }
+    }
+    
+    @Translator
+    func toString() => toXmlString(0)
+}
+
+func escapeForXml(text)
+{
+    return text
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("'", "&apos;")
+}
+
+func unescapeXml(xml)
+{
+    return xml
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&apos;", "'")
+}
+
+func overridesSerialization(obj?)
+{
+    if obj == null { return false }
+           
+    foreach attr in getAttr(Type.get(obj))
+    {
+        if attr.type == <OverridesXmlSerialization>
+        {
+            return true
+        }
+    }
+    
+    return false
+}
+
+func getXmlString(val?, depth)
+{
+    if val is object
+            {
+                var xmlStr
+                if overridesSerialization(val)
+                {
+                    xmlStr = val.toXmlString(depth)
+                }
+                else
+                {
+                    const obj = XmlObject.fromObject(val)
+                    xmlStr = obj.toXmlString(depth)
+                }
+                return xmlStr
+            }
+            else
+            {
+                return escapeForXml(stringOf(val))
+            }
+}
+
+func getValueType(value?)
+{
+    var valtype
+    if value == null { valtype = "null" }
+            else { if value is bool { valtype = "bool" }
+            else { if value is number { valtype = "number" }
+            else { if value is char { valtype = "char" }
+            else { if value is function { valtype = "function" }
+            else { if value is object { valtype = (overridesSerialization(value) ? Type.get(value).fullName : "object") } } } } } }
+    return valtype
+}

@@ -277,9 +277,6 @@ public static class Extensions
 
     public static string ReadLib(string fileNameWithoutExt)
     {
-#if ANDROID
-        return System.IO.File.ReadAllText("/storage/emulated/0/Android/data/com.radinc.csharpshell/files/Exp21/Exp22/Exp22/libs/" + fileNameWithoutExt + ".txt");
-#else
         var assembly = Assembly.GetExecutingAssembly();
         string resourceName = "Exp.libs." + fileNameWithoutExt + ".txt";
 
@@ -287,15 +284,14 @@ public static class Extensions
         {
             if (stream == null)
             {
-                return null;
+                throw new FileNotFoundException("Could not find Exp library file '" + fileNameWithoutExt + ".txt'.\nMake sure the file exists in Exp/libs and its build action is set to 'Embedded Resource'.");
             }
 
             using (StreamReader reader = new StreamReader(stream))
             {
-                return reader.ReadToEnd();
+                return reader.ReadToEnd().Replace("\r", "");
             }
         }
-#endif
     }
 
     private static T GetArgument<T>(object[] args, int index)

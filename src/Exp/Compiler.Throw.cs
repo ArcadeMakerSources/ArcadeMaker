@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -76,12 +77,14 @@ namespace Exp
             }
         }
 
+        [DoesNotReturn]
         public T ThrowRuntime<T>(string msg, string type, Span? throwing = null, bool beforeCurrentSpan = true)
         {
             ThrowRuntime(msg, type, throwing, beforeCurrentSpan);
             throw new Exception(type + ": " + msg);
         }
 
+        [DoesNotReturn]
         public void ThrowRuntime(string msg, string type, Span? throwing = null, bool beforeCurrentSpan = true)
         {
             //if (!RunOpsRunning)

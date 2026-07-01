@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -53,6 +54,7 @@ namespace ArcadeMaker.IDE
         public GameResourcePickerBox(string defaultItemTitle = "<None>", T defaultRes = null)
         {
             InitializeComponent();
+            nameBox.GotFocus += (s, e) => ExternMethods.HideCaret(nameBox.Handle);
             this.defaultItemTitle = defaultItemTitle;
             nameBox.Text = defaultItemTitle;
             Resource = defaultRes;
@@ -66,14 +68,16 @@ namespace ArcadeMaker.IDE
             {
                 Menu.Items.Clear();
 
+                LoadFolderMenu(Global.form1.GetProjectStruct<T>(), null);
+
                 noResItem = new ToolStripMenuItem(defaultItemTitle);
                 noResItem.Click += (s, e) =>
                 {
                     SelectResource(null);
                 };
+                if (Menu.Items.Count >= 1)
+                    Menu.Items.Add(new ToolStripSeparator());
                 Menu.Items.Add(noResItem);
-
-                LoadFolderMenu(Global.form1.GetProjectStruct<T>(), null);
             }
             catch (Exception ex)
             {
@@ -112,7 +116,7 @@ namespace ArcadeMaker.IDE
                 else if (str is ProjectFolderTreeStruct<T> folderStr)
                 {
                     ToolStripMenuItem newFolder = new ToolStripMenuItem(folderStr.Name);
-                    newFolder.Image = null;// Properties.Resources.folder;
+                    newFolder.Image = Properties.Resources.folder;
                     LoadFolderMenu(folderStr, newFolder);
 
                     if (menuItem != null)
@@ -123,14 +127,14 @@ namespace ArcadeMaker.IDE
             }
         }
 
-        private void ShowMenu(Control ctrl, Point position)
+        internal void ShowMenu(Point position, Control? ctrl = null)
         {
-            Menu.Show(this, position);
+            Menu.Show(ctrl ?? this, position);
         }
 
         private void nameBox_MouseClick(object sender, MouseEventArgs e)
         {
-            ShowMenu(nameBox, e.Location);
+            ShowMenu(e.Location);
         }
         private void SelectResource(T res)
         {
@@ -144,7 +148,7 @@ namespace ArcadeMaker.IDE
 
         private void menuBtn_Click(object sender, EventArgs e)
         {
-            ShowMenu(toolStrip1, toolStrip1.Location);
+            ShowMenu(toolStrip1.Location);
         }
 
         private void GameResourcePickerBox_Load(object sender, EventArgs e)
@@ -166,4 +170,10 @@ namespace ArcadeMaker.IDE
     public class GameObjectPickerBox : GameResourcePickerBox<GameObject> { }
     public class GameSpritePickerBox : GameResourcePickerBox<GameSprite> { }
     public class GameBackgroundPickerBox : GameResourcePickerBox<GameBackground> { }
+    static class ExternMethods
+    {
+
+        [DllImport("User32.dll")]
+        internal static extern bool HideCaret(IntPtr hWnd);
+    }
 }

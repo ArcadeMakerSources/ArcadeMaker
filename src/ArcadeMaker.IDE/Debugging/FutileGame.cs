@@ -10,7 +10,7 @@ using System.Text;
 
 namespace ArcadeMaker.IDE.Debugging;
 
-internal class FutileGame : ArcadeMaker.Core.IGame
+internal sealed class FutileGame : ArcadeMaker.Core.IGame
 {
     public List<Sprite> Sprites { get; } = [];
     public List<ObjectModel> Objects { get; } = [];
@@ -24,20 +24,29 @@ internal class FutileGame : ArcadeMaker.Core.IGame
     public TextureAtlasMap MainTextureAtlasMap { get; set; }
     public int CurrentViewIndex { get; }
 
+    public StringWriter Debug { get; }
+
     public void Init() { }
     public Exp.Void DrawInstance(ArcadeMaker.Core.Runtime.Instance instance) => Exp.Void.Return;
     public void DrawBackgrounds() { }
     public void DrawLine(double x1, double y1, double x2, double y2, double thickness) { }
     public void SetWindowsSize(int w, int h) { }
     public void SetCaption(string caption) { }
+    public Color BackColor { get; set; }
 
     public Exp.Void ShowMessage(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
 
     public BoolValue KeyDown(Exp.Instance? _, IValue?[] args) => false;
 
-    public BoolValue KeyUp(Exp.Instance? _, IValue?[] args) => false;
+    public BoolValue KeyPress(Exp.Instance? _, IValue?[] args) => false;
+
+    public BoolValue KeyRelease(Exp.Instance? _, IValue?[] args) => false;
 
     public BoolValue MouseButtonDown(Exp.Instance? _, IValue?[] args) => false;
+
+    public BoolValue MouseButtonPress(Exp.Instance? _, IValue?[] args) => false;
+
+    public BoolValue MouseButtonRelease(Exp.Instance? _, IValue?[] args) => false;
 
     public IValue GetMouseX(Exp.Instance? _, IValue?[] args) => null!;
 

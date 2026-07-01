@@ -10,12 +10,14 @@
     <None Remove="libs\json.txt" />
     <None Remove="libs\reflection.txt" />
     <None Remove="libs\system.txt" />
+    <None Remove="libs\xml.txt" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="libs\json.txt" />
     <EmbeddedResource Include="libs\reflection.txt" />
     <EmbeddedResource Include="libs\system.txt" />
+    <EmbeddedResource Include="libs\xml.txt" />
   </ItemGroup>
 
 </Project>

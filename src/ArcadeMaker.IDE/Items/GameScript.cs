@@ -7,10 +7,9 @@ using System.Threading.Tasks;
 
 namespace ArcadeMaker.IDE.Items
 {
-    public class GameScript : GameItem, IContainsScript
+    public class GameScript : GameItem, ISetsIcon, IContainsScript
     {
-        /* do not change property name!!! */
-        public static System.Drawing.Bitmap icon { get; } = Properties.Resources.script;
+        public static Bitmap Icon => Properties.Resources.script;
 
         public string Script { get; set; } = "";
         public bool CompiledSyntaxTree { get; set; } = false;

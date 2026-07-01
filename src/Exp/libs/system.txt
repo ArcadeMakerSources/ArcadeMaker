@@ -17,6 +17,7 @@ enum StaticRequirements
     DoNotRequire
 }
 
+@xml::OverridesXmlSerialization
 class Array (const csType private) 
 {
     constructor(len) 
@@ -137,8 +138,30 @@ class Array (const csType private)
             action(item, i)
         }
     }
+    
+    func toXmlString(depth)
+    {
+        var xml = ""
+        
+        foreach val in this
+        {
+            const obj = new xml::XmlObject("value")
+            obj.attr.set("type", xml::getValueType(val))
+            obj.values.add(xml::getXmlString(val, depth))
+            
+            xml += obj + "\n"
+        }
+        
+        return xml
+    }
+    
+    static func fromXmlString(xml)
+    {
+    
+    }
 }
 
+@xml::OverridesXmlSerialization
 class string (const chars private basearray) 
 {
     @Equalizer func equals(obj?)
@@ -211,6 +234,24 @@ class string (const chars private basearray)
             }
         }
 
+        return str
+    }
+    
+    @ReadOnly func replace(fromm, too)
+    {
+        var str = ""
+        for (var i = 0; i < length(); i++)
+        {
+            if (i + fromm.length() < length()) & (substr(i, fromm.length()) == fromm)
+            {
+                str += too
+                i += fromm.length() - 1
+            }
+            else
+            {
+                str += chars[i]
+            }
+        }
         return str
     }
     
@@ -293,6 +334,10 @@ class string (const chars private basearray)
 
         return result * sign
     }
+    
+    func toXmlString(depth) => xml::escapeForXml(this)
+    
+    static func fromXmlString(xml) => xml::unescapeXml(xml)
 }
 
 @AllowFor(true, false, false, false, false)
@@ -475,6 +520,15 @@ class List (array private basearray)
     }
 }
 
+class KeyValuePair (key, value)
+{
+    constructor(k, v?)
+    {
+        key = k
+        value = v
+    }
+}
+
 class Dictionary (const keys private, const values private basearray)
 {
     constructor()
@@ -510,6 +564,16 @@ class Dictionary (const keys private, const values private basearray)
     func containsKey(key)
     {
         return keys.contains(key)
+    }
+    
+    func pairs()
+    {
+        const arr = new Array(keys.count())
+        foreach key in keys : counter c
+        {
+            arr[c] = new KeyValuePair(key, values.get(c))
+        }
+        return arr
     }
 
     @Translator
@@ -673,6 +737,6 @@ func pow(a, b)
 func sign(n)
 {
     if n > 0 { return 1 }
-    if n < 0 { return -1 }
+    if n < 0 { return 0 - 1 }
     return 0
 }

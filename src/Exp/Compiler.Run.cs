@@ -859,6 +859,7 @@ public partial class Interpreter
             func.ParamVariables[i++].Value = param;
 
         // on non-static funcs, set parent VS to the instance we're calling on
+        var prevParent = func.Parent;
         if (func.DefinedAt != null)
             func.Parent = (IVarSystem)inst ?? func.DefinedAt;
 
@@ -872,6 +873,7 @@ public partial class Interpreter
         {
             // if its recursion, restore previous var values
             toReturn = false;
+            func.Parent = prevParent;
             if (backup != null)
                 funcAsVs.RestoreValues(backup);
             func.IsRunning = wasRunning;
@@ -1157,6 +1159,7 @@ public sealed class Void : IValue
 {
     public string TypeName => "void";
     public static Void Return { get; } = new();
+    public object Object => Return;
     private Void() { }
     public override string ToString() => TypeName;
 }

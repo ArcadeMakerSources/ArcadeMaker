@@ -478,7 +478,7 @@ public partial class Interpreter
                         Error("Endless function.");
 
                     ignoreCanSetTag = true;
-                    Span ispan = ReadSpan(spaces: false, def: cls);
+                    Span? ispan = ReadSpan(spaces: false, def: cls);
                     bool statdef = false, prvtdef = false;
                     List<Span[]> tagsCode = [];
                     while (ispan is TagSpan tag)
@@ -519,6 +519,11 @@ public partial class Interpreter
                         stprop.Private = prvtdef;
                         stprop.TagsCode = tagsCode;
                         cls.Vars.Add(stprop);
+                    }
+                    else if (ispan == null)
+                    {
+                        Error("} Expected.");
+                        break;
                     }
                     else
                         Error($"Unexpected span in a class ('{ispan.Text}').");

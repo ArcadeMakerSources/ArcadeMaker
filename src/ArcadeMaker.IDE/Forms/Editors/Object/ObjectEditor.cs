@@ -14,6 +14,9 @@ using ArcadeMaker.IDE.Editors.Object.ObjectProperties;
 using ArcadeMaker.IDE.Items;
 using Exp;
 using ArcadeMaker.Core.Resources.Serializeables;
+using ArcadeMaker.Core.Models;
+using ArcadeMaker.IDE.Properties;
+using ArcadeMaker.Core.Common;
 
 namespace ArcadeMaker.IDE
 {
@@ -27,6 +30,8 @@ namespace ArcadeMaker.IDE
                 return obj.sprite;
             }
         }
+
+        private ObjectEvent? changeEvent;
 
         public ObjectEditor(GameObject obj)
         {
@@ -74,10 +79,9 @@ namespace ArcadeMaker.IDE
         private void ObjectEditor_Load(object sender, EventArgs e)
         {
             PropertiesModifier.Init(obj);
-            foreach (EventScripts ev in obj.EventScripts)
+            foreach (var ev in obj.Events)
             {
-                var item = ev.Event;
-                eventsListView.Items.Add(item);
+                eventsListView.Items.Add(ev);
             }
             solidBox.Checked = obj.solid;
             depthBox.Value = obj.depth;
@@ -87,16 +91,29 @@ namespace ArcadeMaker.IDE
             };
             SelectEventDialog.EventSelected += (s, ea) =>
             {
-                if (!obj.EventScripts.Any(sc => sc.Event == ea))
+                // if an event with the same type [and param] already exists, select it instead of adding a new one
+                ObjectEvent? existing = obj.Events.FirstOrDefault(e => e.Type == ea.Type && e.GetParam(out var existingParam) == ea.GetParam(out var newParam) && object.Equals(existingParam, newParam));
+                if (existing == null)
                 {
-                    var evscripts = new EventScripts(ea, []);
-                    obj.EventScripts.Add(evscripts);
+                    existing = ea;
+                    obj.Events.Add(ea);
                     eventsListView.Items.Add(ea);
                 }
-                else
+                else if (changeEvent != null)
                 {
-                    eventsListView.SelectedItem = ea;
+                    MessageBox.Show("The selected event already exists.");
+                    return;
                 }
+
+                if (changeEvent != null)
+                {
+                    // copy scripts from old to new and remove old
+                    ea.Scripts.AddRange(changeEvent.Scripts);
+                    obj.Events.Remove(changeEvent);
+                    eventsListView.Items.Remove(changeEvent);
+                }
+
+                eventsListView.SelectedItem = existing;
             };
             LoadSpriteBox();
             parentBox.Resource = obj.parent;
@@ -180,16 +197,22 @@ namespace ArcadeMaker.IDE
             try
             {
                 var item = eventsListView.SelectedItems[0];
-                ObjectEvent ev = (ObjectEvent)item;
-                if (obj.EventScripts.FirstOrDefault(evs => evs.Event == ev) is EventScripts evscripts)
-                    obj.EventScripts.Remove(evscripts);
-                eventsListView.Items.Remove(item);
+                ObjectEvent ev = (ObjectEvent)item!;
+
+                string warning = $"Are you sure yow want to delete event {ev}?\nAll of its scripts will be deleted too.";
+                bool confirm = ev.Scripts.Count == 0 || MessageBox.Show(warning, "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes;
+
+                if (confirm)
+                {
+                    obj.Events.Remove(ev);
+                    eventsListView.Items.Remove(item!);
+                }
             }
             catch (Exception ex)
             {
-                string err = "Cannot delete or change event";
+                string err = "Cannot delete event";
 #if DEBUG
-                err += "\n\nException:\n" + ex;
+                err += "\n\n[DEBUG ONLY]\nException:\n" + ex;
 #endif
                 MessageBox.Show(err, "Error");
             }
@@ -197,8 +220,14 @@ namespace ArcadeMaker.IDE
 
         private void changeEventBtn_Click(object sender, EventArgs e)
         {
-            deleteEventBtn_Click(null, null);
-            addEventBtn_Click(null, null);
+            changeEvent = eventsListView.SelectedItem as ObjectEvent;
+            if (changeEvent == null)
+                MessageBox.Show("Select an event to change.");
+            else
+            {
+                addEventBtn_Click(null, null);
+                changeEvent = null;
+            }
         }
 
         private void editSpriteBtn_Click(object sender, EventArgs e)
@@ -256,9 +285,9 @@ namespace ArcadeMaker.IDE
                 return;
             }
 
-            EventScript script = new("");
-            obj.EventScripts.FirstOrDefault(es => es.Event == ev)?.Scripts.Add(script);
-            scriptsListView.Items.Add(script);
+            Wrapper<string> script = "";
+            ev.Scripts.Add(script);
+            scriptsListView.Items.Add(new EventScript(ev, script));
         }
 
         private void eventsListView_SelectedIndexChanged(object sender, EventArgs e)
@@ -275,21 +304,27 @@ namespace ArcadeMaker.IDE
                 return;
 
             // load the scripts of the event to the scripts view
-            scriptsListView.Items.AddRange(obj.EventScripts.FirstOrDefault(es => es.Event == ev)?.Scripts.ToArray() ?? []);
+            int i = 0;
+            foreach (var script in ev.Scripts)
+            {
+                scriptsListView.Items.Add(new EventScript(ev, script));
+            }
         }
 
         private void scriptsListView_DoubleClick(object sender, EventArgs e)
         {
+            ObjectEvent ev = eventsListView.SelectedItem as ObjectEvent ?? throw new Exception("No event is selected.");
+            int scriptIndex = scriptsListView.SelectedIndex;
+
             if (scriptsListView.SelectedItem is not EventScript script)
                 return;
 
-            ScriptEditor editor = new(script);
-            editor.Owner = this;
+            ScriptEditor editor = new(script) { Owner = this };
 
             editor.OKClicked += (s, e) =>
             {
-                script.Script = e;
-                scriptsListView.Update(); // to update script desc
+                script.Script = e; // updates in the event itself
+                scriptsListView.Refresh(); // to update script desc
             };
 
             editor.ShowDialog();
@@ -297,19 +332,22 @@ namespace ArcadeMaker.IDE
 
         private void deleteScriptBtn_Click(object sender, EventArgs e)
         {
-            if (eventsListView.SelectedItem is not ObjectEvent ev)
-                return;
-
             if (scriptsListView.SelectedItem is not EventScript script)
                 return;
 
-            obj.EventScripts.FirstOrDefault(ess => ess.Event == ev)?.Scripts.Remove(script);
-            scriptsListView.Items.Remove(script);
+            bool confirm = string.IsNullOrWhiteSpace(script.Script) ||
+                           MessageBox.Show($"Are you sure yow want to delete this script ({script})?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes;
+
+            if (confirm)
+            {
+                script.Event.Scripts.Remove(script.Pointer);
+                scriptsListView.Items.Remove(script);
+            }
         }
 
         private void scriptsListView_SelectedIndexChanged(object sender, EventArgs e)
         {
-            scriptsListView.Invalidate();
+            scriptsListView.Refresh();
         }
 
         private void scriptsListView_DrawItem(object sender, DrawItemEventArgs e)
@@ -333,6 +371,86 @@ namespace ArcadeMaker.IDE
 
             // draw the item text
             e.Graphics.DrawString(item?.ToString(), font, selected ? Brushes.White : Brushes.Black, new PointF(30, e.Bounds.Y));
+        }
+
+        private void eventsListView_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            // Draw the background highlights (selection color)
+            e.DrawBackground();
+
+            // Get the current item object
+            var item = (ObjectEvent)eventsListView.Items[e.Index];
+
+            // Get the icon
+            Image? icon = null;
+            if (item is CollisionEvent colEv)
+                icon = Environment.project.GetItem<GameObject>(colEv.Param)?.CollisionIcon;
+            icon ??= GetIcon(item.Type);
+
+            // Calculate vertical alignment positions
+            int iconX = e.Bounds.Left + 4;
+            int iconY = e.Bounds.Top + (e.Bounds.Height - (icon?.Height ?? 0)) / 2;
+
+            // 1. Draw the icons
+            if (icon != null)
+                e.Graphics.DrawImage(icon, iconX, iconY, icon.Width, icon.Height);
+
+            // 2. Calculate text boundaries (shifting right to prevent overlapping the icon)
+            int textX = iconX + (icon?.Width ?? 24) + 6;
+            Rectangle textRect = new(textX, e.Bounds.Top, e.Bounds.Width - textX, e.Bounds.Height);
+
+            // 3. Draw the item text natively
+            TextRenderer.DrawText(e.Graphics, item?.ToString() ?? "null", e.Font, textRect, e.ForeColor,
+                                  TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+
+            // Draw the focus boundary lines if active
+            e.DrawFocusRectangle();
+        }
+
+        internal static Image? GetIcon(ObjectEvent.EventType ev)
+        {
+            return Resources.ResourceManager.GetObject("evicon24_" + ev) as Image ?? Resources.evicon24_Default;
+        }
+
+        private void eventsListView_MeasureItem(object sender, MeasureItemEventArgs e)
+        {
+            // Retrieve the string text of the current item
+            string text = eventsListView.Items[e.Index]?.ToString() ?? "null";
+
+            // Measure the exact text size using the control's target font
+            // Adding padding (e.g., + 4) prevents descenders (g, j, p, q, y) from clipping
+            Size textSize = TextRenderer.MeasureText(text, eventsListView.Font);
+
+            e.ItemHeight = textSize.Height + 4;
+        }
+
+        private void moveScriptUpBtn_Click(object sender, EventArgs e)
+        {
+            if (scriptsListView.SelectedIndex < 1 || scriptsListView.SelectedItem is not EventScript script) return;
+
+            var upperPointer = (EventScript)scriptsListView.Items[scriptsListView.SelectedIndex - 1];
+            string upperScript = upperPointer.Script;
+            upperPointer.Script = script.Script;
+            script.Script = upperScript;
+
+            scriptsListView.SelectedIndex--;
+            scriptsListView.Invalidate();
+        }
+
+        private void moveScriptDownBtn_Click(object sender, EventArgs e)
+        {
+            if (scriptsListView.SelectedIndex < 0 ||
+                scriptsListView.SelectedIndex >= scriptsListView.Items.Count - 1 ||
+                scriptsListView.SelectedItem is not EventScript script)
+                return;
+
+            var downerPointer = (EventScript)scriptsListView.Items[scriptsListView.SelectedIndex + 1];
+            string downerScript = downerPointer.Script;
+            downerPointer.Script = script.Script;
+            script.Script = downerScript;
+
+            scriptsListView.SelectedIndex++;
+            scriptsListView.Invalidate();
         }
     }
 }

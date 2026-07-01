@@ -29,22 +29,8 @@ public partial class ObjectPropertyModifier : UserControl
             HashSet<ExpError>? errors = null;
             await Task.Run(() =>
             {
-                Debugging.Debug.TryBuild(out errors);
+                Debugging.Debug.TryBuild();
             });
-
-            Global.form1.errorsBox.Items.Clear();
-
-            if (errors?.Count >= 1)
-            {
-                foreach (var err in errors)
-                {
-                    ListViewItem errItem = new("Exp");
-                    errItem.SubItems.Add(err.Message);
-                    errItem.SubItems.Add(err.Doc);
-                    errItem.SubItems.Add(err.Line.ToString());
-                    Global.form1.errorsBox.Items.Add(errItem);
-                }
-            }
         };
 
         // disable type box changing selection on mouse wheel

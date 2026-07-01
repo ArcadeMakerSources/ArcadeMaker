@@ -7,10 +7,9 @@ using System.Drawing;
 
 namespace ArcadeMaker.IDE.Items
 {
-    public class GameBackground : GameItem
+    public class GameBackground : GameItem, ISetsIcon
     {
-        /* do not change property name!!! */
-        public static Bitmap icon { get; } = Properties.Resources.background;
+        public static Bitmap Icon => Properties.Resources.background;
 
         private Bitmap _image = null;
 

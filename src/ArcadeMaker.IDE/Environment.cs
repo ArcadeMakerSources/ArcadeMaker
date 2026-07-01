@@ -100,6 +100,13 @@ namespace ArcadeMaker.IDE
                 return;
             }
 
+            // validate no errors
+            if (!Debugging.Debug.TryBuild())
+            {
+                MessageBox.Show("Couldn't run the game: Build Failed.\nSee error list for more details.", "Build Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             string debugPath = AppDomain.CurrentDomain.BaseDirectory + "\\DEBUG";
             const string debugPname = "debugbuild";
             project.Save(debugPath, successMsg: false, fileName: debugPname);

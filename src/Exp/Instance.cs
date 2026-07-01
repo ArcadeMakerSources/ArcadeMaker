@@ -18,6 +18,7 @@ public class Instance : IVarSystem, IValue, IExpItem
     public string TypeName => def.Name;
     bool IValue.IsInst => true;
     Instance IValue.Inst { get => this; }
+    public object Object => this;
 
     public Instance(ClassDefSpan def, IValue?[]? arrVals = null, bool addProperties = true)
     {
@@ -88,18 +89,25 @@ public class Instance : IVarSystem, IValue, IExpItem
         return ReferenceEquals(this, obj);
     }
 
-    public static Instance operator +(Instance a, object b)
+    public static Instance operator +(Instance a, object? b)
     {
         if (a.def == ClassDefSpan.ExpStringDef || (b as Instance)?.def == ClassDefSpan.ExpStringDef)
             return (a.ToString() + (b?.ToString() ?? "NULL")).ToExpString();
         throw new InvalidOperationException($"Cannot add {Extensions.GetExpTypeName(b, true)} to {((IDefination)a.def).FullName}.");
     }
 
-    public static Instance operator +(object a, Instance b)
+    public static Instance operator +(object? a, Instance b)
     {
         if (b.def == ClassDefSpan.ExpStringDef || (a as Instance)?.def == ClassDefSpan.ExpStringDef)
             return ((a?.ToString() ?? "NULL") + b.ToString()).ToExpString();
         throw new InvalidOperationException($"Cannot add {Extensions.GetExpTypeName(b, true)} to {((IDefination)b.def).FullName}.");
+    }
+    
+    public ClassDefSpan GetClassFromExpTypeInstanceOrThrowRuntime(Interpreter interpreter)
+    {
+        if (def != ClassDefSpan.ExpTypeDef)
+            interpreter.ThrowRuntime(ClassDefSpan.ExpTypeDef.GetExpTypeName(false) + " was expected, but " + def.GetExpTypeName(false) + " was received.", RuntimeException.INVALID_ARGUMENT);
+        return ((SpecialValue<ClassDefSpan>)Vars[2].Value!).Value!;
     }
 }
 

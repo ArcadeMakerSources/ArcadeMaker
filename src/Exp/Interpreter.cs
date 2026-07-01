@@ -190,6 +190,7 @@ namespace Exp
             SourceSpans = source.TextSpans;
 
             var importsLs = new List<ScriptDocument>(imports);
+            importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("xml"), "xml.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("json"), "json.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("reflection"), "reflection.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("system"), "system.txt"));
@@ -526,7 +527,10 @@ namespace Exp
                 var defName = ReadDefName(); // as current method is executed after collecting defs, we can use this def name span immidiately (without defName.Resolved += ...)
                 var attr = defName?.Attr;
                 if (attr == null)
+                {
                     Error($"Unknown attribute '{defName.Name}'.");
+                    return;
+                }
 
                 // read args
                 List<IValue> args = [];

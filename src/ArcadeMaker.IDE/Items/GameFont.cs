@@ -9,10 +9,10 @@ using System.Xml.Serialization;
 
 namespace ArcadeMaker.IDE.Items
 {
-    public class GameFont : GameItem
+    public class GameFont : GameItem, ISetsIcon
     {
         [XmlIgnore]
-        public static System.Drawing.Bitmap icon { get; } = Properties.Resources.font32;
+        public static Bitmap Icon => Properties.Resources.font32;
 
         public string family;
         public float size = 12;

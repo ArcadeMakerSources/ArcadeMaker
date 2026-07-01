@@ -100,8 +100,12 @@ namespace ArcadeMaker.IDE
                 SpriteDesigner designer = new SpriteDesigner(bmp);
                 designer.Finished += (s, ea) =>
                 {
-                    images.Images[index] = designer.image;
-                    imageListView.Refresh();
+                    try
+                    {
+                        images.Images[index] = designer.image;
+                        imageListView.Refresh();
+                    }
+                    catch { }
                 };
                 designer.ShowDialog();
             }

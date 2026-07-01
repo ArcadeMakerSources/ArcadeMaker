@@ -8,7 +8,12 @@ using System.Xml.Serialization;
 
 namespace ArcadeMaker.IDE.Items
 {
-    public class GameItem
+    public interface ISetsIcon
+    {
+        static abstract Bitmap? Icon { get; }
+    }
+
+    public abstract class GameItem
     {
         [XmlIgnore]
         private string Name;

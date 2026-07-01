@@ -146,7 +146,7 @@ public partial class Interpreter
 
                 // throw if type not exist
                 const string number = "number";
-                string[] builtins = [number, "char", "bool", "function"];
+                string[] builtins = [number, "char", "bool", "function", "object"];
                 if (!builtins.Contains(typeName))
                 {
                     defName = ReadDefName(type); // will throw if not found
@@ -159,7 +159,7 @@ public partial class Interpreter
                 value = new CustomReadingOperation<BoolValue>(() =>
                 {
                     bool iz;
-                    IValue val = single.Read();
+                    IValue? val = single?.Read();
                     if (defName != null)
                     {
                         if (defName.Class != null && val is Instance ins)
@@ -178,10 +178,12 @@ public partial class Interpreter
                         iz = typeName.Equals(builtins[2]);
                     else if (val is CharValue)
                         iz = typeName.Equals(builtins[1]);
-                    else if (val is FuncDefSpan)
+                    else if (val is FuncPntr)
                         iz = typeName.Equals(builtins[3]);
-                    else
-                        throw new Exception($"Unsupported value ({val.GetType()}).");
+                    else if (val is Instance)
+                        iz = typeName.Equals(builtins[4]);
+                    else // when val is null or SpecialValue<?>
+                        iz = false;
                     if (not)
                         iz = !iz;
                     return iz;

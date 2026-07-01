@@ -345,15 +345,22 @@ namespace ArcadeMaker.IDE
                 else if (shape == Shape.Line || shape == Shape.Rect || shape == Shape.Ellipse)
                 {
                     imageBox.Image.Dispose();
-                    Bitmap image = new Bitmap(this.image.Width, this.image.Height);
-
-                    using (Graphics g = Graphics.FromImage(image))
+                    try
                     {
-                        g.DrawImage(this.image, 0, 0);
+                        Bitmap image = new Bitmap(this.image.Width, this.image.Height);
 
-                        Draw(g, pen, mouseDownLoc, mouseCurrentLoc);
+                        using (Graphics g = Graphics.FromImage(image))
+                        {
+                            g.DrawImage(this.image, 0, 0);
+
+                            Draw(g, pen, mouseDownLoc, mouseCurrentLoc);
+                        }
+                        imageBox.Image = DisplayImage(image);
                     }
-                    imageBox.Image = DisplayImage(image);
+                    catch (Exception ex)
+                    {
+                        _ = ex;
+                    }
                 }
             }
         }

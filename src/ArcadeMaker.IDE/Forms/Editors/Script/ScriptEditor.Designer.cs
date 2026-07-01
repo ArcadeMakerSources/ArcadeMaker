@@ -72,7 +72,7 @@ namespace ArcadeMaker.IDE
             // scriptBox
             // 
             scriptBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            scriptBox.BackColor = Color.White;
+            scriptBox.BackColor = Color.FromArgb(42, 42, 42);
             scriptBox.Cursor = Cursors.IBeam;
             scriptBox.Location = new Point(12, 12);
             scriptBox.Margin = new Padding(4, 3, 4, 3);
@@ -85,6 +85,7 @@ namespace ArcadeMaker.IDE
             // errorsBox
             // 
             errorsBox.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            errorsBox.FullRowSelect = true;
             errorsBox.Location = new Point(12, 442);
             errorsBox.Name = "errorsBox";
             errorsBox.Size = new Size(852, 87);

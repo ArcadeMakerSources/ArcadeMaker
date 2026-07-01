@@ -43,7 +43,7 @@ namespace ArcadeMaker.IDE
             this.nameBox.Location = new System.Drawing.Point(3, 3);
             this.nameBox.Name = "nameBox";
             this.nameBox.ReadOnly = true;
-            this.nameBox.Size = new System.Drawing.Size(106, 20);
+            this.nameBox.Size = new System.Drawing.Size(126, 20);
             this.nameBox.TabIndex = 0;
             this.nameBox.MouseClick += new System.Windows.Forms.MouseEventHandler(this.nameBox_MouseClick);
             // 
@@ -54,6 +54,9 @@ namespace ArcadeMaker.IDE
             this.toolStrip1.Dock = System.Windows.Forms.DockStyle.None;
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuBtn});
+            this.toolStrip1.GripStyle = ToolStripGripStyle.Hidden;
+            this.toolStrip1.BackColor = System.Drawing.Color.Transparent;
+            this.toolStrip1.ForeColor = System.Drawing.Color.Transparent;
             this.toolStrip1.Location = new System.Drawing.Point(119, 3);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(35, 25);
@@ -67,6 +70,7 @@ namespace ArcadeMaker.IDE
             this.menuBtn.Name = "menuBtn";
             this.menuBtn.Size = new System.Drawing.Size(23, 22);
             this.menuBtn.Text = "Show Menu";
+            this.menuBtn.Image = ArcadeMaker.IDE.Properties.Resources.menu;
             this.menuBtn.Click += new System.EventHandler(this.menuBtn_Click);
             // 
             // GameResourcePickerBox

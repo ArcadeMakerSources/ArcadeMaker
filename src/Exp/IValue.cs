@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Collections.Generic;
 using Exp.Spans;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Exp;
 
@@ -17,10 +18,12 @@ public interface IValue
     Instance Inst { get { Unexpected(ValueHelper.tinst); throw null; } } // set => Unexpected(ValueHelper.tinst); }
     bool IsFunc => false;
     FuncPntr FuncPntr { get { Unexpected(ValueHelper.tfunc); throw null; } } // set => Unexpected(ValueHelper.tfunc); }
-    object Object => IsBool ? Bool : IsChar ? Char : IsNumber ? Number : this;
+    object? Object { get; }
 
 
     string TypeName { get; }
+
+    [DoesNotReturn]
     void Unexpected(string expected)
     {
         Interpreter.Activated.ThrowRuntime($"A value of type {expected} was expected, but {TypeName} received.", RuntimeException.INVALID_ARGUMENT);
@@ -45,6 +48,7 @@ public class BoolValue(bool value) : IValue
     bool IValue.IsBool => true;
     bool IValue.Bool=> value;
     public bool Bool => value;
+    public object Object => value;
 
     public static implicit operator BoolValue(bool val) => new(val);
     public static implicit operator bool(BoolValue val) => val.Bool;
@@ -56,6 +60,7 @@ public class CharValue(char value) : IValue
     public string TypeName => ValueHelper.tchar;
     bool IValue.IsChar => true;
     char IValue.Char => value;
+    public object Object => value;
 
     public static implicit operator CharValue(char val) => new(val);
     public override string ToString() => value.ToString();
@@ -66,6 +71,7 @@ public readonly struct NumberValue(double value) : IValue
     public string TypeName => ValueHelper.tnum;
     bool IValue.IsNumber => true;
     double IValue.Number => value;
+    public object Object => value;
 
     public static implicit operator NumberValue(double val) => new(val);
     public static implicit operator double(NumberValue val) => ((IValue)val).Number;
@@ -78,6 +84,8 @@ public readonly struct FuncPntr(FuncDefSpan func, Instance? instance) : IValue
     public FuncDefSpan Func => func;
     bool IValue.IsFunc => true;
     FuncPntr IValue.FuncPntr => this;
+    public object Object => func;
+
     public Instance? Instance => instance;
 
     public IValue? Call(Interpreter interpreter, IEnumerable<IValue?> args)
@@ -91,13 +99,13 @@ public readonly struct FuncPntr(FuncDefSpan func, Instance? instance) : IValue
 public class SpecialValue<T> : IValue
 {
     public string TypeName => typeof(T).Name;
-    public T Value { get; set; }
+    public T? Value { get; set; }
     public override string ToString() => Value?.ToString() ?? "NULL";
     IValue IValue.Pass()
     {
         return SpecialValue.From(Value);
     }
-    object IValue.Object => Value;
+    object? IValue.Object => Value;
 }
 
 public class SpecialValue : SpecialValue<object>

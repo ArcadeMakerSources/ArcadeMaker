@@ -9,7 +9,7 @@ namespace ArcadeMaker.IDE.Items
 {
     public class GameSound : GameItem
     {
-        /* do not change property name!!! */ public static System.Drawing.Bitmap icon { get; } = Properties.Resources.sound;
+        public static Bitmap Icon => Properties.Resources.sound;
         public string filePath { get; set; } = null;
         /// <summary>
         /// The extension of the file, without dot ("wav", "mp3" "mid"...)

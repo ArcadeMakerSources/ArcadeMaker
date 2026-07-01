@@ -1,4 +1,6 @@
-﻿using Exp;
+﻿using ArcadeMaker.Core.Common;
+using ArcadeMaker.Core.Models;
+using Exp;
 using Exp.Spans;
 using System;
 using System.Collections.Generic;
@@ -82,44 +84,45 @@ public class SerializeableGameObject : SerializeableGameItem
     public bool solid;
     public int depth;
     public string parent;
-    public EventScripts[] events;
+    public ObjectEvent[] events;
     public ObjectProperty[] extraProperties;
 }
 
-
-
 public class EventScript : IContainsScript
 {
+    public Wrapper<string> Pointer { get; }
     public string Script
     {
-        get;
+        get => Pointer.Value ?? "<Error>";
         set
         {
-            field = value;
+            Pointer.Value = value;
 
-            // update description
-            ScriptDocument.ReadDocSettings("", Spanner.GetTextSpans(value), out var _, out string? description, out var _, out var _, out var _);
-            if (string.IsNullOrWhiteSpace(description))
-                description = "<No Description>";
-            this.Description = description;
+            UpdateDescription();
         }
     }
-    public string Description { get; set; }
 
-    public EventScript(string script)
+    public ObjectEvent Event { get; set; }
+
+    public string? Description { get; set; }
+
+    private void UpdateDescription()
     {
-        this.Script = script;
+        ScriptDocument.ReadDocSettings("", Spanner.GetTextSpans(Script), out var _, out string? description, out var _, out var _, out var _);
+        if (string.IsNullOrWhiteSpace(description))
+            description = "<No Description>";
+        this.Description = description;
     }
 
-    public EventScript() : this("") { } // for the serializer
-    public override string ToString() => Description;
-}
+    public EventScript(ObjectEvent ev, Wrapper<string> script)
+    {
+        Event = ev;
+        this.Pointer = script;
 
-public class EventScripts(ObjectEvent ev, params IEnumerable<string> scripts)
-{
-    public List<EventScript> Scripts = [.. scripts.Map(s => new EventScript(s))];
-    public ObjectEvent Event { get => ev; set => ev = value; }
-    public EventScripts() : this(ObjectEvent.Create) { }
+        UpdateDescription();
+    }
+
+    public override string ToString() => Description;
 }
 
 public class SerializeableGameRoom : SerializeableGameItem
@@ -177,21 +180,7 @@ public class GameFont : ISetsID
     public float heightInPixels;
 }
 
-public enum ObjectEvent
-{
-    KeyDown,
-    KeyUp,
-    KeyPress,
-    Create,
-    Step,
-    MouseDown,
-    MousePress,
-    MouseUp,
-    //MouseMove,
-    MouseWheel,
-    Draw,
-    Alarm
-}
+
 
 public class PathPoint
 {

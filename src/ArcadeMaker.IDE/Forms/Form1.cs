@@ -1,4 +1,5 @@
-﻿using ArcadeMaker.IDE.Items;
+﻿using ArcadeMaker.IDE.Debugging;
+using ArcadeMaker.IDE.Items;
 using ArcadeMaker.IDE.Properties;
 using System;
 using System.Linq;
@@ -21,14 +22,14 @@ namespace ArcadeMaker.IDE
             {
                 if (node.Index >= types.Length)
                 {
-                    // clear node icon by setting its ImageIndex property to a value higher that the number
+                    // clear node icon by setting its ImageIndex property to a value higher than the number
                     // of images in the ImageList
                     node.ImageIndex = Environment.project.items.Count + treeImages.Images.Count + 2;
                     node.SelectedImageIndex = node.ImageIndex;
                     continue;
                 }
 
-                SetNodeAsFolder(node, types[node.Index], types[node.Index].GetProperty("icon", BindingFlags.Static | BindingFlags.Public)?.GetValue(null) as Bitmap);
+                SetNodeAsFolder(node, types[node.Index], types[node.Index].GetProperty(nameof(ISetsIcon.Icon), BindingFlags.Static | BindingFlags.Public)?.GetValue(null) as Bitmap);
             }
             foreach (var item in Environment.project.items)
             {
@@ -104,7 +105,7 @@ namespace ArcadeMaker.IDE
                     node.SelectedImageIndex = node.ImageIndex;
                     continue;
                 }
-                Bitmap icon = types[node.Index].GetProperty("icon", BindingFlags.Static | BindingFlags.Public)?.GetValue(null) as Bitmap;
+                Bitmap? icon = types[node.Index].GetProperty(nameof(ISetsIcon.Icon), BindingFlags.Static | BindingFlags.Public)?.GetValue(null) as Bitmap;
                 SetNodeAsFolder(node, types[node.Index], icon);
 
                 foreach (object str in projectTree)
@@ -367,66 +368,62 @@ namespace ArcadeMaker.IDE
             return item.name;
         }
 
-        private TreeNode InsertItemToTree(GameItem item, EventArgs e = null)
+        private TreeNode InsertItemToTree(GameItem item, EventArgs? e = null)
         {
-            Bitmap icon = null;
+            Image? icon = null;
             int tree = 0;
             if (item is GameSprite)
             {
                 tree = 0;
-                icon = (item as GameSprite).image;
+                icon = (item as GameSprite)?.image;
             }
             else if (item is GameSound)
             {
                 tree = 1;
-                icon = GameSound.icon;
+                icon = GameSound.Icon;
             }
             else if (item is GameBackground)
             {
                 tree = 2;
-                icon = (item as GameBackground).image;
+                icon = (item as GameBackground)?.image;
             }
             else if (item is GamePath)
             {
                 tree = 3;
-                icon = GamePath.icon;
+                icon = GamePath.Icon;
             }
             else if (item is GameScript)
             {
                 tree = 4;
-                icon = GameScript.icon;
+                icon = GameScript.Icon;
             }
             else if (item is GameFont)
             {
                 tree = 5;
-                icon = GameFont.icon;
+                icon = GameFont.Icon;
             }
-            else if (item is GameObject)
+            else if (item is GameObject obj)
             {
                 tree = 6;
-                GameObject obj = item as GameObject;
                 if (obj.sprite != null)
                     icon = obj.sprite.image;
             }
             else if (item is GameRoom)
             {
                 tree = 7;
-                icon = GameRoom.icon;
+                icon = GameRoom.Icon;
             }
 
-            if (icon == null)
-                icon = new Bitmap(1, 1);
+            icon ??= new Bitmap(1, 1);
 
-            TreeNode node = null;
-            if (e != null && e is CreateGameItemEventArgs)
+            TreeNode? node = null;
+            if (e != null && e is CreateGameItemEventArgs ea)
             {
-                node = (e as CreateGameItemEventArgs).Folder;
+                node = ea.Folder;
             }
-            if (node == null)
-                node = projectTree.Nodes[tree];
+            node ??= projectTree.Nodes[tree];
 
-            TreeNode itemNode = new TreeNode(item.name);
-            itemNode.Tag = item;
+            TreeNode itemNode = new(item.name) { Tag = item };
             var amNode = AssemblyManagerNode;
             treeImages.Images.Add(icon);
             if (amNode != null)
@@ -437,7 +434,7 @@ namespace ArcadeMaker.IDE
             itemNode.ImageIndex = treeImages.Images.Count - 1;
             itemNode.SelectedImageIndex = itemNode.ImageIndex;
             itemNode.ContextMenuStrip = new ContextMenuStrip();
-            ToolStripMenuItem renameBtn = new ToolStripMenuItem("Rename");
+            ToolStripMenuItem renameBtn = new("Rename");
             renameBtn.Click += (s, ea) =>
             {
                 renameSentByButton = true;
@@ -528,6 +525,9 @@ namespace ArcadeMaker.IDE
             }
 #endif
             LoadRecentProjectsMenu();
+
+            Debugging.Debug.OnDebugBuild += OnDebugBuild;
+            errorsBox.AttachMenu();
         }
 
         private void LoadRecentProjectsMenu()
@@ -730,7 +730,7 @@ namespace ArcadeMaker.IDE
             {
                 foreach (GameItem item in Environment.project.items)
                 {
-                    if (item.name == name)
+                    if (item.name.Equals(name, StringComparison.CurrentCultureIgnoreCase))
                     {
                         try
                         {
@@ -948,6 +948,11 @@ namespace ArcadeMaker.IDE
         private void OpenAssemblyManager()
         {
             (new AssemblyManagerForm()).ShowDialog();
+        }
+
+        private void OnDebugBuild(object? sender, HashSet<ProjectError> e)
+        {
+            errorsBox.FillErrors(e);
         }
     }
 

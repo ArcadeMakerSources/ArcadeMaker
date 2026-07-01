@@ -74,8 +74,8 @@ namespace ArcadeMaker.IDE
             errorsBox_InCol = new ColumnHeader();
             errorsBox_DescCol = new ColumnHeader();
             errorsBox_FileCol = new ColumnHeader();
-            splitter2 = new Splitter();
             errorsBox_LineCol = new ColumnHeader();
+            splitter2 = new Splitter();
             toolStrip1.SuspendLayout();
             mainMenuStrip.SuspendLayout();
             errorsPanel.SuspendLayout();
@@ -257,28 +257,28 @@ namespace ArcadeMaker.IDE
             // newProjectBtn
             // 
             newProjectBtn.Name = "newProjectBtn";
-            newProjectBtn.Size = new Size(180, 22);
+            newProjectBtn.Size = new Size(163, 22);
             newProjectBtn.Text = "New Project";
             newProjectBtn.Click += newProjectBtn_Click;
             // 
             // openProjectBtn
             // 
             openProjectBtn.Name = "openProjectBtn";
-            openProjectBtn.Size = new Size(180, 22);
+            openProjectBtn.Size = new Size(163, 22);
             openProjectBtn.Text = "Open Project";
             openProjectBtn.Click += openProjectBtn_Click;
             // 
             // saveProjectBtn
             // 
             saveProjectBtn.Name = "saveProjectBtn";
-            saveProjectBtn.Size = new Size(180, 22);
+            saveProjectBtn.Size = new Size(163, 22);
             saveProjectBtn.Text = "Save Project";
             saveProjectBtn.Click += saveProjectBtn_Click;
             // 
             // saveProjectAsBtn
             // 
             saveProjectAsBtn.Name = "saveProjectAsBtn";
-            saveProjectAsBtn.Size = new Size(180, 22);
+            saveProjectAsBtn.Size = new Size(163, 22);
             saveProjectAsBtn.Text = "Save Project As...";
             saveProjectAsBtn.Click += saveProjectAsBtn_Click;
             // 
@@ -286,7 +286,7 @@ namespace ArcadeMaker.IDE
             // 
             recentProjectsMenu.DropDownItems.AddRange(new ToolStripItem[] { clearRecentProjectsBtn });
             recentProjectsMenu.Name = "recentProjectsMenu";
-            recentProjectsMenu.Size = new Size(180, 22);
+            recentProjectsMenu.Size = new Size(163, 22);
             recentProjectsMenu.Text = "Recent Projects";
             // 
             // clearRecentProjectsBtn
@@ -356,7 +356,9 @@ namespace ArcadeMaker.IDE
             // 
             errorsBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             errorsBox.Columns.AddRange(new ColumnHeader[] { errorsBox_InCol, errorsBox_DescCol, errorsBox_FileCol, errorsBox_LineCol });
+            errorsBox.FullRowSelect = true;
             errorsBox.Location = new Point(7, 26);
+            errorsBox.MultiSelect = false;
             errorsBox.Name = "errorsBox";
             errorsBox.Size = new Size(707, 133);
             errorsBox.TabIndex = 0;
@@ -377,6 +379,10 @@ namespace ArcadeMaker.IDE
             errorsBox_FileCol.Text = "File";
             errorsBox_FileCol.Width = 100;
             // 
+            // errorsBox_LineCol
+            // 
+            errorsBox_LineCol.Text = "Line";
+            // 
             // splitter2
             // 
             splitter2.Dock = DockStyle.Bottom;
@@ -385,10 +391,6 @@ namespace ArcadeMaker.IDE
             splitter2.Size = new Size(726, 3);
             splitter2.TabIndex = 7;
             splitter2.TabStop = false;
-            // 
-            // errorsBox_LineCol
-            // 
-            errorsBox_LineCol.Text = "Line";
             // 
             // Form1
             // 

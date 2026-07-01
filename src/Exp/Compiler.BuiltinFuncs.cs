@@ -273,7 +273,7 @@ namespace Exp
                         if (func.Args.Length == 2) // for property
                         {
                             Instance type = GetInstArg(0, ClassDefSpan.ExpTypeDef);
-                            ClassDefSpan cls = (ClassDefSpan)type.Vars[2].Value;
+                            ClassDefSpan cls = type.GetClassFromExpTypeInstanceOrThrowRuntime(this);
 
                             string propName = GetInstArg(1, ClassDefSpan.ExpStringDef).ToString();
                             ICanSetAttr prop = (ICanSetAttr)cls.Props.FirstOrDefault(p => p.Name == propName) ?? cls.Vars.OfType<ClassStaticVar>().FirstOrDefault(p => p.Name == propName);
@@ -289,7 +289,7 @@ namespace Exp
                         else if (func.Args.Length == 3) // for funcs
                         {
                             Instance type = GetInstArg(0, ClassDefSpan.ExpTypeDef);
-                            ClassDefSpan cls = (ClassDefSpan)type.Vars[2].Value;
+                            ClassDefSpan cls = type.GetClassFromExpTypeInstanceOrThrowRuntime(this);
 
                             string funcName = GetInstArg(1, ClassDefSpan.ExpStringDef).ToString();
                             int paramsCount = (int)GetArg<IValue>(2).Number;
@@ -306,7 +306,7 @@ namespace Exp
                         else if (func.Args.Length == 1) // for class
                         {
                             Instance type = GetInstArg(0, ClassDefSpan.ExpTypeDef);
-                            ClassDefSpan cls = (ClassDefSpan)type.Vars[2].Value;
+                            ClassDefSpan cls = type.GetClassFromExpTypeInstanceOrThrowRuntime(this);
 
                             func.Returns = cls.AttrInfo.ToExpArray();
                             func.Return = true;
@@ -376,7 +376,7 @@ namespace Exp
                         bool ctors = func.Name == "getConstructors";
 
                         Instance type = GetInstArg(0, ClassDefSpan.ExpTypeDef);
-                        ClassDefSpan cls = (ClassDefSpan)type.Vars[2].Value.Object;
+                        ClassDefSpan cls = type.GetClassFromExpTypeInstanceOrThrowRuntime(this);
 
                         var funcDefs = !ctors ? cls.Funcs.Where(ff => ff is not ConstructorDefSpan) : cls.Funcs.OfType<ConstructorDefSpan>();
                         var funcs = new Instance[funcDefs.Count()];
@@ -436,7 +436,7 @@ namespace Exp
                         type = GetInstArg(0, ClassDefSpan.ExpTypeDef);
 
                         // get class def
-                        cls = type.Vars[2].Value as ClassDefSpan;
+                        cls = type.GetClassFromExpTypeInstanceOrThrowRuntime(this);
 
                         // get args
                         args = GetInstArg(1, ClassDefSpan.ExpArrayDef);

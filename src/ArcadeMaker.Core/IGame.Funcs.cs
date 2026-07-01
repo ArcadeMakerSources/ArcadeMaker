@@ -15,14 +15,31 @@ namespace ArcadeMaker.Core;
 
 public partial interface IGame
 {
+    [ExpFunc(1, CustomName = "debug")]
+    Exp.Void DebugLog(Exp.Instance? _, IValue?[] args)
+    {
+        Debug.WriteLine("".ToExpString() + (args[0]?.ToString() ?? "NULL"));
+
+        return Exp.Void.Return;
+    }
+
     [ExpFunc(1)]
     BoolValue KeyDown(Exp.Instance? _, IValue?[] args);
 
     [ExpFunc(1)]
-    BoolValue KeyUp(Exp.Instance? _, IValue?[] args);
+    BoolValue KeyPress(Exp.Instance? _, IValue?[] args);
+
+    [ExpFunc(1)]
+    BoolValue KeyRelease(Exp.Instance? _, IValue?[] args);
 
     [ExpFunc(1)]
     BoolValue MouseButtonDown(Exp.Instance? _, IValue?[] args);
+
+    [ExpFunc(1)]
+    BoolValue MouseButtonPress(Exp.Instance? _, IValue?[] args);
+
+    [ExpFunc(1)]
+    BoolValue MouseButtonRelease(Exp.Instance? _, IValue?[] args);
 
     [ExpFunc]
     IValue GetMouseX(Exp.Instance? _, IValue?[] args);
@@ -91,6 +108,9 @@ public partial interface IGame
 
         BoolValue PlaceMeeting(double x, double y, Runtime.Instance other)
         {
+            if (inst == other)
+                return false;
+
             var instMask = inst.Model.Sprite!.Mask;
             var instRect = new Rect
             {
@@ -117,9 +137,6 @@ public partial interface IGame
 
             bool result = SeperatingAxisTheorem.AreRectanglesIntersecting(instRect, otherRect);
 
-            if (result)
-                _=0;
-
             return result;
         }
     }
@@ -129,7 +146,7 @@ public partial interface IGame
     {
         foreach (var other in GetActivatedRoom().Instances)
         {
-            if (PlaceMeeting(expinst, [args[0], args[1], other]))
+            if (other.Model.Class.ExpType == args[2] && PlaceMeeting(expinst, [args[0], args[1], other]))
                 return other;
         }
 
@@ -148,10 +165,35 @@ public partial interface IGame
     }
 
     [ExpFunc(IsNonStaticFuncOfGameObjects = true)]
-    Exp.Void Destroy(Exp.Instance? expinst, IValue?[] args)
+    BoolValue OutsideRoom(Exp.Instance? expinst, IValue?[] args)
     {
-        GetActivatedRoom().RemoveInstance((Runtime.Instance)expinst!);
-        return Exp.Void.Return;
+        var room = GetActivatedRoom().Model;
+        var inst = (Runtime.Instance)expinst!;
+
+        Rect roomRect = new Rect
+        {
+            X = 0,
+            Y = 0,
+            Width = room.Width,
+            Height = room.Height,
+            OriginX = 0,
+            OriginY = 0,
+            Angle = 0
+        };
+
+        var instMask = inst.Model.Sprite!.Mask;
+        var instRect = new Rect
+        {
+            X = inst.X.Value!.Number,
+            Y = inst.Y.Value!.Number,
+            Width = instMask.Right - instMask.Left + 1,
+            Height = instMask.Bottom - instMask.Top + 1,
+            OriginX = inst.Model.Sprite.OriginX - instMask.Left + 1,
+            OriginY = inst.Model.Sprite.OriginY - instMask.Top + 1,
+            Angle = inst.ImageAngle.Value!.Number
+        };
+
+        return !Math.SeperatingAxisTheorem.AreRectanglesIntersecting(roomRect, instRect);
     }
 
     /// <summary>
@@ -235,6 +277,22 @@ public partial interface IGame
         inst.Y.Value = y;
         GetActivatedRoom().AddInstance(inst);
         return inst;
+    }
+
+    [ExpFunc(3, IsNonStaticFuncOfGameObjects = true)]
+    Exp.Void MoveTowardsPoint(Exp.Instance? expinst, IValue?[] args)
+    {
+        var inst = (Runtime.Instance)expinst!;
+
+        // set direction
+        var direction = Math.Formulas.AngleBetween(inst.X.Value!.Number, inst.Y.Value!.Number * -1, args[0].ThrowIfNull().Number, args[1].ThrowIfNull().Number * -1) - 90;
+        inst.Direction.Value = direction.ToExp();
+
+        // set speed
+        if (inst.speed != args[2].ThrowIfNull().Number)
+            inst.Speed.Value = args[2];
+
+        return Exp.Void.Return;
     }
 
     [ExpFunc(4, 6)]
@@ -340,6 +398,19 @@ public partial interface IGame
         inst.CurrentPathDrive = null;
         inst.Speed.Value = 0d.ToExp();
 
+        return Exp.Void.Return;
+    }
+
+    [ExpFunc(1, IsNonStaticFuncOfGameObjects = true)]
+    IValue GetAlarm(Exp.Instance? expinst, IValue?[] args)
+    {
+        return ((Runtime.Instance)expinst!).Alarm[(int)args[0].ThrowIfNull().Number].number.ToExp();
+    }
+
+    [ExpFunc(2, IsNonStaticFuncOfGameObjects = true)]
+    Exp.Void SetAlarm(Exp.Instance? expinst, IValue?[] args)
+    {
+        ((Runtime.Instance)expinst!).Alarm[(int)args[0].ThrowIfNull().Number].number = (int)args[1].ThrowIfNull().Number;
         return Exp.Void.Return;
     }
 

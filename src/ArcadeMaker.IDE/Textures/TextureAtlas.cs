@@ -27,7 +27,7 @@ internal static class TextureAtlas
         int i = 0;
         foreach (var texture in textures)
         {
-            texture.Rect = rects[i++];
+            texture.Rect = rects.First(r => r.Id == texture.RectID);
             graphics.DrawImage(texture.Image, texture.Rect.X, texture.Rect.Y);
         }
 
@@ -45,7 +45,11 @@ internal static class TextureAtlas
 
         map = allImages.ToArray();
 
-        return FromImages(map);
+        var atlas = FromImages(map);
+
+        _ = 0;
+
+        return atlas;
     }
 }
 
@@ -53,13 +57,17 @@ internal class ImageRect
 {
     internal Bitmap Image { get; }
     internal PackingRectangle Rect { get; set; }
+    internal int RectID { get; }
+    private static int idCounter = 0;
     internal ImageRect(Bitmap image)
     {
         this.Image = image;
+        RectID = idCounter++;
         Rect = new()
         {
             Width = (uint)image.Width,
-            Height = (uint)image.Height
+            Height = (uint)image.Height,
+            Id = RectID
         };
     }
 }

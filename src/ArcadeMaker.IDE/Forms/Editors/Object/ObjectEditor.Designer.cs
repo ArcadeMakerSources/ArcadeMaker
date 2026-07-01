@@ -51,6 +51,8 @@ namespace ArcadeMaker.IDE
             scriptsListView = new ListBox();
             addScriptBtn = new Button();
             deleteScriptBtn = new Button();
+            moveScriptUpBtn = new Button();
+            moveScriptDownBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)depthBox).BeginInit();
             SuspendLayout();
             // 
@@ -101,7 +103,7 @@ namespace ArcadeMaker.IDE
             addEventBtn.Location = new Point(275, 329);
             addEventBtn.Margin = new Padding(4, 3, 4, 3);
             addEventBtn.Name = "addEventBtn";
-            addEventBtn.Size = new Size(140, 27);
+            addEventBtn.Size = new Size(211, 27);
             addEventBtn.TabIndex = 8;
             addEventBtn.Text = "Add Event";
             addEventBtn.UseVisualStyleBackColor = true;
@@ -110,10 +112,10 @@ namespace ArcadeMaker.IDE
             // changeEventBtn
             // 
             changeEventBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            changeEventBtn.Location = new Point(350, 362);
+            changeEventBtn.Location = new Point(386, 362);
             changeEventBtn.Margin = new Padding(4, 3, 4, 3);
             changeEventBtn.Name = "changeEventBtn";
-            changeEventBtn.Size = new Size(65, 27);
+            changeEventBtn.Size = new Size(100, 27);
             changeEventBtn.TabIndex = 9;
             changeEventBtn.Text = "Change";
             changeEventBtn.UseVisualStyleBackColor = true;
@@ -158,7 +160,7 @@ namespace ArcadeMaker.IDE
             deleteEventBtn.Location = new Point(274, 362);
             deleteEventBtn.Margin = new Padding(4, 3, 4, 3);
             deleteEventBtn.Name = "deleteEventBtn";
-            deleteEventBtn.Size = new Size(68, 27);
+            deleteEventBtn.Size = new Size(104, 27);
             deleteEventBtn.TabIndex = 18;
             deleteEventBtn.Text = "Delete";
             deleteEventBtn.UseVisualStyleBackColor = true;
@@ -199,13 +201,16 @@ namespace ArcadeMaker.IDE
             // eventsListView
             // 
             eventsListView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+            eventsListView.DrawMode = DrawMode.OwnerDrawVariable;
             eventsListView.Font = new Font("Microsoft Sans Serif", 14.25F, FontStyle.Regular, GraphicsUnit.Point, 177);
             eventsListView.FormattingEnabled = true;
             eventsListView.Location = new Point(276, 7);
             eventsListView.Margin = new Padding(4, 3, 4, 3);
             eventsListView.Name = "eventsListView";
-            eventsListView.Size = new Size(139, 316);
+            eventsListView.Size = new Size(210, 308);
             eventsListView.TabIndex = 25;
+            eventsListView.DrawItem += eventsListView_DrawItem;
+            eventsListView.MeasureItem += eventsListView_MeasureItem;
             eventsListView.SelectedIndexChanged += eventsListView_SelectedIndexChanged;
             // 
             // parentBox
@@ -240,10 +245,10 @@ namespace ArcadeMaker.IDE
             scriptsListView.DrawMode = DrawMode.OwnerDrawFixed;
             scriptsListView.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 177);
             scriptsListView.FormattingEnabled = true;
-            scriptsListView.Location = new Point(423, 7);
+            scriptsListView.Location = new Point(494, 7);
             scriptsListView.Margin = new Padding(4, 3, 4, 3);
             scriptsListView.Name = "scriptsListView";
-            scriptsListView.Size = new Size(234, 308);
+            scriptsListView.Size = new Size(163, 308);
             scriptsListView.TabIndex = 27;
             scriptsListView.DrawItem += scriptsListView_DrawItem;
             scriptsListView.SelectedIndexChanged += scriptsListView_SelectedIndexChanged;
@@ -252,30 +257,52 @@ namespace ArcadeMaker.IDE
             // addScriptBtn
             // 
             addScriptBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            addScriptBtn.Location = new Point(423, 329);
+            addScriptBtn.Location = new Point(494, 329);
             addScriptBtn.Name = "addScriptBtn";
-            addScriptBtn.Size = new Size(234, 27);
+            addScriptBtn.Size = new Size(163, 27);
             addScriptBtn.TabIndex = 28;
-            addScriptBtn.Text = "Add Script To Selected Event";
+            addScriptBtn.Text = "Add Script";
             addScriptBtn.UseVisualStyleBackColor = true;
             addScriptBtn.Click += addScriptBtn_Click;
             // 
             // deleteScriptBtn
             // 
             deleteScriptBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            deleteScriptBtn.Location = new Point(422, 362);
+            deleteScriptBtn.Location = new Point(493, 362);
             deleteScriptBtn.Name = "deleteScriptBtn";
-            deleteScriptBtn.Size = new Size(234, 27);
+            deleteScriptBtn.Size = new Size(91, 27);
             deleteScriptBtn.TabIndex = 29;
             deleteScriptBtn.Text = "Delete Script";
             deleteScriptBtn.UseVisualStyleBackColor = true;
             deleteScriptBtn.Click += deleteScriptBtn_Click;
+            // 
+            // moveScriptUpBtn
+            // 
+            moveScriptUpBtn.Location = new Point(590, 362);
+            moveScriptUpBtn.Name = "moveScriptUpBtn";
+            moveScriptUpBtn.Size = new Size(30, 27);
+            moveScriptUpBtn.TabIndex = 30;
+            moveScriptUpBtn.Text = "^";
+            moveScriptUpBtn.UseVisualStyleBackColor = true;
+            moveScriptUpBtn.Click += moveScriptUpBtn_Click;
+            // 
+            // moveScriptDownBtn
+            // 
+            moveScriptDownBtn.Location = new Point(626, 362);
+            moveScriptDownBtn.Name = "moveScriptDownBtn";
+            moveScriptDownBtn.Size = new Size(30, 27);
+            moveScriptDownBtn.TabIndex = 31;
+            moveScriptDownBtn.Text = "v";
+            moveScriptDownBtn.UseVisualStyleBackColor = true;
+            moveScriptDownBtn.Click += moveScriptDownBtn_Click;
             // 
             // ObjectEditor
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1060, 399);
+            Controls.Add(moveScriptDownBtn);
+            Controls.Add(moveScriptUpBtn);
             Controls.Add(deleteScriptBtn);
             Controls.Add(addScriptBtn);
             Controls.Add(scriptsListView);
@@ -329,5 +356,7 @@ namespace ArcadeMaker.IDE
         private ListBox scriptsListView;
         private Button addScriptBtn;
         private Button deleteScriptBtn;
+        private Button moveScriptUpBtn;
+        private Button moveScriptDownBtn;
     }
 }

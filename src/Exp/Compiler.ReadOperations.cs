@@ -290,9 +290,12 @@ public partial class Interpreter
     private IOperation ReadOperation(Span[] spans, IVarSystem vs, out Span[] src)
     {
         var ops = ReadOperations(spans, vs, out src, breakAfter1: true);
-        
+
         if (ops == null || ops.Length == 0 || ops.Length >= 2)
-            Error($"1 Operation was expected, but {ops.Length} read.");
+        {
+            Error($"1 Operation was expected, but {ops?.Length ?? 0} read.");
+            return new Throwing(ConstValueReadingOperation.For("Execution reached a syntax error.".ToExpString()));
+        }
         return ops[0];
     }
 }

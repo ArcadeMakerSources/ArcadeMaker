@@ -1,7 +1,9 @@
 ﻿using Exp.Spans;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Exp;
@@ -59,6 +61,11 @@ class ExternPropertyVar : Variable
     private readonly PropertyInfo pinfo;
     private bool initSetComplete;
     private readonly object inst;
+
+    public bool IsOptimized => getter != null || setter != null;
+    private dynamic? getter = null;
+    private dynamic? setter = null;
+    
     internal ExternPropertyVar(object inst, PropertyInfo pinfo) : base(pinfo.Name.StartWithLowerCase(), null, null)
     {
         ArgumentNullException.ThrowIfNull(inst);
@@ -68,31 +75,48 @@ class ExternPropertyVar : Variable
         this.inst = inst;
     }
 
+    [Obsolete("Performances of this approach have not been tested yet.")]
+    public void Optimize()
+    {
+        if (IsOptimized)
+            return;
+
+        // create Func<T> instance for the property getter, which can be used for fast invocation
+        Type getterType = typeof(Func<>).MakeGenericType(pinfo.PropertyType);
+        getter = pinfo.GetMethod != null ? Delegate.CreateDelegate(getterType, inst, pinfo.GetMethod) : null;
+
+        // create Action<T> instance for the property setter, which can be used for fast invocation
+        Type setterType = typeof(Action<>).MakeGenericType(pinfo.PropertyType);
+        setter = pinfo.SetMethod != null ? Delegate.CreateDelegate(setterType, inst, pinfo.SetMethod) : null;
+    }
+
     public override IValue? Value
     {
-        get => TryGetset(() => Interpreter.CsValToExpVal(pinfo.GetValue(inst)));
-        set => TryGetset(() =>
+        get { try { return getter?.Invoke() ?? Interpreter.CsValToExpVal(pinfo.GetValue(inst)); } catch (Exception ex) { Catch(ex); throw null; } }
+        set
         {
             if (!initSetComplete)
                 initSetComplete = true;
             else
-                pinfo.SetValue(inst, Interpreter.ExpValToCsVal(value));
-            return null;
-        });
+            {
+                try
+                {
+                    if (setter == null)
+                        pinfo.SetValue(inst, Interpreter.ExpValToCsVal(value));
+                    else
+                        setter.Invoke(value);
+                }
+                catch (Exception ex) { Catch(ex); }
+            }
+        }
     }
 
-    private IValue TryGetset(Func<IValue> action)
+    [DoesNotReturn]
+    private static void Catch(Exception ex)
     {
-        try
-        {
-            return action();
-        }
-        catch (Exception ex)
-        {
-            ex = ex.InnerException ?? ex;
-            Interpreter.Activated.ThrowRuntime(ex.GetType().ToString() + ": " + ex.Message, RuntimeException.EXTERN_OPERATION_FAILED);
-            throw null;
-        }
+        ex = ex.InnerException ?? ex;
+        Interpreter.Activated.ThrowRuntime(ex.GetType().ToString() + ": " + ex.Message, RuntimeException.EXTERN_OPERATION_FAILED);
+        throw null;
     }
 }
 

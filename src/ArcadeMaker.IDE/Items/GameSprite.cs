@@ -12,9 +12,9 @@ using System.Windows.Forms;
 
 namespace ArcadeMaker.IDE.Items
 {
-    public class GameSprite : GameItem
+    public class GameSprite : GameItem, ISetsIcon
     {
-        /* do not change property name!!! */ public static Bitmap icon { get; } = Properties.Resources.sprite;
+        public static Bitmap Icon => Properties.Resources.sprite;
 
         public readonly HandlerList<Bitmap> images = new HandlerList<Bitmap>();
 

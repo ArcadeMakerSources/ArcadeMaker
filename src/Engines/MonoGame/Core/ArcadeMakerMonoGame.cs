@@ -23,6 +23,7 @@ using System.Reflection;
 using MonoGame.Extended;
 using MonoGame.Extended.ViewportAdapters;
 using System.Runtime.CompilerServices;
+using System.IO;
 
 namespace ArcadeMaker.Engines.MonoGame.Core
 {
@@ -30,7 +31,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
     /// The main class for the game, responsible for managing game components, settings, 
     /// and platform-specific configurations.
     /// </summary>
-    public partial class ArcadeMakerMonoGame : Game, IGame
+    public sealed partial class ArcadeMakerMonoGame : Game, IGame
     {
         public event EventHandler<RuntimeException>? OnExpRuntimeError;
         public event EventHandler<Exception>? OnCsError;
@@ -42,7 +43,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         private Dictionary<Background, Texture2D?> BackgroundTextures { get; } = [];
         public List<Background> Backgrounds { get; } = [];
         public List<Sound> Sounds { get; } = [];
-        public List<Path> Paths { get; } = [];
+        public List<ArcadeMaker.Core.Resources.Path> Paths { get; } = [];
         public List<ObjectModel> Objects { get; } = [];
         public List<GameFont> FontsData { get; } = [];
         public List<ScriptDocument> Scripts { get; } = [];
@@ -76,8 +77,10 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         public TextureAtlasMap MainTextureAtlasMap { get; set; }
         public TextureAtlas MainTextureAtlas { get; private set; }
 
+        public StringWriter Debug { get; } = new StringWriter();
+
         // runtime private data
-        private GameRunner GameRunner { get; set; }
+        private GameRunner<ArcadeMakerMonoGame> GameRunner { get; set; }
 
         /// <summary>
         /// Indicates if the game is running on a mobile platform.
@@ -136,7 +139,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
             Try(() =>
             {
-                GameRunner = new GameRunner(this);
+                GameRunner = new GameRunner<ArcadeMakerMonoGame>(this);
                 GameRunner.Run(invokeInit: false);
             });
         }
@@ -230,19 +233,35 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             if (isOnError)
                 return;
 
-            KeyboardState = null;
-            Gamepad1State = null;
-            Gamepad2State = null;
-            Gamepad3State = null;
-            Gamepad4State = null;
-            MouseState    = null;
+            // get input state
+            KeyboardState = Keyboard.GetState();
+            Gamepad1State = GamePad.GetState(PlayerIndex.One);
+            Gamepad2State = GamePad.GetState(PlayerIndex.Two);
+            Gamepad3State = GamePad.GetState(PlayerIndex.Three);
+            Gamepad4State = GamePad.GetState(PlayerIndex.Four);
+            MouseState    = Mouse.GetState();
 
             Try(GameRunner.FireStep);
+
+            // save input state
+            PrevKeyboardState = KeyboardState;
+            PrevGamepad1State = Gamepad1State;
+            PrevGamepad2State = Gamepad2State;
+            PrevGamepad3State = Gamepad3State;
+            PrevGamepad4State = Gamepad4State;
+            PrevMouseState    = MouseState;
 
             base.Update(gameTime);
         }
 
         public int CurrentViewIndex { get; private set; } = -1;
+
+        private Color backColor;
+        public System.Drawing.Color BackColor
+        {
+            get => System.Drawing.Color.FromArgb(backColor.A, backColor.R, backColor.G, backColor.B);
+            set => backColor = new(value.R, value.G, value.B, value.A);
+        }
 
         /// <summary>
         /// Draws the game's graphics, called once per frame.
@@ -255,8 +274,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             if (isOnError || CurrentRoom == null)
                 return;
 
-            var bc = CurrentRoom.Model.BackgroundColor;
-            GraphicsDevice.Clear(new(bc.R, bc.G, bc.B, bc.A));
+            GraphicsDevice.Clear(backColor);
 
             // if views are defined, we need to draw the room for each view, applying the corresponding camera transformations.
             // otherwise, we can just draw the room once without any transformations
@@ -365,43 +383,48 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             Window.Title = caption;
         }
 
-        public Exp.Void ShowMessage(Exp.Instance? _, IValue[] args)
+        public Exp.Void ShowMessage(Exp.Instance? _, IValue?[] args)
         {
-            if (args == null || args.Length != 1)
-                throw new ArgumentException("A single argument of type instance was expected.");
-
             MessageBox.Show("Message", ("".ToExpString() + args[0]?.Object?.ToString()).ToString(), ["OK"]);
             return Exp.Void.Return;
         }
 
-        private KeyboardState? KeyboardState { get { field ??= Keyboard.GetState(); return field; } set; }
-        private GamePadState? Gamepad1State { get { field ??= GamePad.GetState(PlayerIndex.One); return field; } set; }
-        private GamePadState? Gamepad2State { get { field ??= GamePad.GetState(PlayerIndex.Two); return field; } set; }
-        private GamePadState? Gamepad3State { get { field ??= GamePad.GetState(PlayerIndex.Three); return field; } set; }
-        private GamePadState? Gamepad4State { get { field ??= GamePad.GetState(PlayerIndex.Four); return field; } set; }
-        private MouseState? MouseState { get { field ??= Mouse.GetState(); return field; } set; }
+        private KeyboardState KeyboardState { get; set; }
+        private GamePadState Gamepad1State { get; set; }
+        private GamePadState Gamepad2State { get; set; }
+        private GamePadState Gamepad3State { get; set; }
+        private GamePadState Gamepad4State { get; set; }
+        private MouseState MouseState { get; set; }
+        private KeyboardState PrevKeyboardState { get; set; }
+        private GamePadState PrevGamepad1State { get; set; }
+        private GamePadState PrevGamepad2State { get; set; }
+        private GamePadState PrevGamepad3State { get; set; }
+        private GamePadState PrevGamepad4State { get; set; }
+        private MouseState PrevMouseState { get; set; }
 
-        public BoolValue KeyDown(Exp.Instance _, IValue[] args)
+        public BoolValue KeyDown(Exp.Instance? _, IValue?[] args)
         {
-            if (args == null || args.Length != 1 || !args[0].IsNumber)
-                throw new ArgumentException("A single argument of type number was expected.");
-
-            // check if the specified key is currently pressed.
-            return KeyboardState.Value.IsKeyDown((Keys)args[0].Number);
+            // check if the specified key is currently down
+            return KeyboardState.IsKeyDown((Keys)args[0].ThrowIfNull().Number);
         }
 
-        public BoolValue KeyUp(Exp.Instance _, IValue[] args)
+        public BoolValue KeyPress(Exp.Instance? _, IValue?[] args)
         {
-            if (args == null || args.Length != 1 || !args[0].IsNumber)
-                throw new ArgumentException("A single argument of type number was expected.");
+            // check if the specified key was got pressed in this frame
+            Keys key = (Keys)args[0].ThrowIfNull().Number;
+            return KeyboardState.IsKeyDown(key) && PrevKeyboardState.IsKeyUp(key);
+        }
 
-            // check if the specified key is currently pressed.
-            return KeyboardState.Value.IsKeyUp((Keys)args[0].Number);
+        public BoolValue KeyRelease(Exp.Instance? _, IValue?[] args)
+        {
+            // check if the specified key was released in this frame
+            Keys key = (Keys)args[0].ThrowIfNull().Number;
+            return KeyboardState.IsKeyUp(key) && PrevKeyboardState.IsKeyDown(key);
         }
 
         public BoolValue GamepadButtonDown(Exp.Instance? _, IValue?[] args)
         {
-            // check if the specified key is currently pressed.
+            // check if the specified key is currently pressed
             GamePadState? gamepad = args[0].ThrowIfNull().Number switch
             {
                 1 => Gamepad1State,
@@ -416,15 +439,36 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
         public BoolValue MouseButtonDown(Exp.Instance? _, IValue?[] args)
         {
-            if (args == null || args.Length != 1 || args[0]?.IsNumber != true)
-                throw new ArgumentException("A single argument of type number was expected.");
-
             // check if the specified key is currently pressed
-            return args[0]!.Number switch
+            return args[0].ThrowIfNull().Number switch
             {
-                0d => MouseState!.Value.LeftButton == ButtonState.Pressed,
-                1d => MouseState!.Value.MiddleButton == ButtonState.Pressed,
-                2d => MouseState!.Value.RightButton == ButtonState.Pressed,
+                0d => MouseState.LeftButton   == ButtonState.Pressed,
+                1d => MouseState.MiddleButton == ButtonState.Pressed,
+                2d => MouseState.RightButton  == ButtonState.Pressed,
+                _ => throw new ArgumentException($"{args[0]!.Number} is not a valid mouse button input. Use '{ExpSrc.EngineNamespace}{Exp.Spans.NamespaceSpecificationSpan.Symbol}MouseButton' enum to pass valid values.")
+            };
+        }
+
+        public BoolValue MouseButtonPress(Exp.Instance? _, IValue?[] args)
+        {
+            // check if the specified key is currently pressed
+            return args[0].ThrowIfNull().Number switch
+            {
+                0d => MouseState.LeftButton   == ButtonState.Pressed && PrevMouseState.LeftButton   == ButtonState.Released,
+                1d => MouseState.MiddleButton == ButtonState.Pressed && PrevMouseState.MiddleButton == ButtonState.Released,
+                2d => MouseState.RightButton  == ButtonState.Pressed && PrevMouseState.RightButton  == ButtonState.Released,
+                _ => throw new ArgumentException($"{args[0]!.Number} is not a valid mouse button input. Use '{ExpSrc.EngineNamespace}{Exp.Spans.NamespaceSpecificationSpan.Symbol}MouseButton' enum to pass valid values.")
+            };
+        }
+
+        public BoolValue MouseButtonRelease(Exp.Instance? _, IValue?[] args)
+        {
+            // check if the specified key is currently pressed
+            return args[0].ThrowIfNull().Number switch
+            {
+                0d => MouseState.LeftButton   == ButtonState.Released && PrevMouseState.LeftButton   == ButtonState.Pressed,
+                1d => MouseState.MiddleButton == ButtonState.Released && PrevMouseState.MiddleButton == ButtonState.Pressed,
+                2d => MouseState.RightButton  == ButtonState.Released && PrevMouseState.RightButton  == ButtonState.Pressed,
                 _ => throw new ArgumentException($"{args[0]!.Number} is not a valid mouse button input. Use '{ExpSrc.EngineNamespace}{Exp.Spans.NamespaceSpecificationSpan.Symbol}MouseButton' enum to pass valid values.")
             };
         }
@@ -481,8 +525,8 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             SpriteBatch.DrawLine(new Vector2((float)x1, (float)y1), new Vector2((float)x2, (float)y2), drawColor, (float)thickness);
         }
 
-        public IValue GetMouseX(Exp.Instance? _, IValue?[] args) => MouseState.Value.X.ToExp();
-        public IValue GetMouseY(Exp.Instance? _, IValue?[] args) => MouseState.Value.Y.ToExp();
+        public IValue GetMouseX(Exp.Instance? _, IValue?[] args) => MouseState.X.ToExp();
+        public IValue GetMouseY(Exp.Instance? _, IValue?[] args) => MouseState.Y.ToExp();
 
         protected override void Dispose(bool disposing)
         {
@@ -499,6 +543,8 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             if (MainTextureAtlas?.Texture?.IsDisposed == false)
                 MainTextureAtlas.Texture.Dispose();
             Fonts.All.ForEach(f => { if (!f.Value.Texture.IsDisposed) f.Value.Texture.Dispose(); });
+
+            Debug?.Dispose();
 
             base.Dispose(disposing);
         }

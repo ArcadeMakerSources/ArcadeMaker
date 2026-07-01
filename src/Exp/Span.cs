@@ -211,7 +211,7 @@ class ExternClassDefSpan : WordSpan, IDefination, IKeyword, IExpItem
             type.GetEnumNames().ForEach((name, index) => EnumValues.Add(name.StartWithLowerCase(), Interpreter.CsValToExpVal(vals.GetValue(index))));
         }
 
-        // get all public static methods of the type
+        // get all public static methods / properties of the type
         this.Methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static);
         this.Constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
         this.Props = type.GetProperties(BindingFlags.Public | BindingFlags.Static);
@@ -729,7 +729,7 @@ public interface IVarSystem
     internal List<Variable> Vars { get; }
     internal IVarSystem Parent { get; set; }
 
-    internal IEnumerable<IValue> BackupValues() => Vars.Map(v => v.Value.Pass());
+    internal IEnumerable<IValue> BackupValues() => Vars.Map(v => v.Value);
     internal void RestoreValues(IEnumerable<IValue> values)
     {
         int i = 0;

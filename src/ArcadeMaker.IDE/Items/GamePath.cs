@@ -7,9 +7,9 @@ using System.Drawing;
 
 namespace ArcadeMaker.IDE.Items
 {
-    public class GamePath : GameItem
+    public class GamePath : GameItem, ISetsIcon
     {
-        /* do not change property name!!! */ public static Bitmap icon { get; } = Properties.Resources.path;
+        public static Bitmap Icon => Properties.Resources.path;
 
         public List<PathPoint> points = new List<PathPoint>();
         public bool close = false;
