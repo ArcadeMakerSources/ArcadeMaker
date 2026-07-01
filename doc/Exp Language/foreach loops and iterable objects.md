@@ -33,7 +33,7 @@ There are 2 methods for that:
         return item
      }
   
-     func reset()
+     func it_reset()
      {
         currNode = firstNode
      }

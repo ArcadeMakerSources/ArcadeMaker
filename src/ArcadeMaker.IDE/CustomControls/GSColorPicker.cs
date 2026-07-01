@@ -13,6 +13,7 @@ namespace ArcadeMaker.IDE
     public partial class GSColorPicker : UserControl
     {
         private ColorDialog dlg1 = new ColorDialog(), dlg2 = new ColorDialog();
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Color Color1
         {
             get
@@ -27,6 +28,8 @@ namespace ArcadeMaker.IDE
                     Color1Changed?.Invoke(this, value);
             }
         }
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Color Color2
         {
             get
