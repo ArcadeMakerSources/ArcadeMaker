@@ -446,6 +446,7 @@ namespace ArcadeMaker.Core.Runtime
             }
 
             Game.CurrentRoom = room;
+
             Game.SetCaption(room.Model.Caption);
             Game.BackColor = room.Model.BackgroundColor;
 
