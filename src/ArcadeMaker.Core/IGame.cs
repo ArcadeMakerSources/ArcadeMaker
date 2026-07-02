@@ -18,6 +18,7 @@ using ArcadeMaker.Core.Math.Shapes;
 using Exp.Spans;
 using System.ComponentModel.DataAnnotations;
 using ArcadeMaker.Core.ExpSrc.Controls;
+using System.Runtime.CompilerServices;
 
 namespace ArcadeMaker.Core;
 
@@ -43,8 +44,10 @@ public partial interface IGame
     void SetWindowsSize(int w, int h);
     void SetCaption(string caption);
     Color BackColor { get; set; }
+    (int x, int y) MousePositionInWindow { get; }
 
-    internal RoomInstance GetActivatedRoom() => CurrentRoom ?? throw new NoActivatedRoomException();
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal RoomInstance GetActivatedRoom() => CurrentRoom ?? throw new NoActivatedRoomException(); // TODO: skip this method...
     private static event EventHandler? OnProjectLoadingComplete;
     public void LoadFromProject(SerializeableGameProject sproject, string filePath)
     {

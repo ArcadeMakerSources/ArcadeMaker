@@ -367,6 +367,12 @@ namespace ArcadeMaker.Core.Runtime
             }
         }
 
+        /// <summary>
+        /// Draws an instance of a game object.
+        /// </summary>
+        /// <param name="inst">The instance to draw.</param>
+        /// <param name="args">[].</param>
+        /// <returns>void.</returns>
         [ExpFunc(CustomName = "drawSelf", IsNonStaticFuncOfGameObjects = true)]
         public Exp.Void DrawInstance(Exp.Instance? inst, IValue?[] args)
         {
@@ -374,7 +380,12 @@ namespace ArcadeMaker.Core.Runtime
             return Exp.Void.Return;
         }
 
-
+        /// <summary>
+        /// Destroys an instance of a game object.
+        /// </summary>
+        /// <param name="expinst">The instance to destroy.</param>
+        /// <param name="args">[].</param>
+        /// <returns>void.</returns>
         [ExpFunc(IsNonStaticFuncOfGameObjects = true)]
         public Exp.Void Destroy(Exp.Instance? expinst, IValue?[] args)
         {
@@ -439,14 +450,15 @@ namespace ArcadeMaker.Core.Runtime
             Game.SetCaption(room.Model.Caption);
             Game.BackColor = room.Model.BackgroundColor;
 
-            // set window size
+            // set window size: room size or the minimum region that would contain all visible views ports, when views enabled
             int winWidth = room.Model.Width, winHeight = room.Model.Height;
-            if (room.Model.Views.Count >= 1)
+            var visibleViews = room.Model.Views.Where(v => v.Visible);
+            if (visibleViews.Any())
             {
                 winWidth = 1;
                 winHeight = 1;
 
-                foreach (var view in room.Model.Views)
+                foreach (var view in visibleViews)
                 {
                     winWidth  = System.Math.Max(winWidth,  view.PortX + view.PortWidth );
                     winHeight = System.Math.Max(winHeight, view.PortY + view.PortHeight);
@@ -472,6 +484,13 @@ namespace ArcadeMaker.Core.Runtime
             GoToRoom(roomInstance);
         }
 
+        /// <summary>
+        /// Goes to another room and destroys the objects in the current one.
+        /// </summary>
+        /// <param name="_">Unused.</param>
+        /// <param name="args">[roomId].</param>
+        /// <returns>void.</returns>
+        /// <exception cref="ArgumentException"></exception>
         [ExpFunc(1)]
         public Exp.Void GoToRoom(Exp.Instance? _, IValue?[] args)
         {

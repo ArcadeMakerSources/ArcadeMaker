@@ -48,9 +48,7 @@ internal sealed class FutileGame : ArcadeMaker.Core.IGame
 
     public BoolValue MouseButtonRelease(Exp.Instance? _, IValue?[] args) => false;
 
-    public IValue GetMouseX(Exp.Instance? _, IValue?[] args) => null!;
-
-    public IValue GetMouseY(Exp.Instance? _, IValue?[] args) => null!;
+    public (int, int) MousePositionInWindow { get; }
 
     public BoolValue GamepadButtonDown(Exp.Instance? _, IValue?[] args) => false;
 

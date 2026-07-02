@@ -525,8 +525,14 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             SpriteBatch.DrawLine(new Vector2((float)x1, (float)y1), new Vector2((float)x2, (float)y2), drawColor, (float)thickness);
         }
 
-        public IValue GetMouseX(Exp.Instance? _, IValue?[] args) => MouseState.X.ToExp();
-        public IValue GetMouseY(Exp.Instance? _, IValue?[] args) => MouseState.Y.ToExp();
+        public (int x, int y) MousePositionInWindow
+        {
+            get
+            {
+                Point position = MouseState.Position;
+                return (position.X, position.Y);
+            }
+        }
 
         protected override void Dispose(bool disposing)
         {

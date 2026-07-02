@@ -746,16 +746,20 @@ namespace ArcadeMaker.IDE
             // show details about the LAST RoomObject match in the list
             for (int i = room.objects.Count - 1; i >= 0; i--)
             {
-                int objX = room.objects[i].x, objY = room.objects[i].y;
-
-                int objImgW = room.objects[i].obj.sprite == null ? noSpriteIcon.Size.Width : (room.objects[i].obj.sprite.image == null ? 0 : room.objects[i].obj.sprite.image.Size.Width);
-                int objImgH = room.objects[i].obj.sprite == null ? noSpriteIcon.Size.Height : (room.objects[i].obj.sprite.image == null ? 0 : room.objects[i].obj.sprite.image.Size.Height);
-                if (position.X >= objX && position.X < objX + objImgW && position.Y >= objY && position.Y < objY + objImgH)
+                try
                 {
-                    objs.Add(room.objects[i]);
-                    if (lastOnly)
-                        break;
+                    int objX = room.objects[i].x, objY = room.objects[i].y;
+
+                    int objImgW = room.objects[i].obj.sprite == null ? noSpriteIcon.Size.Width : (room.objects[i].obj.sprite.image == null ? 0 : room.objects[i].obj.sprite.image.Size.Width);
+                    int objImgH = room.objects[i].obj.sprite == null ? noSpriteIcon.Size.Height : (room.objects[i].obj.sprite.image == null ? 0 : room.objects[i].obj.sprite.image.Size.Height);
+                    if (position.X >= objX && position.X < objX + objImgW && position.Y >= objY && position.Y < objY + objImgH)
+                    {
+                        objs.Add(room.objects[i]);
+                        if (lastOnly)
+                            break;
+                    }
                 }
+                catch { }
             }
 
             return objs.ToArray();
