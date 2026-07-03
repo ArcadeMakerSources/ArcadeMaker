@@ -64,7 +64,7 @@ namespace ArcadeMaker.IDE
             scriptBox.SelectionStartChanged += async (s, e) => await Task.Run(() => ScriptBox_SelectionStartChanged(s, e));
             scriptBox.MouseHover += async (s, e) => await Task.Run(() => ScriptBox_MouseHover(s, e));
 
-
+            expSuggestions.Sort();
             //scriptBox.OnCompletionItemShowInfo += ScriptBox_OnCompletionItemInfo;
             //scriptBox.CharAlerts.Add('.');
             //scriptBox.CharAlert += ScriptBox_CharAlert;
@@ -177,11 +177,36 @@ namespace ArcadeMaker.IDE
             textChangedTimer.Tick += textChangedTimer_Tick;
         }
 
-        private System.Windows.Forms.Timer textChangedTimer = new() { Interval = 3000 };
+        private System.Windows.Forms.Timer textChangedTimer = new() { Interval = 5000 };
         private void scriptBox_TextChanged(object sender, SpansTextBox2TextChangedEventArgs e)
         {
             textChangedTimer.Stop();
             textChangedTimer.Start();
+
+            LoadAndShowSuggestions();
+        }
+
+
+        // all engine funcs and properties:
+        private static readonly List<SpansTextBox2Suggestion> expSuggestions =
+        [..
+            Core.ExpSrc.ExpSrc.AllExternFuncsAndProperties
+            .Map(extrn => new SpansTextBox2Suggestion(extrn))
+            .AppendRange(Exp.Spans.Filter.Keywords.Map(kw => new SpansTextBox2Suggestion("keyword", kw) { TypeLabelColor = Color.Yellow }))
+        ];
+
+        private void LoadAndShowSuggestions()
+        {
+            // get the word the caret is currently on
+            var textSpan = scriptBox.GetSpanByCharIndex(scriptBox.SelectionStart - 1, out int spanStart);
+            string? word = textSpan.type == SpanType.Normal ? textSpan.text : null;
+
+            // if it's a word and not another kind of span, show the suggestions which contains this word
+            if (word != null)
+            {
+                var suggestions = expSuggestions.Where(sug => sug.DisplayText.Contains(word, StringComparison.CurrentCultureIgnoreCase));
+                scriptBox.ShowSuggestions([.. suggestions], spanStart, spanStart + word.Length);
+            }
         }
 
         private async void textChangedTimer_Tick(object? sender, EventArgs e)
@@ -211,43 +236,7 @@ namespace ArcadeMaker.IDE
         
 
         string gameSettings = null;
-        private string GetGameSettings()
-        {
-            throw new NotImplementedException();
-//            if (gameSettings == null)
-//            {
-//#if DEBUG
-//                using (var tr = new StreamReader(@"C:\Users\vsprojs\GameStudio\Settings.cs"))
-//                {
-//                    gameSettings = tr.ReadToEnd();
-//                    tr.Close();
-//                }
-//#else
-//                gameSettings = Properties.Resources.Settings;
-//#endif
-//            }
-//            return gameSettings;
-        }
         string gameResources = null;
-        private string GetGameResources()
-        {
-            throw new NotImplementedException();
-            /*
-            if (gameResources == null)
-            {
-#if DEBUG
-                using (var tr = new StreamReader(@"C:\Users\vsprojs\GameStudio\Resources.Designer.cs"))
-                {
-                    gameResources = tr.ReadToEnd();
-                    tr.Close();
-                }
-#else
-                gameResources = Properties.Resources.Resources_Designer;
-#endif
-            }
-            return gameResources;
-            */
-        }
 
         private void ColorScriptEditor()
         {

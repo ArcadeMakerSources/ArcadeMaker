@@ -6,7 +6,7 @@ using ArcadeMaker.Core.Math.Shapes;
 
 namespace ArcadeMaker.Core.Math;
 
-public static class SeperatingAxisTheorem
+public static class SeparatingAxisTheorem
 {
     /*
        This code was written by Claude. It's full message:

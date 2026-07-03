@@ -62,14 +62,16 @@ namespace ArcadeMaker.IDE
             // 
             // completionBox
             // 
+            completionBox.DrawMode = DrawMode.OwnerDrawFixed;
             completionBox.FormattingEnabled = true;
             completionBox.Location = new Point(20, 230);
             completionBox.Margin = new Padding(4, 3, 4, 3);
             completionBox.Name = "completionBox";
-            completionBox.Size = new Size(268, 124);
+            completionBox.Size = new Size(338, 116);
             completionBox.TabIndex = 2;
             completionBox.Visible = false;
             completionBox.MouseClick += completionBox_MouseClick;
+            completionBox.DrawItem += completionBox_DrawItem;
             completionBox.PreviewKeyDown += completionBox_PreviewKeyDown;
             // 
             // toolTip

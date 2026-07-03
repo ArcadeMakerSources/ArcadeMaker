@@ -85,6 +85,15 @@ public abstract class Span
     }
 }
 
+public class EndOfCodeSpan : Span
+{
+    public EndOfCodeSpan(ScriptDocument doc) : base("<<EndOfCode>>")
+    {
+        base.Document = doc;
+        base.DocumentLocation = doc.Script.Length;
+    }
+}
+
 public class WordSpan : Span
 {
     internal WordSpan(string text) : base(text) { }

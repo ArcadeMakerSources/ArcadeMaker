@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ArcadeMaker.Core;
@@ -26,6 +27,7 @@ public static class Extensions
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IValue[] ThrowIfNull([NotNull] params IValue?[] values)
     {
         int i = 0;
@@ -39,6 +41,7 @@ public static class Extensions
         return values!;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IValue ThrowIfNull([NotNull] this IValue? value) => ThrowIfNull(values: value)[0]!;
 
     public static void Add<TKey, TValue>(this Dictionary<TKey, List<TValue>> dictionary, TKey key, TValue value)

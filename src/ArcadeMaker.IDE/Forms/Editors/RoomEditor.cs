@@ -151,20 +151,15 @@ namespace ArcadeMaker.IDE
                 {
                     if (ModifierKeys == Keys.Control)
                     {
-                        ContextMenu menu = new ContextMenu();
-                        MenuItem editCreationCodeBtn = new MenuItem("Creation Code...");
+                        ContextMenuStrip menu = new();
+                        ToolStripMenuItem editCreationCodeBtn = new("Creation Code...");
                         editCreationCodeBtn.Click += (s, ea) =>
                         {
                             ScriptEditor editor = new ScriptEditor(obj, obj.Script);
                             editor.OKClicked += (ss, ee) => obj.Script = ee;
                             editor.ShowDialog();
                         };
-                        menu.MenuItems.Add(editCreationCodeBtn);
-                        menu.Collapse += (s, ea) =>
-                        {
-                            editCreationCodeBtn.Dispose();
-                            menu.Dispose();
-                        };
+                        menu.Items.Add(editCreationCodeBtn);
                         menu.Show(boardPanel, e.Location);
                     }
                     else

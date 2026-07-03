@@ -69,7 +69,7 @@ public partial class Interpreter
         else if (textSpan.type == SpanType.EscapedString)
             span = new StringSpan(text[2..^1], escaped: true);
         else if (textSpan.type == SpanType.Char)
-            span = new CharSpan(text[1..^1].Replace("\\n", "\n").Replace("\\t", "\t").Replace("\\\"", "\"").Replace("\\\\", "\\")[0]);
+            span = new CharSpan(text[1..^1].Replace("\\n", "\n").Replace("\\t", "\t").Replace("\\\"", "\"").Replace("\\\\", "\\").FirstOrDefault());
         else if (textSpan.type == SpanType.Tag)
         {
             if (text == "@")
@@ -326,18 +326,21 @@ public partial class Interpreter
                         }
 
                         // error if this arg name already exists
-                        ValidateDefNameLegallity(null, argsp.FullText);
-                        if (args.Any(a => a.Name == argsp.FullText))
-                            Error($"The parameter name '{argsp.FullText}' is a duplicate.");
+                        ValidateDefNameLegallity(null, argsp?.FullText);
+                        if (args.Any(a => a.Name == argsp?.FullText))
+                            Error($"The parameter name '{argsp?.FullText}' is a duplicate.");
 
-                        args.Add(new ArgumentSpan(argsp.FullText, notnull));
+                        args.Add(new ArgumentSpan(argsp?.FullText, notnull));
                         argsp = ReadSpan();
                         if (argsp is CommaSpan)
                             argsp = ReadWord();
                         else if (argsp is ClosingBracketSpan)
                             break;
                         else
-                            Error($"Unexpected '{argsp.Text}'. Only ',' or ')' are expected here.");
+                        {
+                            Error(argsp == null ? $"Argument name was expected." : $"Unexpected '{argsp.Text}'. Only ',' or ')' are expected here.");
+                            break;
+                        }
                     }
                 }
 
@@ -661,7 +664,7 @@ public partial class Interpreter
                         WordSpan paramType = ReadWord();
                         string[] types = ["bool", "char", "number"];
                         Type[] types_ = [typeof(BoolValue), typeof(CharValue), typeof(NumberValue)];
-                        int indexOf = Array.IndexOf(types, paramType.Text);
+                        int indexOf = Array.IndexOf(types, paramType?.Text);
 
                         // if a premitive type was read, create as premitive type
                         if (indexOf >= 0)
@@ -671,7 +674,7 @@ public partial class Interpreter
                             // read class name
                             var defName = ReadDefName(paramType);
 
-                            prm = new AttributeParamSpan(defName, ReadWord().Text);
+                            prm = new AttributeParamSpan(defName, ReadWord()?.Text);
                         }
 
                         prms.Add(prm);

@@ -152,6 +152,8 @@ public class ScriptDocument
         compiler.Run(this);
     }
 
+    public bool ContainsCode => CodeSpans?.Any(s => s is not UsingWordSpan and not NamespaceWordSpan and not CommentSpan and not WhiteSpaceSpan) ?? true;
+
     public static ScriptDocument FromString(string script, string name)
     {
         return new ScriptDocument(script, name);

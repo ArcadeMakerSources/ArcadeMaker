@@ -18,7 +18,7 @@ namespace ArcadeMaker.Core.Runtime
             {
                 if (!isSorted)
                 {
-                    instances.Sort((a, b) => a.Depth.Value!.Number.CompareTo(b.Depth.Value!.Number));
+                    instances.Sort((a, b) => b.Depth.Value!.Number.CompareTo(a.Depth.Value!.Number));
                     isSorted = true;
                 }
                 return instances;
@@ -50,6 +50,36 @@ namespace ArcadeMaker.Core.Runtime
         public void AddInstance(Instance instance)
         {
             instances.Add(instance);
+
+            // --- LinkedList approach: ------------------
+            // find the instance that after it all instances have higher depth
+            //LinkedListNode<Instance>? addBefore = null;
+
+            //if (instances.Count >= 1)
+            //{
+            //    var next = instances.First;
+            //    while (next != null)
+            //    {
+            //        if (next.Value.Depth.Value!.Number < instance.Depth.Value!.Number)
+            //        {
+            //            addBefore = next;
+            //            break;
+            //        }
+            //        next = next.Next;
+            //    }
+            //}
+
+            //if (addBefore == null)
+            //{
+            //    if (instances.Count == 0)
+            //        instances.AddFirst(instance);
+            //    else
+            //        instances.AddLast(instance);
+            //}
+            //else
+            //    instances.AddBefore(addBefore, instance);
+            // ------------------------------------------------
+
             isSorted = false;
         }
 

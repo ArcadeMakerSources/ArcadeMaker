@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using System.Collections;
 using ArcadeMaker.IDE.Scripting;
+using ArcadeMaker.Core.ExpSrc;
 
 namespace ArcadeMaker.IDE
 {
@@ -123,6 +124,14 @@ namespace ArcadeMaker.IDE
         public Brush CurrentLineHighlightBrush { get => _currentLineHighlightBrush; set { _currentLineHighlightBrush = value; Invalidate(); } }
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Color LineNumbersColor { get => _lineNumbersColor; set { _lineNumbersColor = value; Invalidate(); } }
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public Color CaretColor { get; set; } = Color.White;
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public Color CompletionColor { get; set; } = Color.White;
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public Color CompletionBackColor { get; set; } = Color.DarkSlateGray;
 
 
         public new event EventHandler<SpansTextBox2TextChangedEventArgs> TextChanged;
@@ -139,6 +148,10 @@ namespace ArcadeMaker.IDE
         public SpansTextBox2()
         {
             InitializeComponent();
+
+            completionBox.BackColor = CompletionBackColor;
+            completionBox.ForeColor = CompletionColor;
+
             completionBox.SelectedValueChanged += (s, e) => ShowCompletionItemInfo();
             textStartLocX += vScrollBar.Width;
             drawTextFormat.FormatFlags = StringFormatFlags.MeasureTrailingSpaces;
@@ -154,13 +167,13 @@ namespace ArcadeMaker.IDE
             };
 
             ContextMenuStrip = new();
-            copyMenuBtn.Click  += (s, e) => Copy();
-            cutMenuBtn.Click   += (s, e) => Cut();
+            copyMenuBtn.Click += (s, e) => Copy();
+            cutMenuBtn.Click += (s, e) => Cut();
             pasteMenuBtn.Click += (s, e) => Paste();
             copyMenuBtn.ShortcutKeys = Keys.Control | Keys.C;
             cutMenuBtn.ShortcutKeys = Keys.Control | Keys.X;
             pasteMenuBtn.ShortcutKeys = Keys.Control | Keys.V;
-            ContextMenuStrip.Items.AddRange([ copyMenuBtn, cutMenuBtn, pasteMenuBtn ]);
+            ContextMenuStrip.Items.AddRange([copyMenuBtn, cutMenuBtn, pasteMenuBtn]);
             ContextMenuStrip.Opened += ContextMenu_Popup;
         }
 
@@ -355,7 +368,7 @@ namespace ArcadeMaker.IDE
                                 }
 
                                 // highlight current line
-                                HighlightLine:
+                            HighlightLine:
                                 if (caretAtCurrentLine)
                                 {
                                     float highlightY = (SelectionStart == 0 ? textStartLocY : y) + 2;
@@ -427,7 +440,7 @@ namespace ArcadeMaker.IDE
                                     x += charWidth;
 
                                 // draw caret
-                                pen.Color = Color.Black;
+                                pen.Color = this.CaretColor;
                                 float caretX = x, caretY = y + 2;
                                 bool drawCaretNow = false;
                                 if (totalCharIndex == SelectionStart - (caretInFirstChar ? 0 : 1))
@@ -551,7 +564,7 @@ namespace ArcadeMaker.IDE
                         e.Graphics.FillRectangle(pen.Brush, Width / 2 - rwidth / 2, Height / 2 - rheight / 2, rwidth, rheight);
                         /* using (*/
                         Brush textBrush = Brushes.White;
-                            e.Graphics.DrawString(text, Font, textBrush, Width / 2 - textSize.Width / 2, Height / 2 - textSize.Height / 2);
+                        e.Graphics.DrawString(text, Font, textBrush, Width / 2 - textSize.Width / 2, Height / 2 - textSize.Height / 2);
                     }
                 }
             }
@@ -1004,7 +1017,7 @@ namespace ArcadeMaker.IDE
                         }
                     }
 
-                    BreakPoint:
+                BreakPoint:
                     CharAlert?.Invoke(this, new SpansTextBox2CharAlertEventArgs(text[SelectionStart - 1], SelectionStart - 1, span));
                 }
             }
@@ -1502,7 +1515,7 @@ namespace ArcadeMaker.IDE
             completionBox.Location = loc;
 
             if (matchSug == null)
-                completionBox.SelectedIndex = 0;
+                completionBox.SelectedIndex = suggestions.Any() ? 0 : -1;
             else
                 completionBox.SelectedItem = matchSug;
 
@@ -1629,7 +1642,8 @@ namespace ArcadeMaker.IDE
             toolTipText = null;
             completionToolTip.Hide(this);
 
-            var ea = new CompletionItemInfoEventArgs(null, completionBox.SelectedItem as SpansTextBox2Suggestion);
+            var item = completionBox.SelectedItem as SpansTextBox2Suggestion;
+            var ea = new CompletionItemInfoEventArgs(item?.Description, item);
             OnCompletionItemShowInfo?.Invoke(this, ea);
             if (ea.Text != null)
             {
@@ -1638,22 +1652,26 @@ namespace ArcadeMaker.IDE
             }
         }
 
-        public int GetSpanIndexByCharIndex(int index)
+        public int GetSpanIndexByCharIndex(int index, out int spanStart)
         {
-            for (int spanIndex = 0, totalCharIndex = 0; spanIndex < Spans.Count; spanIndex++)
+            spanStart = 0;
+            for (int spanIndex = 0, totalCharIndex = 0; spanIndex < Spans.Count; spanIndex++, spanStart = totalCharIndex)
             {
                 for (int charIndex = 0; charIndex < Spans[spanIndex].text.Length; charIndex++, totalCharIndex++)
                 {
                     if (totalCharIndex == index)
+                    {
                         return spanIndex;
+                    }
                 }
             }
             return -1;
         }
 
-        public ScriptBoxSpan GetSpanByCharIndex(int index)
+        public ScriptBoxSpan GetSpanByCharIndex(int index) => GetSpanByCharIndex(index);
+        public ScriptBoxSpan GetSpanByCharIndex(int index, out int spanStart)
         {
-            int spanIndex = GetSpanIndexByCharIndex(index);
+            int spanIndex = GetSpanIndexByCharIndex(index, out spanStart);
             if (spanIndex >= 0)
                 return Spans[spanIndex];
             return null;
@@ -1738,6 +1756,24 @@ namespace ArcadeMaker.IDE
         {
             return MeasureString(str.ToString(), g);
         }
+
+        private void completionBox_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            if (e.Index < 0) return; // must!
+            var sug = (SpansTextBox2Suggestion)completionBox.Items[e.Index];
+
+            e.DrawBackground();
+
+            using Pen pen = new(CompletionColor);
+            using Pen typeLblPen = new(sug.TypeLabelColor);
+
+            // draw item text
+            e.Graphics.DrawString(sug.DisplayText, completionBox.Font, pen.Brush, e.Bounds);
+
+            // draw item type label
+            float lblX = e.Bounds.Width - e.Graphics.MeasureString(sug.Type, completionBox.Font).Width;
+            e.Graphics.DrawString(sug.Type, completionBox.Font, typeLblPen.Brush, lblX, e.Bounds.Y);
+        }
     }
 
     public enum TextChangedKind
@@ -1773,19 +1809,41 @@ namespace ArcadeMaker.IDE
         }
     }
 
-    public class SpansTextBox2Suggestion
+    public class SpansTextBox2Suggestion : IComparable<SpansTextBox2Suggestion>
     {
         public string DisplayText { get; set; }
         public string Text { get; set; }
-        public string Description { get; set; }
+        public string? Description { get; set; }
+        public Color TypeLabelColor { get; set; }
+        public string Type { get; set; } = "";
 
-        public SpansTextBox2Suggestion(string displayText, string text = null)
+        public SpansTextBox2Suggestion(string type, string displayText, string? text = null)
         {
-            if (text == null)
-                text = displayText;
+            text ??= displayText;
             this.DisplayText = displayText;
             this.Text = text;
+            this.Type = type;
         }
+
+        public SpansTextBox2Suggestion(Core.ExpSrc.ExternEngineItem expItem)
+        {
+            DisplayText = expItem.Name;
+            Text = expItem.Name;
+            Description = expItem.Desc;
+
+            if (expItem is ExternEngineFunc)
+            {
+                Type = "function";
+                TypeLabelColor = Color.DeepPink;
+            }
+            else if (expItem is ExternEngineProperty)
+            {
+                Type = "property";
+                TypeLabelColor = Color.IndianRed;
+            }
+        }
+
+        public int CompareTo(SpansTextBox2Suggestion? other) => string.Compare(DisplayText, other?.DisplayText);
 
         public override string ToString()
         {

@@ -16,7 +16,7 @@ namespace ArcadeMaker.Core.Runtime
         public TGame Game { get; }
         public Interpreter Interpreter { get; }
 
-        public GameRunner(TGame game)
+        public GameRunner(TGame game, bool removeEmptyEvents = true)
         {
             ArgumentNullException.ThrowIfNull(game);
 
@@ -26,9 +26,25 @@ namespace ArcadeMaker.Core.Runtime
 
             AddFuncsToInterpreter();
 
+            // build
+            ExpError[]? eventsErrors = null;
             Interpreter.Build(ScriptDocument.FromString("", "main.script"), game.Objects.Map(model => model.Class), game.Scripts.ToArray());
+            if (removeEmptyEvents)
+                game.Objects.ForEach(obj => obj.Events.ForEach(ev => ev.Docs!.ForEach(doc => doc.TryPrepare(Interpreter, out eventsErrors))));
+            if (eventsErrors?.Length >= 1)
+            {
+                // TODO: do something...
+            }
 
             CreatePropertiesInitializers();
+
+            if (removeEmptyEvents)
+            {
+                foreach (var model in Game.Objects)
+                {
+                    model.RemoveEmptyEvents();
+                }
+            }
         }
 
         private void CreatePropertiesInitializers()
@@ -37,6 +53,9 @@ namespace ArcadeMaker.Core.Runtime
 
             foreach (ObjectModel model in Game.Objects)
             {
+                if (model.ExtraProperties.Length == 0)
+                    continue;
+
                 // create a script that initializes the property for an instance
                 string initializerScript = $"using {ExpSrc.ExpSrc.EngineNamespace}\nusing {ExpSrc.ExpSrc.GameNamespace}\n\n";
 
@@ -202,9 +221,11 @@ namespace ArcadeMaker.Core.Runtime
 
             // run all step events for the current room
             var roominsts = Game.CurrentRoom.Instances;
+            //var node = roominsts.First;
             for (int i = 0; i < roominsts.Count; i++) // if we use foreach here, modifications to the list of instances (like destroying an instance and removing it from the list) would cause an exception, but with this for loop it won't
             {
                 var instance = roominsts[i];
+                //node = node.Next;
 
                 // run other events that belong to step (like KeyDown)
                 // run KeyDown events
@@ -212,7 +233,7 @@ namespace ArcadeMaker.Core.Runtime
                 {
                     if (Game.KeyDown(null, [((int)keyDownEv.Param).ToExp()]).Bool)
                     {
-                        foreach (var script in keyDownEv.Docs ?? [])
+                        foreach (var script in keyDownEv.Docs)
                             script.Run(Interpreter, instance);
                     }
                 }
@@ -222,7 +243,7 @@ namespace ArcadeMaker.Core.Runtime
                 {
                     if (Game.KeyPress(null, [((int)ev.Param).ToExp()]).Bool)
                     {
-                        foreach (var script in ev.Docs ?? [])
+                        foreach (var script in ev.Docs)
                             script.Run(Interpreter, instance);
                     }
                 }
@@ -232,7 +253,7 @@ namespace ArcadeMaker.Core.Runtime
                 {
                     if (Game.KeyRelease(null, [((int)ev.Param).ToExp()]).Bool)
                     {
-                        foreach (var script in ev.Docs ?? [])
+                        foreach (var script in ev.Docs)
                             script.Run(Interpreter, instance);
                     }
                 }
@@ -243,7 +264,7 @@ namespace ArcadeMaker.Core.Runtime
                     // also check collision with mouse
                     if (Game.MouseButtonDown(null, [((int)ev.Param).ToExp()]).Bool && Game.PointMeeting(instance, [Game.GetMouseX(null, []), Game.GetMouseY(null, [])]).Bool)
                     {
-                        foreach (var script in ev.Docs ?? [])
+                        foreach (var script in ev.Docs)
                             script.Run(Interpreter, instance);
                     }
                 }
@@ -254,7 +275,7 @@ namespace ArcadeMaker.Core.Runtime
                     // also check collision with mouse
                     if (Game.MouseButtonPress(null, [((int)ev.Param).ToExp()]).Bool && Game.PointMeeting(instance, [Game.GetMouseX(null, []), Game.GetMouseY(null, [])]).Bool)
                     {
-                        foreach (var script in ev.Docs ?? [])
+                        foreach (var script in ev.Docs)
                             script.Run(Interpreter, instance);
                     }
                 }
@@ -265,7 +286,7 @@ namespace ArcadeMaker.Core.Runtime
                     // also check collision with mouse
                     if (Game.MouseButtonRelease(null, [((int)ev.Param).ToExp()]).Bool && Game.PointMeeting(instance, [Game.GetMouseX(null, []), Game.GetMouseY(null, [])]).Bool)
                     {
-                        foreach (var script in ev.Docs ?? [])
+                        foreach (var script in ev.Docs)
                             script.Run(Interpreter, instance);
                     }
                 }
@@ -276,7 +297,7 @@ namespace ArcadeMaker.Core.Runtime
                     Runtime.Instance? other = Game.InstanceMeeting(instance, [instance.X.Value, instance.Y.Value, ev.Model.Class.ExpType]);
                     if (other != null)
                     {
-                        foreach (var script in ev.Docs ?? [])
+                        foreach (var script in ev.Docs)
                             script.Run(Interpreter, instance, other);
                     }
                 }
@@ -289,13 +310,13 @@ namespace ArcadeMaker.Core.Runtime
                 {
                     if (Game.OutsideRoom(instance, []).Bool)
                     {
-                        foreach (var script in instance.Model.OutsideRoomEvent?.Docs ?? [])
+                        foreach (var script in instance.Model.OutsideRoomEvent.Docs)
                             script.Run(Interpreter, instance);
                     }
                 }
 
                 if (instance.Model.StepEvent != null)
-                    foreach (var script in instance.Model.StepEvent.Docs!)
+                    foreach (var script in instance.Model.StepEvent.Docs)
                         script.Run(Interpreter, instance);
 
                 // move path
@@ -331,6 +352,17 @@ namespace ArcadeMaker.Core.Runtime
                             targetX += System.Math.Sign(targetX - view.X) * System.Math.Min(view.Follow_HSpeed, System.Math.Abs(targetX - view.X));
                         if (view.Follow_VSpeed > 0)
                             targetY += System.Math.Sign(targetY - view.Y) * System.Math.Min(view.Follow_VSpeed, System.Math.Abs(targetY - view.Y));
+                        
+                        // don't let the following view get out of the room
+                        if (targetX < 0)
+                            targetX = 0;
+                        else if (targetX + view.Width > Game.CurrentRoom.Model.Width)
+                            targetX = Game.CurrentRoom.Model.Width - view.Width;
+                        if (targetY < 0)
+                            targetY = 0;
+                        else if (targetY + view.Height > Game.CurrentRoom.Model.Height)
+                            targetY = Game.CurrentRoom.Model.Height - view.Height;
+
                         view.SetPosition(targetX, targetY);
                     }
                 }
@@ -359,8 +391,8 @@ namespace ArcadeMaker.Core.Runtime
             // run all draw events for the current room
             foreach (var instance in Game.GetActivatedRoom().SortedInstances)
             {
-                if (instance.Model.DrawEvent?.Docs!.Count >= 1)
-                    foreach (var script in instance.Model.DrawEvent.Docs!)
+                if (instance.Model.DrawEvent?.Docs.Count >= 1)
+                    foreach (var script in instance.Model.DrawEvent.Docs)
                         script.Run(Interpreter, instance, Game.CurrentViewIndex.ToExp());
                 else
                     Game.DrawInstance(instance);
@@ -395,12 +427,40 @@ namespace ArcadeMaker.Core.Runtime
             Game.GetActivatedRoom().RemoveInstance(inst);
 
             // run Destroy event
-            foreach (var script in inst.Model.DestroyEvent?.Docs ?? [])
+            if (inst.Model.DestroyEvent != null)
             {
-                script.Run(Interpreter, inst);
+                foreach (var script in inst.Model.DestroyEvent.Docs)
+                {
+                    script.Run(Interpreter, inst);
+                }
             }
 
             return Exp.Void.Return;
+        }
+
+        /// <summary>
+        /// Creates a new instance of the specified object type at the given coordinates and adds it to the active room.
+        /// </summary>
+        /// <param name="_">The calling EXP instance (unused).</param>
+        /// <param name="args">Arguments where args[0] and args[1] are the spawn X and Y coordinates and args[2] is the object type to instantiate.</param>
+        /// <returns>The newly created runtime instance.</returns>
+        [ExpFunc(3)]
+        public Runtime.Instance CreateInstance(Exp.Instance? _, IValue?[] args)
+        {
+            ObjectModel model = Game.Objects.FirstOrDefault(m => m.Class.ExpType == args[2].ThrowIfNull()) ?? throw new ArgumentException("Value of argument type must be a type of a game object.");
+            Runtime.Instance inst = new(model);
+            inst.X.Value = args[0];
+            inst.Y.Value = args[1];
+            Game.GetActivatedRoom().AddInstance(inst);
+
+            // run create event
+            if (inst.Model.CreateEvent != null)
+            {
+                foreach (var script in inst.Model.CreateEvent.Docs)
+                    script.Run(Interpreter, inst);
+            }
+
+            return inst;
         }
 
         public void Run(bool invokeInit = true)
@@ -470,7 +530,7 @@ namespace ArcadeMaker.Core.Runtime
             foreach (var instance in room.Instances)
             {
                 if (instance.Model.CreateEvent != null)
-                    foreach (var script in instance.Model.CreateEvent?.Docs!)
+                    foreach (var script in instance.Model.CreateEvent.Docs)
                         script.Run(Interpreter, instance);
             }
         }

@@ -1,4 +1,5 @@
-﻿using ArcadeMaker.Core.Resources;
+﻿using ArcadeMaker.Core.Math.Shapes;
+using ArcadeMaker.Core.Resources;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -9,6 +10,7 @@ public class RoomModel(string name, string caption, int w, int h, Color backgrou
 {
     private static int idCounter = 0;
     public int ID { get; } = idCounter++;
+    internal Rect Bounds { get; } = new() { X = 0, Y = 0, Width = w, Height = h, Angle = 0, OriginX = 0, OriginY = 0 };
     public string Name => name;
     public string Caption => caption;
     public RoomInitMap InitMap => initMap;

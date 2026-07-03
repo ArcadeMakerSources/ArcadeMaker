@@ -1,4 +1,6 @@
-﻿using Exp;
+﻿using ArcadeMaker.Core.Models;
+using ArcadeMaker.Core.Runtime;
+using Exp;
 using Exp.Spans;
 using System;
 using System.Collections.Generic;
@@ -36,6 +38,39 @@ namespace ArcadeMaker.Core.ExpSrc
             }
 
             return types;
+        }
+
+        public static List<ExternEngineItem> AllExternFuncsAndProperties { get => field ??= GetAllExternFuncsAndProperties(); }
+        private static List<ExternEngineItem> GetAllExternFuncsAndProperties()
+        {
+            List<ExternEngineItem> all = [];
+
+            void AddMarkedFuncs(object? instance, Type? type = null)
+            {
+                Type finalType = type ?? instance?.GetType() ?? throw new ArgumentNullException();
+
+                // methods
+                foreach (var methodInfo in finalType.GetMethods())
+                {
+                    var attr = methodInfo.GetCustomAttribute<ExpFuncAttribute>();
+                    if (attr != null)
+                        all.Add(new ExternEngineFunc(attr.CustomName ?? methodInfo.Name.StartWithLowerCase(), XmlDocReader.GetMethodSummary(methodInfo), methodInfo));
+                }
+
+                // properties
+                foreach (var propertyInfo in finalType.GetProperties())
+                {
+                    var attr = propertyInfo.GetCustomAttribute<ExpPropertyAttribute>();
+                    if (attr != null)
+                        all.Add(new ExternEngineProperty(propertyInfo.Name.StartWithLowerCase(), "", propertyInfo));
+                }
+            }
+
+            AddMarkedFuncs(null, typeof(IGame));
+            AddMarkedFuncs(null, typeof(GameRunner<>));
+            AddMarkedFuncs(null, typeof(Runtime.Instance));
+
+            return all;
         }
     }
 }
