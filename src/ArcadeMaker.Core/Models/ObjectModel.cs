@@ -21,18 +21,18 @@ namespace ArcadeMaker.Core.Models
         public ObjectProperty[] ExtraProperties { get; }
 
         internal ObjectEvent? CreateEvent { get; set; } // setter is required for the properties initializer generator
-        internal ObjectEvent? StepEvent { get; }
-        internal ObjectEvent? DrawEvent { get; }
-        internal ObjectEvent? DestroyEvent { get; }
-        internal ParameterizedObjectEvent<Keys>[] KeyDownEvents { get; }
-        internal ParameterizedObjectEvent<Keys>[] KeyPressEvents { get; }
-        internal ParameterizedObjectEvent<Keys>[] KeyReleaseEvents { get; }
-        internal ParameterizedObjectEvent<MouseButton>[] MouseDownEvents { get; }
-        internal ParameterizedObjectEvent<MouseButton>[] MousePressEvents { get; }
-        internal ParameterizedObjectEvent<MouseButton>[] MouseReleaseEvents { get; }
-        internal CollisionEvent[] CollisionEvents { get; }
-        internal ParameterizedObjectEvent<int>[] AlarmEvents { get; }
-        internal ObjectEvent? OutsideRoomEvent { get; }
+        internal ObjectEvent? StepEvent { get; private set; }
+        internal ObjectEvent? DrawEvent { get; private set; }
+        internal ObjectEvent? DestroyEvent { get; private set; }
+        internal ParameterizedObjectEvent<Keys>[] KeyDownEvents { get; private set; }
+        internal ParameterizedObjectEvent<Keys>[] KeyPressEvents { get; private set; }
+        internal ParameterizedObjectEvent<Keys>[] KeyReleaseEvents { get; private set; }
+        internal ParameterizedObjectEvent<MouseButton>[] MouseDownEvents { get; private set; }
+        internal ParameterizedObjectEvent<MouseButton>[] MousePressEvents { get; private set; }
+        internal ParameterizedObjectEvent<MouseButton>[] MouseReleaseEvents { get; private set; }
+        internal CollisionEvent[] CollisionEvents { get; private set; }
+        internal ParameterizedObjectEvent<int>[] AlarmEvents { get; private set; }
+        internal ObjectEvent? OutsideRoomEvent { get; private set; }
 
         public ObjectModel(string name, Sprite? sprite, ObjectEvent[] events, ObjectProperty[] extraProperties)
         {
@@ -41,23 +41,11 @@ namespace ArcadeMaker.Core.Models
             this.ExtraProperties = extraProperties;
 
             this.Class = CreateClass(name, extraProperties); // create a class for this object model
-            events.ForEach(e => e.CreateDocs(this.Class));
+            events.ForEach(e => e.CreateDocs(Class));
             
             this.Events = [..events];
 
-            CreateEvent        = GetEvent(ObjectEvent.EventType.Create);
-            StepEvent          = GetEvent(ObjectEvent.EventType.Step);
-            DrawEvent          = GetEvent(ObjectEvent.EventType.Draw);
-            DestroyEvent       = GetEvent(ObjectEvent.EventType.Destroy);
-            OutsideRoomEvent   = GetEvent(ObjectEvent.EventType.OutsideRoom);
-            KeyDownEvents      = [.. GetEvents<Keys>(ObjectEvent.EventType.KeyDown)];
-            KeyPressEvents     = [.. GetEvents<Keys>(ObjectEvent.EventType.KeyPress)];
-            KeyReleaseEvents   = [.. GetEvents<Keys>(ObjectEvent.EventType.KeyRelease)];
-            MouseDownEvents    = [.. GetEvents<MouseButton>(ObjectEvent.EventType.MouseDown)];
-            MousePressEvents   = [.. GetEvents<MouseButton>(ObjectEvent.EventType.MousePress)];
-            MouseReleaseEvents = [.. GetEvents<MouseButton>(ObjectEvent.EventType.MouseRelease)];
-            CollisionEvents    = [.. Events.OfType<CollisionEvent>()];
-            AlarmEvents        = [.. GetEvents<int>(ObjectEvent.EventType.Alarm)];
+            // AssignEvents() is called by RemoveEmptyEvents() which is called by GameRunner's ctor
         }
 
         private static ClassDefSpan CreateClass(string name, ObjectProperty[] extraProps)
@@ -95,6 +83,40 @@ namespace ArcadeMaker.Core.Models
         {
             return Events.OfType<ParameterizedObjectEvent<T>>().Where(e => e.Type == type);
         }
+
+        internal void RemoveEmptyEvents()
+        {
+            // this method is being called after TryPrepare(...) is called on all docs, so their ContainsCode property can be trusted
+            for (int i = 0; i < Events.Count; i++)
+            {
+                var ev = Events[i];
+                ev.Docs!.RemoveAll(doc => !doc.ContainsCode);
+                if (ev.Docs.Count == 0)
+                {
+                    Events.Remove(ev);
+                    i--;
+                }
+            }
+
+            AssignEvents();
+        }
+
+        private void AssignEvents()
+        {
+            CreateEvent = GetEvent(ObjectEvent.EventType.Create);
+            StepEvent = GetEvent(ObjectEvent.EventType.Step);
+            DrawEvent = GetEvent(ObjectEvent.EventType.Draw);
+            DestroyEvent = GetEvent(ObjectEvent.EventType.Destroy);
+            OutsideRoomEvent = GetEvent(ObjectEvent.EventType.OutsideRoom);
+            KeyDownEvents = [.. GetEvents<Keys>(ObjectEvent.EventType.KeyDown)];
+            KeyPressEvents = [.. GetEvents<Keys>(ObjectEvent.EventType.KeyPress)];
+            KeyReleaseEvents = [.. GetEvents<Keys>(ObjectEvent.EventType.KeyRelease)];
+            MouseDownEvents = [.. GetEvents<MouseButton>(ObjectEvent.EventType.MouseDown)];
+            MousePressEvents = [.. GetEvents<MouseButton>(ObjectEvent.EventType.MousePress)];
+            MouseReleaseEvents = [.. GetEvents<MouseButton>(ObjectEvent.EventType.MouseRelease)];
+            CollisionEvents = [.. Events.OfType<CollisionEvent>()];
+            AlarmEvents = [.. GetEvents<int>(ObjectEvent.EventType.Alarm)];
+        }
     }
 
     public class ObjectEvent
@@ -129,16 +151,12 @@ namespace ArcadeMaker.Core.Models
         public List<Wrapper<string>> Scripts { get; set; }
 
         [XmlIgnore]
-        public List<InstanceScriptDocument>? Docs { get; private set; }
+        public List<InstanceScriptDocument> Docs { get; } = [];
 
         public string[] ScriptArgs { get; set; }
 
         internal void CreateDocs(ClassDefSpan def)
         {
-            //if (Docs != null)
-            //    throw new InvalidOperationException("Documents were already been created.");
-
-            Docs = [];
             for (int i = 0; i < Scripts.Count; i++)
             {
                 Docs.Add(ExpSrc.ExpSrc.CreateInstanceScriptDocument($"{def.Name}.Events.{Type}{(GetParam(out var param) ? $"<{param}>" : "")}.{i}", def, Scripts[i] ?? throw new NullReferenceException($"{nameof(Scripts)}[{i}]"), ScriptArgs));

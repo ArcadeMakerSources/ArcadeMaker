@@ -102,17 +102,7 @@ namespace Exp
             }
         }
         private int codeCursor = 0;
-        private Span[] _codeSpans_;
-        private Span[] CodeSpans
-        {
-            get => _codeSpans_;
-            set
-            {
-                //if (value == null)
-                //throw new InvalidOperationException(nameof(codeSpans) + " cannot be null.");
-                _codeSpans_ = value;
-            }
-        }
+        private Span[] CodeSpans { get; set; }
 
         private readonly List<ScriptDocument> docs = [];
         private HashSet<string> currUsings = [];
@@ -713,7 +703,7 @@ namespace Exp
         public void ValidateDefNameLegallity(string ns, string name, int @params = -1)
         {
             if (!name.IsLiterallyValidName())
-                Error($"'{name ?? "null"}' is not a valid name.");
+                Error(name == null ? "Item name was expected." : $"'{name}' is not a valid name.");
 
             // validate in definations
             else if (definations.Any(d => d != null && d.Namespace == ns && d.Name == name && (d is not FuncDefSpan func || func.Args.Length == @params)))

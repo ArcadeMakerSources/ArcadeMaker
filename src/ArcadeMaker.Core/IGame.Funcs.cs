@@ -196,7 +196,7 @@ public partial interface IGame
             Angle = inst.ImageAngle.Value!.Number
         };
 
-        return SeperatingAxisTheorem.IsPointInRectangle(x, y, instRect).ToExp();
+        return SeparatingAxisTheorem.IsPointInRectangle(x, y, instRect).ToExp();
     }
 
     /// <summary>
@@ -240,34 +240,17 @@ public partial interface IGame
 
         BoolValue PlaceMeeting(double x, double y, Runtime.Instance other)
         {
-            if (inst == other)
+            if (inst == other || inst.Mask is null || other.Mask is null)
                 return false;
 
-            var instMask = inst.Model.Sprite!.Mask;
-            var instRect = new Rect
-            {
-                X = x,
-                Y = y,
-                Width = instMask.Right - instMask.Left + 1,
-                Height = instMask.Bottom - instMask.Top + 1,
-                OriginX = inst.Model.Sprite.OriginX - instMask.Left + 1,
-                OriginY = inst.Model.Sprite.OriginY - instMask.Top + 1,
-                Angle = inst.ImageAngle.Value!.Number
-            };
+            double originalX = inst.Mask.X, originalY = inst.Mask.Y;
+            inst.Mask.X = x; // note that this actually updates the value of inst.X
+            inst.Mask.Y = y; // same
 
-            var otherMask = other.Model.Sprite!.Mask;
-            var otherRect = new Rect
-            {
-                X = other.X.Value!.Number,
-                Y = other.Y.Value!.Number,
-                Width = otherMask.Right - otherMask.Left + 1,
-                Height = otherMask.Bottom - otherMask.Top + 1,
-                OriginX = other.Model.Sprite.OriginX - otherMask.Left + 1,
-                OriginY = other.Model.Sprite.OriginY - otherMask.Top + 1,
-                Angle = other.ImageAngle.Value!.Number
-            };
+            bool result = SeparatingAxisTheorem.AreRectanglesIntersecting(inst.Mask, other.Mask);
 
-            bool result = SeperatingAxisTheorem.AreRectanglesIntersecting(instRect, otherRect);
+            inst.Mask.X = originalX;
+            inst.Mask.Y = originalY;
 
             return result;
         }
@@ -317,33 +300,15 @@ public partial interface IGame
     [ExpFunc(IsNonStaticFuncOfGameObjects = true)]
     BoolValue OutsideRoom(Exp.Instance? expinst, IValue?[] args)
     {
-        var room = GetActivatedRoom().Model;
         var inst = (Runtime.Instance)expinst!;
+        var roomBounds = GetActivatedRoom().Model.Bounds;
 
-        Rect roomRect = new Rect
-        {
-            X = 0,
-            Y = 0,
-            Width = room.Width,
-            Height = room.Height,
-            OriginX = 0,
-            OriginY = 0,
-            Angle = 0
-        };
+        if (inst.Mask != null)
+            return !SeparatingAxisTheorem.AreRectanglesIntersecting(roomBounds, inst.Mask);
 
-        var instMask = inst.Model.Sprite!.Mask;
-        var instRect = new Rect
-        {
-            X = inst.X.Value!.Number,
-            Y = inst.Y.Value!.Number,
-            Width = instMask.Right - instMask.Left + 1,
-            Height = instMask.Bottom - instMask.Top + 1,
-            OriginX = inst.Model.Sprite.OriginX - instMask.Left + 1,
-            OriginY = inst.Model.Sprite.OriginY - instMask.Top + 1,
-            Angle = inst.ImageAngle.Value!.Number
-        };
-
-        return !Math.SeperatingAxisTheorem.AreRectanglesIntersecting(roomRect, instRect);
+        double x = inst.X.Value!.Number, y = inst.Y.Value!.Number;
+        return x >= roomBounds.X && x <= roomBounds.X + roomBounds.Width &&
+               y >= roomBounds.Y && y <= roomBounds.Y + roomBounds.Height;
     }
 
     /// <summary>
@@ -439,24 +404,6 @@ public partial interface IGame
     /// <param name="args">Arguments where args[0] is the message to show.</param>
     [ExpFunc(1)]
     Exp.Void ShowMessage(Exp.Instance? _, IValue?[] args);
-
-    /// <summary>
-    /// Creates a new instance of the specified object type at the given coordinates and adds it to the active room.
-    /// </summary>
-    /// <param name="_">The calling EXP instance (unused).</param>
-    /// <param name="args">Arguments where args[0] and args[1] are the spawn X and Y coordinates and args[2] is the object type to instantiate.</param>
-    /// <returns>The newly created runtime instance.</returns>
-    [ExpFunc(3)]
-    Runtime.Instance CreateInstance(Exp.Instance? _, IValue?[] args)
-    {
-        var (x, y, type) = args.ValidateArguments<NumberValue, NumberValue, Exp.Instance>();
-        ObjectModel model = Objects.FirstOrDefault(m => m.Class.ExpType == type) ?? throw new ArgumentException("Value of argument type must be a type of a game object.");
-        Runtime.Instance inst = new(model);
-        inst.X.Value = x;
-        inst.Y.Value = y;
-        GetActivatedRoom().AddInstance(inst);
-        return inst;
-    }
 
     /// <summary>
     /// Sets the calling instance's direction and speed so it moves towards the specified point.

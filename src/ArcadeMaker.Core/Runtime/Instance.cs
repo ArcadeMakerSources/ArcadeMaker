@@ -1,4 +1,5 @@
-﻿using ArcadeMaker.Core.Models;
+﻿using ArcadeMaker.Core.Math.Shapes;
+using ArcadeMaker.Core.Models;
 using ArcadeMaker.Core.Resources.Serializeables;
 using Exp;
 using Exp.Spans;
@@ -52,6 +53,8 @@ public class Instance : Exp.Instance
     [ExpProperty]
     public TypeVariable ImageYScale { get; }
 
+    public Rect? Mask { get; private set; }
+
     private double depth;
     public event EventHandler<double>? DepthChanged;
     [ExpProperty]
@@ -80,6 +83,8 @@ public class Instance : Exp.Instance
     public Instance(ObjectModel model) : base(model.Class, addProperties: false)
     {
         this.Model = model;
+
+        InitMask();
 
         // assign properties
         var isNumChecker = new Func<IValue?, bool>(v => v?.IsNumber == true);
@@ -193,6 +198,22 @@ public class Instance : Exp.Instance
         DepthChanged?.Invoke(this, depth);
     }
 
+    private void InitMask()
+    {
+        var instMask = Model.Sprite?.Mask;
+
+        if (instMask == null)
+            return;
+
+        Mask = new MirrorRect(this)
+        {
+            Width = instMask.Right - instMask.Left + 1,
+            Height = instMask.Bottom - instMask.Top + 1,
+            OriginX = Model.Sprite!.OriginX - instMask.Left + 1,
+            OriginY = Model.Sprite.OriginY - instMask.Top + 1
+        };
+    }
+
     // consider: [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void TickAlarms(Interpreter runner)
     {
@@ -210,5 +231,12 @@ public class Instance : Exp.Instance
                 Alarm[i].number--;
             }
         }
+    }
+
+    private class MirrorRect(Instance src) : Rect
+    {
+        public override double X { get => src.X.Value!.Number; set => src.X.Value = value.ToExp(); }
+        public override double Y { get => src.Y.Value!.Number; set => src.Y.Value = value.ToExp(); }
+        public override double Angle { get => src.ImageAngle.Value!.Number; set => src.ImageAngle.Value = value.ToExp(); }
     }
 }

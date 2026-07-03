@@ -63,7 +63,7 @@ internal static class Debug
             futileGame.Paths.AddRange(Environment.project.items.OfType<GamePath>().Map(p => new Core.Resources.Path(p.name, 0, 0, [])));
             futileGame.Rooms.AddRange(Environment.project.items.OfType<GameRoom>().Map(r => new RoomModel(r.name, "", 0, 0, default, new([]))));
 
-            GameRunner = new(futileGame);
+            GameRunner = new(futileGame, removeEmptyEvents: false);
 
             // catch errors in event scripts
             futileGame.Objects.ForEach(model =>

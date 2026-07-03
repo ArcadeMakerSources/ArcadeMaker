@@ -1,5 +1,8 @@
 <Solution>
   <Folder Name="/doc/" />
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/ArcadeMaker.Core/ArcadeMaker.Core.csproj" />
     <Project Path="src/ArcadeMaker.IDE/ArcadeMaker.IDE.csproj" />
