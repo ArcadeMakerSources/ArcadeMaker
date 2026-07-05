@@ -62,6 +62,7 @@ namespace ArcadeMaker.IDE
             // 
             // completionBox
             // 
+            completionBox.Cursor = Cursors.Default;
             completionBox.DrawMode = DrawMode.OwnerDrawFixed;
             completionBox.FormattingEnabled = true;
             completionBox.Location = new Point(20, 230);

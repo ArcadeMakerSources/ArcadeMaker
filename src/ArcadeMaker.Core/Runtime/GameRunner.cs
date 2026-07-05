@@ -445,6 +445,9 @@ namespace ArcadeMaker.Core.Runtime
         /// <param name="args">Arguments where args[0] and args[1] are the spawn X and Y coordinates and args[2] is the object type to instantiate.</param>
         /// <returns>The newly created runtime instance.</returns>
         [ExpFunc(3)]
+        [Param("x", ParamType.Number, "The x position to create the new instance at.")]
+        [Param("y", ParamType.Number, "The y position to create the new instance at.")]
+        [Param("type", ParamType.Type, "The type of object to create.")]
         public Runtime.Instance CreateInstance(Exp.Instance? _, IValue?[] args)
         {
             ObjectModel model = Game.Objects.FirstOrDefault(m => m.Class.ExpType == args[2].ThrowIfNull()) ?? throw new ArgumentException("Value of argument type must be a type of a game object.");
