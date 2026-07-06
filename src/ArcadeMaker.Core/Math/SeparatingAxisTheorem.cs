@@ -25,6 +25,14 @@ public static class SeparatingAxisTheorem
 
     public static bool AreRectanglesIntersecting(Rect rect1, Rect rect2)
     {
+        // Broad phase: check if bounding circles overlap, if not we can skip SAT
+        double minDist = HalfDiagonal(rect1) + HalfDiagonal(rect2);
+        if (Formulas.DistanceBetween(
+            rect1.X + rect1.Width / 2 - rect1.OriginX, rect1.Y + rect1.Height / 2 - rect1.OriginY,
+            rect2.X + rect2.Width / 2 - rect2.OriginX, rect2.Y + rect2.Height / 2 - rect2.OriginY
+        ) > minDist)
+            return false;
+
         // Get the four corners of each rectangle in world space
         var corners1 = GetRotatedCorners(rect1);
         var corners2 = GetRotatedCorners(rect2);
@@ -118,6 +126,8 @@ public static class SeparatingAxisTheorem
 
         return (min, max);
     }
+
+    private static double HalfDiagonal(Rect rect) => System.Math.Sqrt(rect.Width * rect.Width + rect.Height * rect.Height) / 2;
 }
 
 
