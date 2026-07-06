@@ -207,7 +207,7 @@ namespace ArcadeMaker.IDE
             // if it's a word and not another kind of span, show the suggestions which contains this word
             if (word != null)
             {
-                var suggestions = expSuggestions.Where(sug => sug.DisplayText.Contains(word, StringComparison.CurrentCultureIgnoreCase));
+                var suggestions = expSuggestions.Where(sug => sug.Text.Contains(word, StringComparison.CurrentCultureIgnoreCase));
                 scriptBox.ShowSuggestions([.. suggestions], spanStart, spanStart + word.Length);
             }
         }

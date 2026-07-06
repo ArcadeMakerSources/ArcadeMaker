@@ -442,8 +442,10 @@ public partial class Interpreter
                             propsp = ReadWord();
                         else if (propsp is ClosingBracketSpan)
                             break;
-                        else
+                        else if (propsp != null)
                             Error($"Unexpected '{propsp.Text}'. Only ',' or ')' are expected here.");
+                        else
+                            Error("Missing ).");
                     }
                 }
 
