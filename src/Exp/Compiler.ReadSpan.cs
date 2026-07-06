@@ -302,7 +302,7 @@ public partial class Interpreter
                 bool ctor = text == ConstructorDefSpan.Keyword;
 
                 if (!ctor && Spoiler() is not OpeningBracketSpan)
-                    name = ReadWord().FullText;
+                    name = ReadWord()?.FullText ?? "<<MissingName>>";
 
                 Read<OpeningBracketSpan>();
 
@@ -410,7 +410,7 @@ public partial class Interpreter
                         }
 
                         // read param name
-                        string pname = propsp.FullText;
+                        string pname = propsp?.FullText ?? "<<MissingName>>";
 
                         // after pname
                         propsp = ReadSpan();

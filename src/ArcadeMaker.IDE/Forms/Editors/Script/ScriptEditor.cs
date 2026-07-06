@@ -199,6 +199,9 @@ namespace ArcadeMaker.IDE
         {
             // get the word the caret is currently on
             var textSpan = scriptBox.GetSpanByCharIndex(scriptBox.SelectionStart - 1, out int spanStart);
+            if (textSpan == null)
+                return;
+
             string? word = textSpan.type == SpanType.Normal ? textSpan.text : null;
 
             // if it's a word and not another kind of span, show the suggestions which contains this word

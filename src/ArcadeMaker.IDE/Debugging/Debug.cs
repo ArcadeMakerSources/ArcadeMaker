@@ -109,7 +109,7 @@ internal static class Debug
         {
             CatchErrors(ex.Errors.Map(e => new ProjectError(e)));
         }
-        catch (Exception ex) when (false)
+        catch (Exception ex)
         {
             CatchErrors([new("Debugger", $"Uncaught build exception: {ex.Message}.", "", 0, [])]);
         }
