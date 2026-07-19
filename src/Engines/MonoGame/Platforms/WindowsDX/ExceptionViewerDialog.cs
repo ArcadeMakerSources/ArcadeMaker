@@ -7,7 +7,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
-namespace ArcadeMaker.Engines.MonoGame.WindowsDX
+namespace ArcadeMaker.Engines.MonoGame.Platforms.WindowsDX
 {
     public partial class ExceptionViewerDialog : Form
     {
@@ -35,6 +35,11 @@ namespace ArcadeMaker.Engines.MonoGame.WindowsDX
         {
             DialogResult = DialogResult.Ignore;
             Close();
+        }
+
+        private void ExceptionViewerDialog_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

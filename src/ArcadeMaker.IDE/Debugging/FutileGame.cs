@@ -22,9 +22,8 @@ internal sealed class FutileGame : ArcadeMaker.Core.IGame
     public List<ScriptDocument> Scripts { get; } = [];
     public RoomInstance? CurrentRoom { get; set; }
     public TextureAtlasMap MainTextureAtlasMap { get; set; }
+    public string MainTextureAtlasFilePath { get; set; }
     public int CurrentViewIndex { get; }
-
-    public StringWriter Debug { get; }
 
     public void Init() { }
     public Exp.Void DrawInstance(ArcadeMaker.Core.Runtime.Instance instance) => Exp.Void.Return;

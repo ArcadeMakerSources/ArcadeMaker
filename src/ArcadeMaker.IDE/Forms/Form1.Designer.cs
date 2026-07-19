@@ -31,6 +31,7 @@ namespace ArcadeMaker.IDE
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             TreeNode treeNode1 = new TreeNode("Sprites");
             TreeNode treeNode2 = new TreeNode("Sounds");
             TreeNode treeNode3 = new TreeNode("Backgrounds");
@@ -69,16 +70,30 @@ namespace ArcadeMaker.IDE
             assemblyManagerBtn = new ToolStripMenuItem();
             splitter1 = new Splitter();
             errorsPanel = new Panel();
-            label1 = new Label();
+            buttomPanelTabs = new TabControl();
+            tabPage1 = new TabPage();
             errorsBox = new ListView();
             errorsBox_InCol = new ColumnHeader();
             errorsBox_DescCol = new ColumnHeader();
             errorsBox_FileCol = new ColumnHeader();
             errorsBox_LineCol = new ColumnHeader();
+            debugConsoleTab = new TabPage();
+            clearDebugConsoleBtn = new Button();
+            debugConsoleTimestampBox = new CheckBox();
+            debugInputLbl = new Label();
+            debugInputBtn = new Button();
+            debugInputBox = new TextBox();
+            debugConsoleBox = new RichTextBox();
             splitter2 = new Splitter();
+            debugInputBoxBalloon = new ToolTip(components);
+            debugInputErrorProvider = new ErrorProvider(components);
             toolStrip1.SuspendLayout();
             mainMenuStrip.SuspendLayout();
             errorsPanel.SuspendLayout();
+            buttomPanelTabs.SuspendLayout();
+            tabPage1.SuspendLayout();
+            debugConsoleTab.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)debugInputErrorProvider).BeginInit();
             SuspendLayout();
             // 
             // projectTree
@@ -335,32 +350,44 @@ namespace ArcadeMaker.IDE
             // 
             // errorsPanel
             // 
-            errorsPanel.Controls.Add(label1);
-            errorsPanel.Controls.Add(errorsBox);
+            errorsPanel.Controls.Add(buttomPanelTabs);
             errorsPanel.Dock = DockStyle.Bottom;
             errorsPanel.Location = new Point(207, 348);
             errorsPanel.Name = "errorsPanel";
             errorsPanel.Size = new Size(726, 171);
             errorsPanel.TabIndex = 6;
             // 
-            // label1
+            // buttomPanelTabs
             // 
-            label1.AutoSize = true;
-            label1.Location = new Point(7, 8);
-            label1.Name = "label1";
-            label1.Size = new Size(53, 15);
-            label1.TabIndex = 1;
-            label1.Text = "Error List";
+            buttomPanelTabs.Controls.Add(tabPage1);
+            buttomPanelTabs.Controls.Add(debugConsoleTab);
+            buttomPanelTabs.Dock = DockStyle.Fill;
+            buttomPanelTabs.Location = new Point(0, 0);
+            buttomPanelTabs.Name = "buttomPanelTabs";
+            buttomPanelTabs.SelectedIndex = 0;
+            buttomPanelTabs.Size = new Size(726, 171);
+            buttomPanelTabs.TabIndex = 2;
+            // 
+            // tabPage1
+            // 
+            tabPage1.Controls.Add(errorsBox);
+            tabPage1.Location = new Point(4, 24);
+            tabPage1.Name = "tabPage1";
+            tabPage1.Padding = new Padding(3);
+            tabPage1.Size = new Size(718, 143);
+            tabPage1.TabIndex = 0;
+            tabPage1.Text = "Error List";
+            tabPage1.UseVisualStyleBackColor = true;
             // 
             // errorsBox
             // 
-            errorsBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             errorsBox.Columns.AddRange(new ColumnHeader[] { errorsBox_InCol, errorsBox_DescCol, errorsBox_FileCol, errorsBox_LineCol });
+            errorsBox.Dock = DockStyle.Fill;
             errorsBox.FullRowSelect = true;
-            errorsBox.Location = new Point(7, 26);
+            errorsBox.Location = new Point(3, 3);
             errorsBox.MultiSelect = false;
             errorsBox.Name = "errorsBox";
-            errorsBox.Size = new Size(707, 133);
+            errorsBox.Size = new Size(712, 137);
             errorsBox.TabIndex = 0;
             errorsBox.UseCompatibleStateImageBehavior = false;
             errorsBox.View = View.Details;
@@ -383,6 +410,83 @@ namespace ArcadeMaker.IDE
             // 
             errorsBox_LineCol.Text = "Line";
             // 
+            // debugConsoleTab
+            // 
+            debugConsoleTab.Controls.Add(clearDebugConsoleBtn);
+            debugConsoleTab.Controls.Add(debugConsoleTimestampBox);
+            debugConsoleTab.Controls.Add(debugInputLbl);
+            debugConsoleTab.Controls.Add(debugInputBtn);
+            debugConsoleTab.Controls.Add(debugInputBox);
+            debugConsoleTab.Controls.Add(debugConsoleBox);
+            debugConsoleTab.Location = new Point(4, 24);
+            debugConsoleTab.Name = "debugConsoleTab";
+            debugConsoleTab.Padding = new Padding(3);
+            debugConsoleTab.Size = new Size(718, 143);
+            debugConsoleTab.TabIndex = 1;
+            debugConsoleTab.Text = "Debug Console";
+            debugConsoleTab.UseVisualStyleBackColor = true;
+            // 
+            // clearDebugConsoleBtn
+            // 
+            clearDebugConsoleBtn.Location = new Point(6, 83);
+            clearDebugConsoleBtn.Name = "clearDebugConsoleBtn";
+            clearDebugConsoleBtn.Size = new Size(75, 23);
+            clearDebugConsoleBtn.TabIndex = 5;
+            clearDebugConsoleBtn.Text = "Clear";
+            clearDebugConsoleBtn.UseVisualStyleBackColor = true;
+            clearDebugConsoleBtn.Click += clearDebugConsoleBtn_Click;
+            // 
+            // debugConsoleTimestampBox
+            // 
+            debugConsoleTimestampBox.AutoSize = true;
+            debugConsoleTimestampBox.Location = new Point(87, 86);
+            debugConsoleTimestampBox.Name = "debugConsoleTimestampBox";
+            debugConsoleTimestampBox.Size = new Size(90, 19);
+            debugConsoleTimestampBox.TabIndex = 4;
+            debugConsoleTimestampBox.Text = "Timestamps";
+            debugConsoleTimestampBox.UseVisualStyleBackColor = true;
+            // 
+            // debugInputLbl
+            // 
+            debugInputLbl.AutoSize = true;
+            debugInputLbl.Location = new Point(6, 115);
+            debugInputLbl.Name = "debugInputLbl";
+            debugInputLbl.Size = new Size(38, 15);
+            debugInputLbl.TabIndex = 3;
+            debugInputLbl.Text = "Input:";
+            // 
+            // debugInputBtn
+            // 
+            debugInputBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            debugInputBtn.Enabled = false;
+            debugInputBtn.Location = new Point(635, 111);
+            debugInputBtn.Name = "debugInputBtn";
+            debugInputBtn.Size = new Size(75, 23);
+            debugInputBtn.TabIndex = 2;
+            debugInputBtn.Text = "Send";
+            debugInputBtn.UseVisualStyleBackColor = true;
+            debugInputBtn.Click += debugInputBtn_Click;
+            // 
+            // debugInputBox
+            // 
+            debugInputBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            debugInputBox.Location = new Point(50, 112);
+            debugInputBox.Name = "debugInputBox";
+            debugInputBox.Size = new Size(581, 23);
+            debugInputBox.TabIndex = 1;
+            debugInputBox.TextChanged += debugInputBox_TextChanged;
+            debugInputBox.KeyDown += debugInputBox_KeyDown;
+            // 
+            // debugConsoleBox
+            // 
+            debugConsoleBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            debugConsoleBox.Location = new Point(6, 3);
+            debugConsoleBox.Name = "debugConsoleBox";
+            debugConsoleBox.ReadOnly = true;
+            debugConsoleBox.Size = new Size(704, 71);
+            debugConsoleBox.TabIndex = 0;
+            debugConsoleBox.Text = "";
+            // 
             // splitter2
             // 
             splitter2.Dock = DockStyle.Bottom;
@@ -391,6 +495,17 @@ namespace ArcadeMaker.IDE
             splitter2.Size = new Size(726, 3);
             splitter2.TabIndex = 7;
             splitter2.TabStop = false;
+            // 
+            // debugInputBoxBalloon
+            // 
+            debugInputBoxBalloon.IsBalloon = true;
+            debugInputBoxBalloon.ToolTipIcon = ToolTipIcon.Error;
+            debugInputBoxBalloon.ToolTipTitle = "Invalid Debug Input";
+            // 
+            // debugInputErrorProvider
+            // 
+            debugInputErrorProvider.BlinkStyle = ErrorBlinkStyle.NeverBlink;
+            debugInputErrorProvider.ContainerControl = this;
             // 
             // Form1
             // 
@@ -416,7 +531,11 @@ namespace ArcadeMaker.IDE
             mainMenuStrip.ResumeLayout(false);
             mainMenuStrip.PerformLayout();
             errorsPanel.ResumeLayout(false);
-            errorsPanel.PerformLayout();
+            buttomPanelTabs.ResumeLayout(false);
+            tabPage1.ResumeLayout(false);
+            debugConsoleTab.ResumeLayout(false);
+            debugConsoleTab.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)debugInputErrorProvider).EndInit();
             ResumeLayout(false);
             PerformLayout();
 
@@ -456,9 +575,19 @@ namespace ArcadeMaker.IDE
         private ColumnHeader errorsBox_InCol;
         private ColumnHeader errorsBox_DescCol;
         private ColumnHeader errorsBox_FileCol;
-        private Label label1;
         internal ListView errorsBox;
         private ColumnHeader errorsBox_LineCol;
+        private TabControl buttomPanelTabs;
+        private TabPage tabPage1;
+        private TabPage debugConsoleTab;
+        private RichTextBox debugConsoleBox;
+        private Button debugInputBtn;
+        private TextBox debugInputBox;
+        private Label debugInputLbl;
+        private CheckBox debugConsoleTimestampBox;
+        private Button clearDebugConsoleBtn;
+        private ToolTip debugInputBoxBalloon;
+        private ErrorProvider debugInputErrorProvider;
     }
 }
 

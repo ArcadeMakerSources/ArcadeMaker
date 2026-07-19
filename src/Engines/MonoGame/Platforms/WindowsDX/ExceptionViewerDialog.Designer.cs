@@ -1,4 +1,4 @@
-﻿namespace ArcadeMaker.Engines.MonoGame.WindowsDX
+﻿namespace ArcadeMaker.Engines.MonoGame.Platforms.WindowsDX
 {
     partial class ExceptionViewerDialog
     {
@@ -72,6 +72,7 @@
             Controls.Add(textBox);
             Name = "ExceptionViewerDialog";
             Text = "Uncaught Exception";
+            Load += ExceptionViewerDialog_Load;
             ResumeLayout(false);
         }
 

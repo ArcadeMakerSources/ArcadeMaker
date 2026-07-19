@@ -21,4 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\ArcadeMaker.Core\ArcadeMaker.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Audio\" />
+  </ItemGroup>
 </Project>

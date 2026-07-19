@@ -1,21 +1,23 @@
-﻿using System;
+﻿using ArcadeMaker.IDE;
+using ArcadeMaker.IDE.Items;
+using SharpDX.MediaFoundation;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.IO;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Text.RegularExpressions;
-using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Resources;
 using System.Runtime.InteropServices;
-using System.Xml.Serialization;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 using System.Xml;
-using ArcadeMaker.IDE;
-using ArcadeMaker.IDE.Items;
+using System.Xml.Serialization;
 
 namespace ArcadeMaker.IDE
 {
@@ -25,6 +27,7 @@ namespace ArcadeMaker.IDE
 
         public static bool allowClosing = false;
         public static Form1 form1 = null;
+
         public static bool IsEnglishLettersAndNumbers(this string text, char[] specials = null, bool allowEmpty = true)
         {
             if (text == null)

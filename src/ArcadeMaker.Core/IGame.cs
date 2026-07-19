@@ -1,24 +1,26 @@
 ﻿using ArcadeMaker.Core.Exceptions;
+using ArcadeMaker.Core.ExpSrc;
+using ArcadeMaker.Core.ExpSrc.Controls;
+using ArcadeMaker.Core.Math;
+using ArcadeMaker.Core.Math.Shapes;
 using ArcadeMaker.Core.Models;
 using ArcadeMaker.Core.Resources;
 using ArcadeMaker.Core.Resources.Serializeables;
 using ArcadeMaker.Core.Runtime;
-using ArcadeMaker.Core.ExpSrc;
 using Exp;
+using Exp.Spans;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Drawing;
 using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using System.Xml.Serialization;
-using ArcadeMaker.Core.Math;
-using ArcadeMaker.Core.Math.Shapes;
-using Exp.Spans;
-using System.ComponentModel.DataAnnotations;
-using ArcadeMaker.Core.ExpSrc.Controls;
-using System.Runtime.CompilerServices;
+using static System.Net.Mime.MediaTypeNames;
+using System.Resources.NetStandard;
 
 namespace ArcadeMaker.Core;
 
@@ -34,9 +36,8 @@ public partial interface IGame
     List<ScriptDocument> Scripts { get; }
     RoomInstance? CurrentRoom { get; set; }
     TextureAtlasMap MainTextureAtlasMap { get; set; }
+    string MainTextureAtlasFilePath { get; set; }
     int CurrentViewIndex { get; }
-
-    StringWriter Debug { get; }
 
     void Init();
     Exp.Void DrawInstance(Runtime.Instance inst);
@@ -49,11 +50,76 @@ public partial interface IGame
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal RoomInstance GetActivatedRoom() => CurrentRoom ?? throw new NoActivatedRoomException(); // TODO: skip this method...
     private static event EventHandler? OnProjectLoadingComplete;
-    public void LoadFromProject(SerializeableGameProject sproject, string filePath)
+    public bool LoadFromProject(SerializeableGameProject sproject, Stream? bundledProjectFileStream, string? filePath)
     {
+        // validate that arguments are valid
+        if (bundledProjectFileStream == null && filePath == null)
+            throw new ArgumentNullException(message: $"Argument {nameof(bundledProjectFileStream)} OR argument {nameof(filePath)} must have a value.", null);
+        
+        // find directory of project file, if there's one
+        string? fileDir = System.IO.Path.GetDirectoryName(filePath);
+
+        // check file format
+        string fileExt = filePath == null ? SerializeableGameProject.FileFormat_AMPB : filePath.Substring(filePath.LastIndexOf('.'));
+        bool bundled = fileExt switch
+        {
+            SerializeableGameProject.FileFormat_AMP => false,
+            SerializeableGameProject.FileFormat_AMPB => true,
+            _ => throw new FormatException($"Unsupported project file format ({fileExt}).")
+        };
+
         try
         {
-            string projectFileLocation = filePath.Substring(0, filePath.LastIndexOf('\\'));
+            // if it's a bundled project format, create a ResourceReader for the project file
+            FileStream? fileStream = null;
+            bundledProjectFileStream ??= bundled ? fileStream = File.OpenRead(filePath!) : null;
+            using var _ = fileStream; // dispose it if it exists
+            using ResXResourceReader? resourceReader = bundled ? new(bundledProjectFileStream!) : null;
+
+            // a method to get an absolute path from a relative one
+            string AbsPath(string relativePath) => fileDir + (relativePath.StartsWith('\\') ? "" : "\\") + relativePath;
+
+            // a method to save a resource, wether it's a bundled project file or normal
+            object? LoadResource(string key)
+            {
+                if (bundled)
+                {
+                    var resourceDictionary = resourceReader!.GetEnumerator();
+                    while (resourceDictionary.MoveNext())
+                    {
+                        if (key.Equals(resourceDictionary.Key))
+                            return resourceDictionary.Value;
+                    }
+
+                    throw new KeyNotFoundException("Bundled project file did not contain key '" + key + "'.");
+                }
+                else
+                {
+                    return File.ReadAllBytes(AbsPath(key));
+                }
+            }
+
+            // a method to save text, wether it's a bundled project file or normal
+            string LoadText(string key)
+            {
+                if (bundled)
+                {
+                    return (string)LoadResource(key);
+                }
+                else
+                {
+                    try
+                    {
+                        return File.ReadAllText(AbsPath(key));
+                    }
+                    catch
+                    {
+                        throw;
+                    }
+                }
+            }
+
+            string projectFileLocation = fileDir;
             foreach (SerializeableGameItem item in sproject.items)
             {
                 if (item is SerializeableGameSprite ssprite)
@@ -76,7 +142,7 @@ public partial interface IGame
                 }
                 else if (item is SerializeableGameSound ssound)
                 {
-                    Sounds.Add(new(ssound.name, projectFileLocation + ssound.path, ssound.volume, ssound.pan, ssound.patch, ssound.type));
+                    Sounds.Add(new(ssound.name, ssound.path, ssound.volume, ssound.pan, ssound.patch, ssound.type));
                 }
                 else if (item is SerializeableGamePath spath)
                 {
@@ -112,7 +178,7 @@ public partial interface IGame
                 }
                 else if (item is SerializeableGameScript script)
                 {
-                    var doc = ScriptDocument.FromFile(projectFileLocation + script.path);
+                    var doc = ScriptDocument.FromString(LoadText(script.path), script.name);
                     doc.Usings.AddRange(ExpSrc.ExpSrc.GlobalUsings);
                     doc.Namespace ??= ExpSrc.ExpSrc.GameNamespace;
                     Scripts.Add(doc);
@@ -126,23 +192,6 @@ public partial interface IGame
                 }
                 else if (item is SerializeableGameObject sobj)
                 {
-                    // load event scripts
-                    //List<InstanceScriptDocument> createEv = [], stepEv = [], drawEv = [];
-                    //foreach (var evscripts in sobj.events)
-                    //{
-                    //    //string createEvScript = File.ReadAllText($"{projectFileLocation}\\{sobj.name}.Create.cs");
-                    //    //string stepEvScript = File.ReadAllText($"{projectFileLocation}\\{sobj.name}.Step.cs");
-                    //    //string drawEvScript = File.ReadAllText($"{projectFileLocation}\\{sobj.name}.Draw.cs");
-                    //    List<InstanceScriptDocument> list = evscripts.Type switch
-                    //    {
-                    //        ObjectEvent.EventType.Create => createEv,
-                    //        ObjectEvent.EventType.Step => stepEv,
-                    //        ObjectEvent.EventType.Draw => drawEv,
-                    //        _ => throw new NotImplementedException($"Unsupported event type: {evscripts.Type}.")
-                    //    };
-                    //    evscripts.Scripts.ForEach(script => { if (!string.IsNullOrWhiteSpace(script.Script)) list.Add(ExpSrc.ExpSrc.CreateInstanceScriptDocument($"{evscripts.Type} event of {sobj.name}", null, script.Script, evscripts.Type == ObjectEvent.EventType.Draw ? [ExpSrc.ExpSrc.CURRENT_VIEW_INDEX_ARG_NAME] : [])); });
-                    //}
-
                     ObjectModel obj = new(sobj.name, Sprites.FirstOrDefault(spr => spr.Name == sobj.sprite), sobj.events, sobj.extraProperties)
                     {
                         InitValues = (Depth: sobj.depth, Visible: true, Solid: sobj.solid)
@@ -214,16 +263,25 @@ public partial interface IGame
 
             // create main texture atlas
             MainTextureAtlasMap = sproject.textureAtlasMap;
+            MainTextureAtlasFilePath = MainTextureAtlasMap.AtlasFilePath;
 
             OnProjectLoadingComplete?.Invoke(this, EventArgs.Empty);
+
+            return bundled;
         }
-        catch (Exception ex) when (false)
+        catch (Exception ex)
         {
             throw new LoadingException("Error loading game items from project file.", ex);
         }
     }
 
-    public void LoadFromProjectFile(string filePath)
+    /// <summary>
+    /// Loads resources info.
+    /// </summary>
+    /// <param name="path">The path to the project file to run.</param>
+    /// <param name="bundledProjectFileStream">The bundled project file stream.</param>
+    /// <returns><c>true</c> if the given file was a bundled project file. Otherwise, <c>false</c>.</returns>
+    public bool LoadFromProjectFile(Stream? bundledProjectFileStream, string? path)
     {
         Type[] serializerExtraTypes =
         [
@@ -256,13 +314,24 @@ public partial interface IGame
                     typeof(TextureAtlasMap.Item)
         ];
 
-        XmlSerializer serializer = new XmlSerializer(typeof(SerializeableGameProject), extraTypes: serializerExtraTypes);
-        SerializeableGameProject sproject = null;
-        using (Stream reader = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+        string? fileDir = System.IO.Path.GetDirectoryName(path);
+
+        // check file format
+        string fileExt = bundledProjectFileStream != null ? SerializeableGameProject.FileFormat_AMPB : path!.Substring(path.LastIndexOf('.'));
+        bool bundled = fileExt switch
+        {
+            SerializeableGameProject.FileFormat_AMP => false,
+            SerializeableGameProject.FileFormat_AMPB => true,
+            _ => throw new FormatException()
+        };
+
+        XmlSerializer serializer = new(typeof(SerializeableGameProject), extraTypes: serializerExtraTypes);
+        SerializeableGameProject? sproject = null;
+        using (Stream xmlReader = bundled ? (path == null ? SerializeableGameProject.OpenStream(bundledProjectFileStream!, "*", true) : SerializeableGameProject.OpenStream(path, "*", true))! : new FileStream(path!, FileMode.Open, FileAccess.Read))
         {
             try
             {
-                sproject = (SerializeableGameProject)serializer.Deserialize(reader);
+                sproject = (SerializeableGameProject)serializer.Deserialize(xmlReader);
             }
             catch (Exception ex)
             {
@@ -270,6 +339,6 @@ public partial interface IGame
             }
         }
 
-        LoadFromProject(sproject, filePath);
+        return LoadFromProject(sproject, bundledProjectFileStream, path);
     }
 }

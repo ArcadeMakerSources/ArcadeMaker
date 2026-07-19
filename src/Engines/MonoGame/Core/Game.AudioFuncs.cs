@@ -19,6 +19,7 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Media;
 using System.Linq;
 using Exp.Spans;
+using System.IO;
 
 namespace ArcadeMaker.Engines.MonoGame.Core;
 
@@ -27,6 +28,7 @@ public partial class ArcadeMakerMonoGame
     private readonly Dictionary<Sound, SoundEffect> soundEffects = [];
     private readonly Dictionary<Sound, Song> backgroundMusics = [];
     private readonly Dictionary<Sound, List<SoundEffectInstance>> soundEffectInstances = [];
+    private readonly List<FileStream> openedSongFilesStreams = [];
     internal static Song? CurrentlyPlayedBackgroundMusic { get; private set; }
 
     public Exp.Instance? PlaySound(Exp.Instance? _, IValue?[] args)

@@ -21,11 +21,44 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (may be null for global calls).</param>
     /// <param name="args">An array of arguments; the first element is converted to string and written to the debug output.</param>
     [ExpFunc(1, CustomName = "debug")]
-    Exp.Void DebugLog(Exp.Instance? _, IValue?[] args)
+    [Param("output", ParamType.Any, "The output to print to the debug console.")]
+    public Exp.Void DebugLog(Exp.Instance? _, IValue?[] args)
     {
-        Debug.WriteLine("".ToExpString() + (args[0]?.ToString() ?? "NULL"));
-
+        DebugConsole.WriteLine(this, args[0]);
         return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Blocks the game thread until an input is received from the debug console, and returns the received input.
+    /// </summary>
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">(Unused).</param>
+    /// <returns>The received input.</returns>
+    [ExpFunc(0, 1)]
+    [Param("message", ParamType.Any, "A message to print to the debug console before picking the value.", Optional = true)]
+    public IValue DebugReadLine(Exp.Instance? _, IValue?[] args)
+    {
+        if (args is { Length: > 0 })
+            DebugLog(null, [args[0]]);
+
+        return DebugConsole.ReadLine().ToExpString();
+    }
+
+    /// <summary>
+    /// Blocks the game thread until an input number is received from the debug console, and returns it.
+    /// </summary>
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">(Unused).</param>
+    /// <returns>The received input number.</returns>
+    [ExpFunc(0, 1)]
+    [Param("message", ParamType.Any, "A message to print to the debug console before picking the value.", Optional = true)]
+    public IValue DebugReadNumber(Exp.Instance? _, IValue?[] args)
+    {
+        if (args is { Length: > 0 })
+            DebugLog(null, [args[0]]);
+
+        double num = double.Parse(DebugConsole.ReadLine(line => double.TryParse(line, out num) ? null : "A number was expected."));
+        return num.ToExp();
     }
 
     /// <summary>

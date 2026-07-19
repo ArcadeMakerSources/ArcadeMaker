@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <PackageReference Include="nkast.Kni.Platform.Blazor.GL" Version="4.2.9001.2" />
     <PackageReference Include="RectpackSharp" Version="1.2.0" />
   </ItemGroup>

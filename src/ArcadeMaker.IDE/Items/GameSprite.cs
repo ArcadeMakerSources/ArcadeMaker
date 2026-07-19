@@ -6,6 +6,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Resources;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -18,14 +19,33 @@ namespace ArcadeMaker.IDE.Items
 
         public readonly HandlerList<Bitmap> images = new HandlerList<Bitmap>();
 
-        public void Import(string[] pathes)
+        public void Import(string[] pathes, ResXResourceReader? resourceReader = null)
         {
             images.Clear();
+            int i = 0;
             foreach (string path in pathes)
             {
-                Bitmap spriteSheet;
-                using (Stream reader = new FileStream(path, FileMode.Open, FileAccess.Read))
-                    spriteSheet = (Bitmap)Bitmap.FromStream(reader);
+                Bitmap spriteSheet = null!;
+                if (resourceReader == null)
+                {
+                    using (Stream reader = new FileStream(path, FileMode.Open, FileAccess.Read))
+                        spriteSheet = (Bitmap)Bitmap.FromStream(reader);
+                }
+                else
+                {
+                    var resDictionary = resourceReader?.GetEnumerator();
+                    while (resDictionary!.MoveNext())
+                    {
+                        if (path.Equals(resDictionary.Key))
+                        {
+                            using MemoryStream imageStream = new(Convert.FromBase64String((string)resDictionary.Value!));
+                            spriteSheet = (Bitmap)Bitmap.FromStream(imageStream);
+                            break;
+                        }
+                    }
+                    if (spriteSheet == null)
+                        throw new Exception($"Subimage {i} of sprite {name} was not found in the path {path}.");
+                }
                 
                 if (Global.ImageFileIsSpriteStrip(path, out int count))
                 {
@@ -35,7 +55,7 @@ namespace ArcadeMaker.IDE.Items
                     {
                         int frameCount = spriteSheet.Width / width; // Assuming frames are stacked horizontally
 
-                        for (int i = 0; i < frameCount; i++)
+                        for (i = 0; i < frameCount; i++)
                         {
                             Rectangle frameRect = new Rectangle(i * width, 0, width, spriteSheet.Height);
                             images.Add(spriteSheet.Clone(frameRect, PixelFormat.Format32bppArgb));
@@ -69,6 +89,7 @@ namespace ArcadeMaker.IDE.Items
                 {
                     images.Add(spriteSheet);
                 }
+                i++;
             }
         }
 

@@ -10,14 +10,53 @@ namespace ArcadeMaker.IDE.Items
     public class GameSound : GameItem
     {
         public static Bitmap Icon => Properties.Resources.sound;
-        public string filePath { get; set; } = null;
+        public byte[]? Data { get; private set; }
+
         /// <summary>
-        /// The extension of the file, without dot ("wav", "mp3" "mid"...)
+        /// The extension of the file that this sound was load from, including the opening dot, e.g. ".mp3".
         /// </summary>
-        public string fileExtension
+        public string? FileExtension
         {
-            get => filePath != null && filePath.Contains('.') ? filePath.Substring(filePath.LastIndexOf('.') + 1) : null;
+            get;
+            private set
+            {
+                // make sure the value starts with . (like ".mp3")
+                if (value == null)
+                    field = null;
+                else
+                {
+                    if (!value.StartsWith('.'))
+                        value = '.' + value;
+                    field = value;
+                }
+            }
         }
+
+        public void SetSource(string? fileExt, byte[]? row)
+        {
+            if (fileExt == null || row == null)
+            {
+                this.FileExtension = null;
+                Data = null;
+            }
+            else
+            {
+                this.FileExtension = fileExt;
+                Data = row;
+            }
+        }
+
+        public void SetSource(string? file)
+        {
+            if (file == null)
+                SetSource(null, null);
+            else
+            {
+                string ext = System.IO.Path.GetExtension(file) ?? throw new ArgumentException($"The given file must have an extenion.\n(Given file: {file}).", paramName: nameof(file));
+                SetSource(ext, File.ReadAllBytes(file));
+            }
+        }
+
         public float volume = 1.0F;
         public Sound.Types Type { get; set; } = Sound.Types.SoundEffect;
 
@@ -40,9 +79,9 @@ namespace ArcadeMaker.IDE.Items
         public float Pan { get; internal set; }
         public float Pitch { get; internal set; }
 
-        public GameSound(string name, string filePath = null) : base(name)
+        public GameSound(string name, string? filePath = null) : base(name)
         {
-            this.filePath = filePath;
+            SetSource(filePath);
             base.getEditor += (s, e) =>
             {
                 e = this.editor;

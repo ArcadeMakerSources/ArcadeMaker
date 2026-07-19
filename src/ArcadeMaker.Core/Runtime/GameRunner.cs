@@ -9,585 +9,584 @@ using Exp.Spans;
 using System.Reflection;
 using ArcadeMaker.Core.ExpSrc;
 
-namespace ArcadeMaker.Core.Runtime
+namespace ArcadeMaker.Core.Runtime;
+
+public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-generic class, but this approach allows the JIT to optimize the code by skipping the vtable lookup for the IGame interface, which is a bit faster. it's also important to mark the classes that implement IGame as 'sealed' (not sure if this comment is actually true...).
 {
-    public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-generic class, but this approach allows the JIT to optimize the code by skipping the vtable lookup for the IGame interface, which is a bit faster. it's also important to mark the classes that implement IGame as 'sealed' (not sure if this comment is actually true...).
+    public TGame Game { get; }
+    public Interpreter Interpreter { get; }
+
+    public GameRunner(TGame game, bool removeEmptyEvents = true)
     {
-        public TGame Game { get; }
-        public Interpreter Interpreter { get; }
+        ArgumentNullException.ThrowIfNull(game);
 
-        public GameRunner(TGame game, bool removeEmptyEvents = true)
+        this.Game = game;
+        game.Scripts.AddRange(GetScripts());
+        Interpreter = new();
+
+        AddFuncsToInterpreter();
+
+        // build
+        ExpError[]? eventsErrors = null;
+        Interpreter.Build(ScriptDocument.FromString("", "main.script"), game.Objects.Map(model => model.Class), game.Scripts.ToArray());
+        if (removeEmptyEvents)
+            game.Objects.ForEach(obj => obj.Events.ForEach(ev => ev.Docs!.ForEach(doc => doc.TryPrepare(Interpreter, out eventsErrors))));
+        if (eventsErrors?.Length >= 1)
         {
-            ArgumentNullException.ThrowIfNull(game);
+            // TODO: do something...
+        }
 
-            this.Game = game;
-            game.Scripts.AddRange(GetScripts());
-            Interpreter = new();
+        CreatePropertiesInitializers();
 
-            AddFuncsToInterpreter();
-
-            // build
-            ExpError[]? eventsErrors = null;
-            Interpreter.Build(ScriptDocument.FromString("", "main.script"), game.Objects.Map(model => model.Class), game.Scripts.ToArray());
-            if (removeEmptyEvents)
-                game.Objects.ForEach(obj => obj.Events.ForEach(ev => ev.Docs!.ForEach(doc => doc.TryPrepare(Interpreter, out eventsErrors))));
-            if (eventsErrors?.Length >= 1)
+        if (removeEmptyEvents)
+        {
+            foreach (var model in Game.Objects)
             {
-                // TODO: do something...
+                model.RemoveEmptyEvents();
+            }
+        }
+    }
+
+    private void CreatePropertiesInitializers()
+    {
+        List<ExpError> InitializersErrors = [];
+
+        foreach (ObjectModel model in Game.Objects)
+        {
+            if (model.ExtraProperties.Length == 0)
+                continue;
+
+            // create a script that initializes the property for an instance
+            string initializerScript = $"using {ExpSrc.ExpSrc.EngineNamespace}\nusing {ExpSrc.ExpSrc.GameNamespace}\n\n";
+
+            foreach (var extrap in model.ExtraProperties)
+            {
+                initializerScript += $"{extrap.Name} = {extrap.InitValueCode} /* */\n"; // add /* */ to prevent issues with properties with code that ends with a comment
             }
 
-            CreatePropertiesInitializers();
+            // add the initializer script to the create event of the object
+            InstanceScriptDocument initializerDoc = new(model.Name + ".PropertiesInitializer", model.Class, initializerScript);
+            initializerDoc.TryPrepare(Interpreter, out var errors);
+            InitializersErrors.AddRange(errors);
 
-            if (removeEmptyEvents)
+            // if create event is not set, create it
+            var createEv = model.GetEvent(ObjectEvent.EventType.Create);
+            if (createEv == null)
             {
-                foreach (var model in Game.Objects)
+                createEv = new(ObjectEvent.EventType.Create, []);
+                createEv.CreateDocs(model.Class);
+                model.Events.Add(createEv);
+                model.CreateEvent = createEv;
+            }
+
+            // insert the initializer doc to create event
+            createEv.InsertDoc(0, initializerDoc, false);
+        }
+
+        if (InitializersErrors.Count > 0)
+            throw new BuildFailureException(InitializersErrors);
+    }
+
+    public static IEnumerable<ScriptDocument> GetScripts()
+    {
+        List<ScriptDocument> docs = [];
+
+        // get the types of all the enums that should be copied to the interpreter
+        List<Type> enums = [];
+        enums.AddRange(ExpSrc.ExpSrc.GetEnums());
+
+        // convert them to Exp code
+        docs.AddRange(enums.Select(e => ScriptDocument.FromString(GetEnumCode(e), e.Name + ".exp")));
+
+        return docs;
+
+        static string GetEnumCode(Type type) // converts an enum type to a string of Exp code that defines the same enum
+        {
+            string code = $"namespace {ExpSrc.ExpSrc.EngineNamespace}:\n\nenum {type.Name}\n{{\n";
+
+            string[] names = Enum.GetNames(type);
+            int i = 0;
+            foreach (var name in names)
+            {
+                code += $"    {name.StartWithLowerCase()} = {(type.GetEnumUnderlyingType() == typeof(uint) ? (uint)Enum.Parse(type, name) : (int)Enum.Parse(type, name))}{(i++ < names.Length - 1 ? "," : "")}\n";
+            }
+
+            code += "}";
+            return code;
+        }
+    }
+
+    public void AddFuncsToInterpreter()
+    {
+        List<ExternFunc> funcs = [];
+        var objClasses = Game.Objects.Map(model => model.Class);
+
+        // static classes to add
+        ClassDefSpan instanceStaticClass = new("Instance", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
+        instanceStaticClass.Funcs = instanceStaticClass.Funcs.Append(new ConstructorDefSpan([], [], instanceStaticClass, Interpreter) { Private = true }).ToArray();
+        ClassDefSpan spritesStaticClass = new("Sprites", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
+        spritesStaticClass.Funcs = spritesStaticClass.Funcs.Append(new ConstructorDefSpan([], [], spritesStaticClass, Interpreter) { Private = true }).ToArray();
+        spritesStaticClass.Vars.AddRange(Game.Sprites.Map(s => new Variable(s.Name, s.ID.ToExp(), cons: true)));
+        ClassDefSpan soundsStaticClass = new("Sounds", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
+        soundsStaticClass.Funcs = instanceStaticClass.Funcs.Append(new ConstructorDefSpan([], [], soundsStaticClass, Interpreter) { Private = true }).ToArray();
+        soundsStaticClass.Vars.AddRange(Game.Sounds.Map(s => new Variable(s.Name, s.ID.ToExp(), cons: true)));
+        ClassDefSpan pathsStaticClass = new("Paths", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
+        pathsStaticClass.Funcs = instanceStaticClass.Funcs.Append(new ConstructorDefSpan([], [], pathsStaticClass, Interpreter) { Private = true }).ToArray();
+        pathsStaticClass.Vars.AddRange(Game.Paths.Map(p => new Variable(p.Name, p.ID.ToExp(), cons: true)));
+        ClassDefSpan roomsStaticClass = new("Rooms", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
+        roomsStaticClass.Funcs = roomsStaticClass.Funcs.Append(new ConstructorDefSpan([], [], roomsStaticClass, Interpreter) { Private = true }).ToArray();
+        roomsStaticClass.Vars.AddRange(Game.Rooms.Map(r => new Variable(r.Name, r.ID.ToExp(), cons: true)));
+        ClassDefSpan fontsStaticClass = new("Fonts", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
+        fontsStaticClass.Funcs = fontsStaticClass.Funcs.Append(new ConstructorDefSpan([], [], fontsStaticClass, Interpreter) { Private = true }).ToArray();
+        fontsStaticClass.Vars.AddRange(Game.FontsData.Map(f => new Variable(f.Name, f.ID.ToExp(), cons: true)));
+        Interpreter.definations.AddRange([spritesStaticClass, instanceStaticClass, soundsStaticClass, pathsStaticClass, roomsStaticClass, fontsStaticClass, SoundPlaybackInstance.Class]);
+
+        // add all methods with [ExpFunc] attribute
+        void AddMarkedFuncs(object instance, Type? type = null)
+        {
+            foreach (var methodInfo in (type ?? instance.GetType()).GetMethods())
+            {
+                var attr = methodInfo.GetCustomAttribute<ExpFuncAttribute>();
+                if (attr != null)
                 {
-                    model.RemoveEmptyEvents();
+                    // create Func<...> from methodInfo
+                    var invoker = (Func<Exp.Instance?, IValue?[], IValue?>)Delegate.CreateDelegate(typeof(Func<Exp.Instance?, IValue?[], IValue?>), instance, methodInfo);
+                    string invokerName = attr.CustomName ?? methodInfo.Name.StartWithLowerCase();
+
+                    // add to interpreter
+                    if (attr.IsNonStaticFuncOfGameObjects)
+                        objClasses.ForEach(objCls => Interpreter.AddExternFunc(new(invoker, attr.ParamsCounts, invokerName), objCls));
+                    else
+                        Interpreter.AddExternFunc(new(invoker, attr.ParamsCounts, invokerName, ExpSrc.ExpSrc.EngineNamespace));
                 }
             }
         }
+        AddMarkedFuncs(Game, typeof(IGame));
+        AddMarkedFuncs(this);
 
-        private void CreatePropertiesInitializers()
+        // manually add non-static functions that cannot be marked with [ExpFunc]
+        Interpreter.AddExternFunc(new(Game.PauseSound, 0, "pause"), SoundPlaybackInstance.Class);
+        Interpreter.AddExternFunc(new(Game.ResumeSound, 0, "resume"), SoundPlaybackInstance.Class);
+
+        // add "all()" functions and "i" / "first" getters
+        foreach (var cls in objClasses)
         {
-            List<ExpError> InitializersErrors = [];
-
-            foreach (ObjectModel model in Game.Objects)
+            IValue? All(Exp.Instance? _, IValue?[] args)
             {
-                if (model.ExtraProperties.Length == 0)
-                    continue;
+                if (Game.CurrentRoom == null)
+                    return new Exp.Instance(ClassDefSpan.ExpArrayDef, []);
 
-                // create a script that initializes the property for an instance
-                string initializerScript = $"using {ExpSrc.ExpSrc.EngineNamespace}\nusing {ExpSrc.ExpSrc.GameNamespace}\n\n";
+                List<Exp.Instance> all = [];
 
-                foreach (var extrap in model.ExtraProperties)
+                foreach (var inst in Game.CurrentRoom.Instances)
                 {
-                    initializerScript += $"{extrap.Name} = {extrap.InitValueCode} /* */\n"; // add /* */ to prevent issues with properties with code that ends with a comment
+                    if (inst.Model.Class == cls)
+                        all.Add(inst);
                 }
 
-                // add the initializer script to the create event of the object
-                InstanceScriptDocument initializerDoc = new(model.Name + ".PropertiesInitializer", model.Class, initializerScript);
-                initializerDoc.TryPrepare(Interpreter, out var errors);
-                InitializersErrors.AddRange(errors);
-
-                // if create event is not set, create it
-                var createEv = model.GetEvent(ObjectEvent.EventType.Create);
-                if (createEv == null)
-                {
-                    createEv = new(ObjectEvent.EventType.Create, []);
-                    createEv.CreateDocs(model.Class);
-                    model.Events.Add(createEv);
-                    model.CreateEvent = createEv;
-                }
-
-                // insert the initializer doc to create event
-                createEv.InsertDoc(0, initializerDoc, false);
+                return new Exp.Instance(ClassDefSpan.ExpArrayDef, [.. all]);
             }
 
-            if (InitializersErrors.Count > 0)
-                throw new BuildFailureException(InitializersErrors);
-        }
-
-        public static IEnumerable<ScriptDocument> GetScripts()
-        {
-            List<ScriptDocument> docs = [];
-
-            // get the types of all the enums that should be copied to the interpreter
-            List<Type> enums = [];
-            enums.AddRange(ExpSrc.ExpSrc.GetEnums());
-
-            // convert them to Exp code
-            docs.AddRange(enums.Select(e => ScriptDocument.FromString(GetEnumCode(e), e.Name + ".exp")));
-
-            return docs;
-
-            static string GetEnumCode(Type type) // converts an enum type to a string of Exp code that defines the same enum
+            IValue? GetSingleInst()
             {
-                string code = $"namespace {ExpSrc.ExpSrc.EngineNamespace}:\n\nenum {type.Name}\n{{\n";
+                if (Game.CurrentRoom == null)
+                    return null;
 
-                string[] names = Enum.GetNames(type);
-                int i = 0;
-                foreach (var name in names)
+                Instance? i = null;
+
+                foreach (var inst in Game.CurrentRoom.Instances)
                 {
-                    code += $"    {name.StartWithLowerCase()} = {(type.GetEnumUnderlyingType() == typeof(uint) ? (uint)Enum.Parse(type, name) : (int)Enum.Parse(type, name))}{(i++ < names.Length - 1 ? "," : "")}\n";
-                }
-
-                code += "}";
-                return code;
-            }
-        }
-
-        public void AddFuncsToInterpreter()
-        {
-            List<ExternFunc> funcs = [];
-            var objClasses = Game.Objects.Map(model => model.Class);
-
-            // static classes to add
-            ClassDefSpan instanceStaticClass = new("Instance", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
-            instanceStaticClass.Funcs = instanceStaticClass.Funcs.Append(new ConstructorDefSpan([], [], instanceStaticClass, Interpreter) { Private = true }).ToArray();
-            ClassDefSpan spritesStaticClass = new("Sprites", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
-            spritesStaticClass.Funcs = spritesStaticClass.Funcs.Append(new ConstructorDefSpan([], [], spritesStaticClass, Interpreter) { Private = true }).ToArray();
-            spritesStaticClass.Vars.AddRange(Game.Sprites.Map(s => new Variable(s.Name, s.ID.ToExp(), cons: true)));
-            ClassDefSpan soundsStaticClass = new("Sounds", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
-            soundsStaticClass.Funcs = instanceStaticClass.Funcs.Append(new ConstructorDefSpan([], [], soundsStaticClass, Interpreter) { Private = true }).ToArray();
-            soundsStaticClass.Vars.AddRange(Game.Sounds.Map(s => new Variable(s.Name, s.ID.ToExp(), cons: true)));
-            ClassDefSpan pathsStaticClass = new("Paths", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
-            pathsStaticClass.Funcs = instanceStaticClass.Funcs.Append(new ConstructorDefSpan([], [], pathsStaticClass, Interpreter) { Private = true }).ToArray();
-            pathsStaticClass.Vars.AddRange(Game.Paths.Map(p => new Variable(p.Name, p.ID.ToExp(), cons: true)));
-            ClassDefSpan roomsStaticClass = new("Rooms", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
-            roomsStaticClass.Funcs = roomsStaticClass.Funcs.Append(new ConstructorDefSpan([], [], roomsStaticClass, Interpreter) { Private = true }).ToArray();
-            roomsStaticClass.Vars.AddRange(Game.Rooms.Map(r => new Variable(r.Name, r.ID.ToExp(), cons: true)));
-            ClassDefSpan fontsStaticClass = new("Fonts", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
-            fontsStaticClass.Funcs = fontsStaticClass.Funcs.Append(new ConstructorDefSpan([], [], fontsStaticClass, Interpreter) { Private = true }).ToArray();
-            fontsStaticClass.Vars.AddRange(Game.FontsData.Map(f => new Variable(f.Name, f.ID.ToExp(), cons: true)));
-            Interpreter.definations.AddRange([spritesStaticClass, instanceStaticClass, soundsStaticClass, pathsStaticClass, roomsStaticClass, fontsStaticClass, SoundPlaybackInstance.Class]);
-
-            // add all methods with [ExpFunc] attribute
-            void AddMarkedFuncs(object instance, Type? type = null)
-            {
-                foreach (var methodInfo in (type ?? instance.GetType()).GetMethods())
-                {
-                    var attr = methodInfo.GetCustomAttribute<ExpFuncAttribute>();
-                    if (attr != null)
+                    if (inst.Model.Class == cls)
                     {
-                        // create Func<...> from methodInfo
-                        var invoker = (Func<Exp.Instance?, IValue?[], IValue?>)Delegate.CreateDelegate(typeof(Func<Exp.Instance?, IValue?[], IValue?>), instance, methodInfo);
-                        string invokerName = attr.CustomName ?? methodInfo.Name.StartWithLowerCase();
-
-                        // add to interpreter
-                        if (attr.IsNonStaticFuncOfGameObjects)
-                            objClasses.ForEach(objCls => Interpreter.AddExternFunc(new(invoker, attr.ParamsCounts, invokerName), objCls));
+                        if (i == null)
+                            i = inst;
                         else
-                            Interpreter.AddExternFunc(new(invoker, attr.ParamsCounts, invokerName, ExpSrc.ExpSrc.EngineNamespace));
+                            Interpreter.ThrowRuntime($"There is more than 1 instance of object '{cls.Name}' in current room.", RuntimeException.INVALID_OPERATION);
                     }
                 }
+
+                return i;
             }
-            AddMarkedFuncs(Game, typeof(IGame));
-            AddMarkedFuncs(this);
 
-            // manually add non-static functions that cannot be marked with [ExpFunc]
-            Interpreter.AddExternFunc(new(Game.PauseSound, 0, "pause"), SoundPlaybackInstance.Class);
-            Interpreter.AddExternFunc(new(Game.ResumeSound, 0, "resume"), SoundPlaybackInstance.Class);
-
-            // add "all()" functions and "i" / "first" getters
-            foreach (var cls in objClasses)
-            {
-                IValue? All(Exp.Instance? _, IValue?[] args)
-                {
-                    if (Game.CurrentRoom == null)
-                        return new Exp.Instance(ClassDefSpan.ExpArrayDef, []);
-
-                    List<Exp.Instance> all = [];
-
-                    foreach (var inst in Game.CurrentRoom.Instances)
-                    {
-                        if (inst.Model.Class == cls)
-                            all.Add(inst);
-                    }
-
-                    return new Exp.Instance(ClassDefSpan.ExpArrayDef, [.. all]);
-                }
-
-                IValue? GetSingleInst()
-                {
-                    if (Game.CurrentRoom == null)
-                        return null;
-
-                    Instance? i = null;
-
-                    foreach (var inst in Game.CurrentRoom.Instances)
-                    {
-                        if (inst.Model.Class == cls)
-                        {
-                            if (i == null)
-                                i = inst;
-                            else
-                                Interpreter.ThrowRuntime($"There is more than 1 instance of object '{cls.Name}' in current room.", RuntimeException.INVALID_OPERATION);
-                        }
-                    }
-
-                    return i;
-                }
-
-                Interpreter.AddExternFunc(new(All, 0, "all" /* name must be specified in local functions! */), cls, true);
-                cls.Vars.Add(new CustomVariable("i", GetSingleInst, null, false));
-                cls.Vars.Add(new CustomVariable("first", () => Game.CurrentRoom?.Instances.FirstOrDefault(i => i.Model.Class == cls), null, false));
-            }
+            Interpreter.AddExternFunc(new(All, 0, "all" /* name must be specified in local functions! */), cls, true);
+            cls.Vars.Add(new CustomVariable("i", GetSingleInst, null, false));
+            cls.Vars.Add(new CustomVariable("first", () => Game.CurrentRoom?.Instances.FirstOrDefault(i => i.Model.Class == cls), null, false));
         }
+    }
 
-        public void FireStep()
+    public void FireStep()
+    {
+        if (Game.CurrentRoom == null)
+            return;
+
+        // run all step events for the current room
+        var roominsts = Game.CurrentRoom.Instances;
+        //var node = roominsts.First;
+        for (int i = 0; i < roominsts.Count; i++) // if we use foreach here, modifications to the list of instances (like destroying an instance and removing it from the list) would cause an exception, but with this for loop it won't
         {
-            if (Game.CurrentRoom == null)
-                return;
+            var instance = roominsts[i];
+            //node = node.Next;
 
-            // run all step events for the current room
-            var roominsts = Game.CurrentRoom.Instances;
-            //var node = roominsts.First;
-            for (int i = 0; i < roominsts.Count; i++) // if we use foreach here, modifications to the list of instances (like destroying an instance and removing it from the list) would cause an exception, but with this for loop it won't
+            // run other events that belong to step (like KeyDown)
+            // run KeyDown events
+            foreach (var keyDownEv in instance.Model.KeyDownEvents)
             {
-                var instance = roominsts[i];
-                //node = node.Next;
-
-                // run other events that belong to step (like KeyDown)
-                // run KeyDown events
-                foreach (var keyDownEv in instance.Model.KeyDownEvents)
+                if (Game.KeyDown(null, [((int)keyDownEv.Param).ToExp()]).Bool)
                 {
-                    if (Game.KeyDown(null, [((int)keyDownEv.Param).ToExp()]).Bool)
-                    {
-                        foreach (var script in keyDownEv.Docs)
-                            script.Run(Interpreter, instance);
-                    }
-                }
-
-                // run KeyPress events
-                foreach (var ev in instance.Model.KeyPressEvents)
-                {
-                    if (Game.KeyPress(null, [((int)ev.Param).ToExp()]).Bool)
-                    {
-                        foreach (var script in ev.Docs)
-                            script.Run(Interpreter, instance);
-                    }
-                }
-
-                // run KeyRelease events
-                foreach (var ev in instance.Model.KeyReleaseEvents)
-                {
-                    if (Game.KeyRelease(null, [((int)ev.Param).ToExp()]).Bool)
-                    {
-                        foreach (var script in ev.Docs)
-                            script.Run(Interpreter, instance);
-                    }
-                }
-
-                // run MouseDown events
-                foreach (var ev in instance.Model.MouseDownEvents)
-                {
-                    // also check collision with mouse
-                    if (Game.MouseButtonDown(null, [((int)ev.Param).ToExp()]).Bool && Game.PointMeeting(instance, [Game.GetMouseX(null, []), Game.GetMouseY(null, [])]).Bool)
-                    {
-                        foreach (var script in ev.Docs)
-                            script.Run(Interpreter, instance);
-                    }
-                }
-
-                // run MousePress events
-                foreach (var ev in instance.Model.MousePressEvents)
-                {
-                    // also check collision with mouse
-                    if (Game.MouseButtonPress(null, [((int)ev.Param).ToExp()]).Bool && Game.PointMeeting(instance, [Game.GetMouseX(null, []), Game.GetMouseY(null, [])]).Bool)
-                    {
-                        foreach (var script in ev.Docs)
-                            script.Run(Interpreter, instance);
-                    }
-                }
-
-                // run MouseRelease events
-                foreach (var ev in instance.Model.MouseReleaseEvents)
-                {
-                    // also check collision with mouse
-                    if (Game.MouseButtonRelease(null, [((int)ev.Param).ToExp()]).Bool && Game.PointMeeting(instance, [Game.GetMouseX(null, []), Game.GetMouseY(null, [])]).Bool)
-                    {
-                        foreach (var script in ev.Docs)
-                            script.Run(Interpreter, instance);
-                    }
-                }
-
-                // run collision events
-                foreach (var ev in instance.Model.CollisionEvents)
-                {
-                    Runtime.Instance? other = Game.InstanceMeeting(instance, [instance.X.Value, instance.Y.Value, ev.Model.Class.ExpType]);
-                    if (other != null)
-                    {
-                        foreach (var script in ev.Docs)
-                            script.Run(Interpreter, instance, other);
-                    }
-                }
-
-                // tick alarms
-                instance.TickAlarms(Interpreter);
-
-                // run outside room events
-                if (instance.Model.OutsideRoomEvent != null)
-                {
-                    if (Game.OutsideRoom(instance, []).Bool)
-                    {
-                        foreach (var script in instance.Model.OutsideRoomEvent.Docs)
-                            script.Run(Interpreter, instance);
-                    }
-                }
-
-                if (instance.Model.StepEvent != null)
-                    foreach (var script in instance.Model.StepEvent.Docs)
+                    foreach (var script in keyDownEv.Docs)
                         script.Run(Interpreter, instance);
-
-                // move path
-                if (instance.CurrentPathDrive != null)
-                {
-                    if (!instance.CurrentPathDrive.Move(out double hsp, out double vsp, out bool updated))
-                        instance.CurrentPathDrive = null;
-                    else if (updated)
-                    {
-                        instance.Hspeed.Value = hsp.ToExp();
-                        instance.Vspeed.Value = vsp.ToExp();
-                    }
-                }
-
-                instance.X.Value = (instance.X.Value!.Number + (instance.hspeed ?? 0)).ToExp(); // add hspeed to x
-                instance.Y.Value = (instance.Y.Value!.Number + (instance.vspeed ?? 0)).ToExp(); // add vspeed to y
-                UpdateImageIndex(instance);
-            }
-
-            // move following views
-            foreach (var view in Game.CurrentRoom.Model.Views)
-            {
-                if (!view.Visible || view.Following == null)
-                    continue;
-
-                Instance? inst = roominsts.FirstOrDefault(i => i.Model == view.Following);
-                if (inst != null)
-                {
-                    double targetX = inst.X.Value!.Number - view.Follow_HBorder, targetY = inst.Y.Value!.Number - view.Follow_VBorder;
-                    if (view.X != targetX || view.Y != targetY)
-                    {
-                        if (view.Follow_HSpeed > 0)
-                            targetX += System.Math.Sign(targetX - view.X) * System.Math.Min(view.Follow_HSpeed, System.Math.Abs(targetX - view.X));
-                        if (view.Follow_VSpeed > 0)
-                            targetY += System.Math.Sign(targetY - view.Y) * System.Math.Min(view.Follow_VSpeed, System.Math.Abs(targetY - view.Y));
-                        
-                        // don't let the following view get out of the room
-                        if (targetX < 0)
-                            targetX = 0;
-                        else if (targetX + view.Width > Game.CurrentRoom.Model.Width)
-                            targetX = Game.CurrentRoom.Model.Width - view.Width;
-                        if (targetY < 0)
-                            targetY = 0;
-                        else if (targetY + view.Height > Game.CurrentRoom.Model.Height)
-                            targetY = Game.CurrentRoom.Model.Height - view.Height;
-
-                        view.SetPosition(targetX, targetY);
-                    }
                 }
             }
 
-            // scroll backgrounds
-            foreach (var bg in Game.CurrentRoom.Backgrounds)
+            // run KeyPress events
+            foreach (var ev in instance.Model.KeyPressEvents)
             {
-                bg.X += bg.HorSpeed;
-                bg.Y += bg.VerSpeed;
-            }
-        }
-
-        private static void UpdateImageIndex(Instance instance)
-        {
-            if (instance.Model.Sprite != null && instance.ImageSpeed.Value!.Number > 0 && instance.Model.Sprite.NumberOfImages >= 2 && ++instance.FramesSinceLastImageIndex >= instance.ImageSpeed.Value?.Number)
-            {
-                instance.FramesSinceLastImageIndex = 0;
-                double nextIndex = instance.ImageIndex.Value!.Number + 1 >= instance.Model.Sprite.NumberOfImages ? 0 : instance.ImageIndex.Value.Number + 1;
-                instance.ImageIndex.Value = nextIndex.ToExp();
-            }
-        }
-
-        public void FireDraw()
-        {
-            // run all draw events for the current room
-            foreach (var instance in Game.GetActivatedRoom().SortedInstances)
-            {
-                if (instance.Model.DrawEvent?.Docs.Count >= 1)
-                    foreach (var script in instance.Model.DrawEvent.Docs)
-                        script.Run(Interpreter, instance, Game.CurrentViewIndex.ToExp());
-                else
-                    Game.DrawInstance(instance);
-            }
-        }
-
-        /// <summary>
-        /// Draws an instance of a game object.
-        /// </summary>
-        /// <param name="inst">The instance to draw.</param>
-        /// <param name="args">[].</param>
-        /// <returns>void.</returns>
-        [ExpFunc(CustomName = "drawSelf", IsNonStaticFuncOfGameObjects = true)]
-        public Exp.Void DrawInstance(Exp.Instance? inst, IValue?[] args)
-        {
-            Game.DrawInstance((Runtime.Instance)inst!);
-            return Exp.Void.Return;
-        }
-
-        /// <summary>
-        /// Destroys an instance of a game object.
-        /// </summary>
-        /// <param name="expinst">The instance to destroy.</param>
-        /// <param name="args">[].</param>
-        /// <returns>void.</returns>
-        [ExpFunc(IsNonStaticFuncOfGameObjects = true)]
-        public Exp.Void Destroy(Exp.Instance? expinst, IValue?[] args)
-        {
-            var inst = (Runtime.Instance)expinst!;
-
-            // remove from room
-            Game.GetActivatedRoom().RemoveInstance(inst);
-
-            // run Destroy event
-            if (inst.Model.DestroyEvent != null)
-            {
-                foreach (var script in inst.Model.DestroyEvent.Docs)
+                if (Game.KeyPress(null, [((int)ev.Param).ToExp()]).Bool)
                 {
-                    script.Run(Interpreter, inst);
+                    foreach (var script in ev.Docs)
+                        script.Run(Interpreter, instance);
                 }
             }
 
-            return Exp.Void.Return;
-        }
-
-        /// <summary>
-        /// Creates a new instance of the specified object type at the given coordinates and adds it to the active room.
-        /// </summary>
-        /// <param name="_">The calling EXP instance (unused).</param>
-        /// <param name="args">Arguments where args[0] and args[1] are the spawn X and Y coordinates and args[2] is the object type to instantiate.</param>
-        /// <returns>The newly created runtime instance.</returns>
-        [ExpFunc(3)]
-        [Param("x", ParamType.Number, "The x position to create the new instance at.")]
-        [Param("y", ParamType.Number, "The y position to create the new instance at.")]
-        [Param("type", ParamType.Type, "The type of object to create.")]
-        public Runtime.Instance CreateInstance(Exp.Instance? _, IValue?[] args)
-        {
-            ObjectModel model = Game.Objects.FirstOrDefault(m => m.Class.ExpType == args[2].ThrowIfNull()) ?? throw new ArgumentException("Value of argument type must be a type of a game object.");
-            Runtime.Instance inst = new(model);
-            inst.X.Value = args[0];
-            inst.Y.Value = args[1];
-            Game.GetActivatedRoom().AddInstance(inst);
-
-            // run create event
-            if (inst.Model.CreateEvent != null)
+            // run KeyRelease events
+            foreach (var ev in instance.Model.KeyReleaseEvents)
             {
-                foreach (var script in inst.Model.CreateEvent.Docs)
-                    script.Run(Interpreter, inst);
-            }
-
-            return inst;
-        }
-
-        public void Run(bool invokeInit = true)
-        {
-            // initialize the game
-            try
-            {
-                if (invokeInit)
-                    Game.Init();
-            }
-            catch (Exception ex)
-            {
-                throw new LoadingException("An error occurred while loading the game.", ex);
-            }
-
-            // resolve collision events
-            foreach (var obj in Game.Objects)
-            {
-                foreach (var collisionEv in obj.CollisionEvents)
-                    collisionEv.Resolve(Game);
-            }
-
-            // make sure game has any rooms
-            if (Game.Rooms.Count == 0)
-                throw new Exception("A game must have at least 1 room.");
-
-            // go to the first room in the list
-            GoToRoom(Game.Rooms[0]);
-        }
-
-        public void GoToRoom(RoomInstance room)
-        {
-            if (!Game.Rooms.Contains(room.Model))
-                throw new Exception("The specified room is not part of the game.");
-
-            // if there's an existing room ( =it's not the beginning of the game), destroy them all
-            if (Game.CurrentRoom != null)
-            {
-                while (Game.CurrentRoom.Instances.Count >= 1)
+                if (Game.KeyRelease(null, [((int)ev.Param).ToExp()]).Bool)
                 {
-                    Destroy(Game.CurrentRoom.Instances[0], []);
+                    foreach (var script in ev.Docs)
+                        script.Run(Interpreter, instance);
                 }
             }
+
+            // run MouseDown events
+            foreach (var ev in instance.Model.MouseDownEvents)
+            {
+                // also check collision with mouse
+                if (Game.MouseButtonDown(null, [((int)ev.Param).ToExp()]).Bool && Game.PointMeeting(instance, [Game.GetMouseX(null, []), Game.GetMouseY(null, [])]).Bool)
+                {
+                    foreach (var script in ev.Docs)
+                        script.Run(Interpreter, instance);
+                }
+            }
+
+            // run MousePress events
+            foreach (var ev in instance.Model.MousePressEvents)
+            {
+                // also check collision with mouse
+                if (Game.MouseButtonPress(null, [((int)ev.Param).ToExp()]).Bool && Game.PointMeeting(instance, [Game.GetMouseX(null, []), Game.GetMouseY(null, [])]).Bool)
+                {
+                    foreach (var script in ev.Docs)
+                        script.Run(Interpreter, instance);
+                }
+            }
+
+            // run MouseRelease events
+            foreach (var ev in instance.Model.MouseReleaseEvents)
+            {
+                // also check collision with mouse
+                if (Game.MouseButtonRelease(null, [((int)ev.Param).ToExp()]).Bool && Game.PointMeeting(instance, [Game.GetMouseX(null, []), Game.GetMouseY(null, [])]).Bool)
+                {
+                    foreach (var script in ev.Docs)
+                        script.Run(Interpreter, instance);
+                }
+            }
+
+            // run collision events
+            foreach (var ev in instance.Model.CollisionEvents)
+            {
+                Runtime.Instance? other = Game.InstanceMeeting(instance, [instance.X.Value, instance.Y.Value, ev.Model.Class.ExpType]);
+                if (other != null)
+                {
+                    foreach (var script in ev.Docs)
+                        script.Run(Interpreter, instance, other);
+                }
+            }
+
+            // tick alarms
+            instance.TickAlarms(Interpreter);
+
+            // run outside room events
+            if (instance.Model.OutsideRoomEvent != null)
+            {
+                if (Game.OutsideRoom(instance, []).Bool)
+                {
+                    foreach (var script in instance.Model.OutsideRoomEvent.Docs)
+                        script.Run(Interpreter, instance);
+                }
+            }
+
+            if (instance.Model.StepEvent != null)
+                foreach (var script in instance.Model.StepEvent.Docs)
+                    script.Run(Interpreter, instance);
+
+            // move path
+            if (instance.CurrentPathDrive != null)
+            {
+                if (!instance.CurrentPathDrive.Move(out double hsp, out double vsp, out bool updated))
+                    instance.CurrentPathDrive = null;
+                else if (updated)
+                {
+                    instance.Hspeed.Value = hsp.ToExp();
+                    instance.Vspeed.Value = vsp.ToExp();
+                }
+            }
+
+            instance.X.Value = (instance.X.Value!.Number + (instance.hspeed ?? 0)).ToExp(); // add hspeed to x
+            instance.Y.Value = (instance.Y.Value!.Number + (instance.vspeed ?? 0)).ToExp(); // add vspeed to y
+            UpdateImageIndex(instance);
+        }
+
+        // move following views
+        foreach (var view in Game.CurrentRoom.Model.Views)
+        {
+            if (!view.Visible || view.Following == null)
+                continue;
+
+            Instance? inst = roominsts.FirstOrDefault(i => i.Model == view.Following);
+            if (inst != null)
+            {
+                double targetX = inst.X.Value!.Number - view.Follow_HBorder, targetY = inst.Y.Value!.Number - view.Follow_VBorder;
+                if (view.X != targetX || view.Y != targetY)
+                {
+                    if (view.Follow_HSpeed > 0)
+                        targetX += System.Math.Sign(targetX - view.X) * System.Math.Min(view.Follow_HSpeed, System.Math.Abs(targetX - view.X));
+                    if (view.Follow_VSpeed > 0)
+                        targetY += System.Math.Sign(targetY - view.Y) * System.Math.Min(view.Follow_VSpeed, System.Math.Abs(targetY - view.Y));
+                    
+                    // don't let the following view get out of the room
+                    if (targetX < 0)
+                        targetX = 0;
+                    else if (targetX + view.Width > Game.CurrentRoom.Model.Width)
+                        targetX = Game.CurrentRoom.Model.Width - view.Width;
+                    if (targetY < 0)
+                        targetY = 0;
+                    else if (targetY + view.Height > Game.CurrentRoom.Model.Height)
+                        targetY = Game.CurrentRoom.Model.Height - view.Height;
+
+                    view.SetPosition(targetX, targetY);
+                }
+            }
+        }
+
+        // scroll backgrounds
+        foreach (var bg in Game.CurrentRoom.Backgrounds)
+        {
+            bg.X += bg.HorSpeed;
+            bg.Y += bg.VerSpeed;
+        }
+    }
+
+    private static void UpdateImageIndex(Instance instance)
+    {
+        if (instance.Model.Sprite != null && instance.ImageSpeed.Value!.Number > 0 && instance.Model.Sprite.NumberOfImages >= 2 && ++instance.FramesSinceLastImageIndex >= instance.ImageSpeed.Value?.Number)
+        {
+            instance.FramesSinceLastImageIndex = 0;
+            double nextIndex = instance.ImageIndex.Value!.Number + 1 >= instance.Model.Sprite.NumberOfImages ? 0 : instance.ImageIndex.Value.Number + 1;
+            instance.ImageIndex.Value = nextIndex.ToExp();
+        }
+    }
+
+    public void FireDraw()
+    {
+        // run all draw events for the current room
+        foreach (var instance in Game.GetActivatedRoom().SortedInstances)
+        {
+            if (instance.Model.DrawEvent?.Docs.Count >= 1)
+                foreach (var script in instance.Model.DrawEvent.Docs)
+                    script.Run(Interpreter, instance, Game.CurrentViewIndex.ToExp());
+            else
+                Game.DrawInstance(instance);
+        }
+    }
+
+    /// <summary>
+    /// Draws an instance of a game object.
+    /// </summary>
+    /// <param name="inst">The instance to draw.</param>
+    /// <param name="args">[].</param>
+    /// <returns>void.</returns>
+    [ExpFunc(CustomName = "drawSelf", IsNonStaticFuncOfGameObjects = true)]
+    public Exp.Void DrawInstance(Exp.Instance? inst, IValue?[] args)
+    {
+        Game.DrawInstance((Runtime.Instance)inst!);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Destroys an instance of a game object.
+    /// </summary>
+    /// <param name="expinst">The instance to destroy.</param>
+    /// <param name="args">[].</param>
+    /// <returns>void.</returns>
+    [ExpFunc(IsNonStaticFuncOfGameObjects = true)]
+    public Exp.Void Destroy(Exp.Instance? expinst, IValue?[] args)
+    {
+        var inst = (Runtime.Instance)expinst!;
+
+        // remove from room
+        Game.GetActivatedRoom().RemoveInstance(inst);
+
+        // run Destroy event
+        if (inst.Model.DestroyEvent != null)
+        {
+            foreach (var script in inst.Model.DestroyEvent.Docs)
+            {
+                script.Run(Interpreter, inst);
+            }
+        }
+
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Creates a new instance of the specified object type at the given coordinates and adds it to the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">Arguments where args[0] and args[1] are the spawn X and Y coordinates and args[2] is the object type to instantiate.</param>
+    /// <returns>The newly created runtime instance.</returns>
+    [ExpFunc(3)]
+    [Param("x", ParamType.Number, "The x position to create the new instance at.")]
+    [Param("y", ParamType.Number, "The y position to create the new instance at.")]
+    [Param("type", ParamType.Type, "The type of object to create.")]
+    public Runtime.Instance CreateInstance(Exp.Instance? _, IValue?[] args)
+    {
+        ObjectModel model = Game.Objects.FirstOrDefault(m => m.Class.ExpType == args[2].ThrowIfNull()) ?? throw new ArgumentException("Value of argument type must be a type of a game object.");
+        Runtime.Instance inst = new(model);
+        inst.X.Value = args[0];
+        inst.Y.Value = args[1];
+        Game.GetActivatedRoom().AddInstance(inst);
+
+        // run create event
+        if (inst.Model.CreateEvent != null)
+        {
+            foreach (var script in inst.Model.CreateEvent.Docs)
+                script.Run(Interpreter, inst);
+        }
+
+        return inst;
+    }
+
+    public void Run(bool invokeInit = true)
+    {
+        // initialize the game
+        try
+        {
+            if (invokeInit)
+                Game.Init();
+        }
+        catch (Exception ex)
+        {
+            throw new LoadingException("An error occurred while loading the game.", ex);
+        }
+
+        // resolve collision events
+        foreach (var obj in Game.Objects)
+        {
+            foreach (var collisionEv in obj.CollisionEvents)
+                collisionEv.Resolve(Game);
+        }
 
             Game.CurrentRoom = room;
 
             Game.SetCaption(room.Model.Caption);
             Game.BackColor = room.Model.BackgroundColor;
 
-            // set window size: room size or the minimum region that would contain all visible views ports, when views enabled
-            int winWidth = room.Model.Width, winHeight = room.Model.Height;
-            var visibleViews = room.Model.Views.Where(v => v.Visible);
-            if (visibleViews.Any())
-            {
-                winWidth = 1;
-                winHeight = 1;
+        // go to the first room in the list
+        GoToRoom(Game.Rooms[0]);
+    }
 
-                foreach (var view in visibleViews)
-                {
-                    winWidth  = System.Math.Max(winWidth,  view.PortX + view.PortWidth );
-                    winHeight = System.Math.Max(winHeight, view.PortY + view.PortHeight);
-                }
-            }
-            Game.SetWindowsSize(winWidth, winHeight);
+    public void GoToRoom(RoomInstance room)
+    {
+        if (!Game.Rooms.Contains(room.Model))
+            throw new Exception("The specified room is not part of the game.");
 
-            // run all create events for the new room
-            foreach (var instance in room.Instances)
+        // if there's an existing room ( =it's not the beginning of the game), destroy them all
+        if (Game.CurrentRoom != null)
+        {
+            while (Game.CurrentRoom.Instances.Count >= 1)
             {
-                if (instance.Model.CreateEvent != null)
-                    foreach (var script in instance.Model.CreateEvent.Docs)
-                        script.Run(Interpreter, instance);
+                Destroy(Game.CurrentRoom.Instances[0], []);
             }
         }
 
-        public void GoToRoom(RoomModel roomModel)
+        Game.CurrentRoom = room;
+        Game.SetCaption(room.Model.Caption);
+        Game.BackColor = room.Model.BackgroundColor;
+
+        // set window size: room size or the minimum region that would contain all visible views ports, when views enabled
+        int winWidth = room.Model.Width, winHeight = room.Model.Height;
+        var visibleViews = room.Model.Views.Where(v => v.Visible);
+        if (visibleViews.Any())
         {
-            if (!Game.Rooms.Contains(roomModel))
-                throw new Exception("The specified room is not part of the game.");
+            winWidth = 1;
+            winHeight = 1;
 
-            var roomInstance = new RoomInstance(roomModel);
-            GoToRoom(roomInstance);
+            foreach (var view in visibleViews)
+            {
+                winWidth  = System.Math.Max(winWidth,  view.PortX + view.PortWidth );
+                winHeight = System.Math.Max(winHeight, view.PortY + view.PortHeight);
+            }
         }
+        Game.SetWindowsSize(winWidth, winHeight);
 
-        /// <summary>
-        /// Goes to another room and destroys the objects in the current one.
-        /// </summary>
-        /// <param name="_">Unused.</param>
-        /// <param name="args">[roomId].</param>
-        /// <returns>void.</returns>
-        /// <exception cref="ArgumentException"></exception>
-        [ExpFunc(1)]
-        public Exp.Void GoToRoom(Exp.Instance? _, IValue?[] args)
+        // run all create events for the new room
+        foreach (var instance in room.Instances)
         {
-            // find the room by the ID
-            double ID = args[0].ThrowIfNull().Number;
-            RoomModel model = Game.Rooms.FirstOrDefault(r => ID == r.ID) ?? throw new ArgumentException($"There is no room with ID {ID}.");
-
-            // go to it
-            GoToRoom(model);
-
-            return Exp.Void.Return;
+            if (instance.Model.CreateEvent != null)
+                foreach (var script in instance.Model.CreateEvent.Docs)
+                    script.Run(Interpreter, instance);
         }
+    }
 
-        [ExpFunc]
-        public Exp.Void GoToNextRoom(Exp.Instance? _, IValue?[] args)
-        {
-            if (Game.CurrentRoom == null)
-                throw new NoActivatedRoomException();
+    public void GoToRoom(RoomModel roomModel)
+    {
+        if (!Game.Rooms.Contains(roomModel))
+            throw new Exception("The specified room is not part of the game.");
 
-            int currentIndex = Game.Rooms.IndexOf(Game.CurrentRoom.Model);
+        var roomInstance = new RoomInstance(roomModel);
+        GoToRoom(roomInstance);
+    }
 
-            if (currentIndex + 1 >= Game.Rooms.Count)
-                this.Interpreter.ThrowRuntime("Current room is the last room.", RuntimeException.INVALID_OPERATION);
-            else
-                GoToRoom(Game.Rooms[currentIndex + 1]);
+    /// <summary>
+    /// Goes to another room and destroys the objects in the current one.
+    /// </summary>
+    /// <param name="_">Unused.</param>
+    /// <param name="args">[roomId].</param>
+    /// <returns>void.</returns>
+    /// <exception cref="ArgumentException"></exception>
+    [ExpFunc(1)]
+    public Exp.Void GoToRoom(Exp.Instance? _, IValue?[] args)
+    {
+        // find the room by the ID
+        double ID = args[0].ThrowIfNull().Number;
+        RoomModel model = Game.Rooms.FirstOrDefault(r => ID == r.ID) ?? throw new ArgumentException($"There is no room with ID {ID}.");
 
-            return Exp.Void.Return;
-        }
+        // go to it
+        GoToRoom(model);
 
-        [ExpFunc]
-        public Exp.Void RestartRoom(Exp.Instance? _, IValue?[] args)
-        {
-            GoToRoom(Game.GetActivatedRoom().Model);
-            return Exp.Void.Return;
-        }
+        return Exp.Void.Return;
+    }
+
+    [ExpFunc]
+    public Exp.Void GoToNextRoom(Exp.Instance? _, IValue?[] args)
+    {
+        if (Game.CurrentRoom == null)
+            throw new NoActivatedRoomException();
+
+        int currentIndex = Game.Rooms.IndexOf(Game.CurrentRoom.Model);
+
+        if (currentIndex + 1 >= Game.Rooms.Count)
+            this.Interpreter.ThrowRuntime("Current room is the last room.", RuntimeException.INVALID_OPERATION);
+        else
+            GoToRoom(Game.Rooms[currentIndex + 1]);
+
+        return Exp.Void.Return;
+    }
+
+    [ExpFunc]
+    public Exp.Void RestartRoom(Exp.Instance? _, IValue?[] args)
+    {
+        GoToRoom(Game.GetActivatedRoom().Model);
+        return Exp.Void.Return;
     }
 }

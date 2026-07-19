@@ -75,14 +75,15 @@ namespace ArcadeMaker.IDE
         private void MusicEditor_Load(object sender, EventArgs e)
         {
             nameBox.Text = sound.name;
-            if (sound != null && sound.filePath != null)
-            {
-                fileNameLbl.Text = sound.filePath.FileName();
-            }
-            else
-            {
-                fileNameLbl.Text = "";
-            }
+            //if (sound != null && sound.filePath != null)
+            //{
+            //    fileNameLbl.Text = sound.filePath.FileName();
+            //}
+            //else
+            //{
+            //    fileNameLbl.Text = "";
+            //}
+            fileNameLbl.Text = "";
             float originalVolume = sound.volume;
             volumeBar.Value = (int)(100 * sound.volume);
 
@@ -101,7 +102,7 @@ namespace ArcadeMaker.IDE
         {
             if (isPlaying)
                 return;
-            if (sound.filePath != null)
+            if (sound.Data != null)
             {
                 try
                 {
@@ -171,7 +172,7 @@ namespace ArcadeMaker.IDE
         {
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                sound.filePath = openFileDialog.FileName;
+                sound.SetSource(openFileDialog.FileName);
                 fileNameLbl.Text = openFileDialog.FileName.FileName();
             }
         }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using ArcadeMaker.Core.Runtime;
 using ArcadeMaker.Core.Math.Shapes;
+using System.Runtime.CompilerServices;
 
 namespace ArcadeMaker.Core.Math;
 
@@ -22,6 +23,9 @@ public static class SeparatingAxisTheorem
 
        The method returns true if the rectangles overlap, false otherwise.
     */
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Intersects(this Rect rect, Rect other) => AreRectanglesIntersecting(rect, other);
 
     public static bool AreRectanglesIntersecting(Rect rect1, Rect rect2)
     {

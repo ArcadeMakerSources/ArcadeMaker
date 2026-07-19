@@ -1,4 +1,5 @@
-﻿using ArcadeMaker.IDE.Debugging;
+﻿using ArcadeMaker.Core.Runtime;
+using ArcadeMaker.IDE.Debugging;
 using ArcadeMaker.IDE.Items;
 using ArcadeMaker.IDE.Properties;
 using System;
@@ -312,7 +313,7 @@ namespace ArcadeMaker.IDE
             script.InitDefaultCode();
             InsertItemToTree(script, e);
             CreateItem(script, null, show: false);
-            
+
             script.editor.MdiParent = this;
             script.editor.Show();
         }
@@ -341,7 +342,7 @@ namespace ArcadeMaker.IDE
         {
             int index = 0;
 
-            restart:
+        restart:
             foreach (GameItem pitem in Environment.project.items)
             {
                 if (pitem.name == baseName + index)
@@ -513,7 +514,7 @@ namespace ArcadeMaker.IDE
                 "      this.Close(); // close the program https://www.google.co.il naviagte http://www.sport5.co.il\n      " +
                 "\n      return 0;\n   }\n" +
                 "}";
-            
+
             if (show)
             {
                 Form debug = new Form { Size = new Size(500, 500) };
@@ -528,6 +529,9 @@ namespace ArcadeMaker.IDE
 
             Debugging.Debug.OnDebugBuild += OnDebugBuild;
             errorsBox.AttachMenu();
+
+            Core.Runtime.DebugConsole.OnDebugOutput += (s, output) => DebugConsoleWriteLine(output, false);
+            debugInputErrorProvider.SetIconPadding(debugInputBox, -20); // make the icon appear INSIDE the text box
         }
 
         private void LoadRecentProjectsMenu()
@@ -595,26 +599,31 @@ namespace ArcadeMaker.IDE
 
         private async void saveGameBtn_Click(object sender, EventArgs e)
         {
+#if DEBUG
+            MessageBox.Show(
+                "Generating a standalone .exe is not implemented yet. For now, this button will generate a dll file, that replacing it with the original WindowsDX project folder's dll and then executing the .exe would run the game.",
+                "[DEBUG MODE]"
+            );
+#else
             MessageBox.Show("This option is not available yet.");
             return;
+#endif
 
             // old code
-            using (SaveFileDialog saveFileDialog = new SaveFileDialog())
-            {
-                saveFileDialog.Filter = "Executeable File|*.exe";
-                if (Environment.project.projectFilePath != null)
-                    saveFileDialog.FileName = Environment.project.name + ".exe";
-                else
-                    saveFileDialog.FileName = "Game " + DateTime.Now.ToString("dd-MM-yy") + ".exe";
+            using SaveFileDialog saveFileDialog = new();
+            saveFileDialog.Filter = "Executeable File|*.exe";
+            if (Environment.project.name != null)
+                saveFileDialog.FileName = Environment.project.name + ".exe";
+            else
+                saveFileDialog.FileName = "Game " + DateTime.Now.ToString("dd-MM-yy") + ".exe";
 
-                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                await Task.Run(() =>
                 {
-                    await Task.Run(() =>
-                    {
-                        Environment.GenerateExe(savePath: saveFileDialog.FileName, run: false, console: false);
-                        MessageBox.Show("Game saved.", ".exe File Saved", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    });
-                }
+                    Environment.GenerateExe(savePath: saveFileDialog.FileName, run: false, console: false);
+                    MessageBox.Show("Game saved.", ".exe File Saved", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                });
             }
         }
 
@@ -625,15 +634,15 @@ namespace ArcadeMaker.IDE
 
         private static void SaveProject(bool saveAs = false)
         {
-            string rootFolder; // the folder to which we want to save the full project folder, e.g. Desktop
             string projectName = Environment.project.name;
 
             saveAs = saveAs || Environment.project.projectFilePath == null;
+            string path;
             if (saveAs)
             {
                 using SaveFileDialog dialog = new();
-                dialog.Filter = $"{Global.ProgramName} Project|*.gsp";
-                if (Environment.project.projectFilePath != null)
+                dialog.Filter = $"{Global.ProgramName} Bundled Project (*.ampb)|*{GameProject.FileFormats.ArcadeMakerBundledProject}|{Global.ProgramName} Project (*.amp)|*{GameProject.FileFormats.ArcadeMakerProject}";
+                if (Environment.project.name != null)
                     dialog.FileName = Environment.project.name;
                 else
                 {
@@ -642,35 +651,15 @@ namespace ArcadeMaker.IDE
                 }
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    string loc = dialog.FileName;
-                    if (!string.IsNullOrWhiteSpace(loc))
-                    {
-                        Environment.project.name = loc.FileNameWithoutExtension();
-                        rootFolder = loc.FileLocation();
-                    }
-                    else
-                    {
-                        var res = MessageBox.Show("Something went wrong. Would you like to insert path directly?", "Error", MessageBoxButtons.YesNo);
-                        if (res == DialogResult.Yes)
-                        {
-                            loc = Microsoft.VisualBasic.Interaction.InputBox("Location to save the project to:");
-                            Environment.project.name = loc.FileNameWithoutExtension();
-                            rootFolder = loc.FileLocation();
-                        }
-                        else return;
-                    }
+                    path = dialog.FileName;
+                    Environment.project.name = path.FileNameWithoutExtension();
                 }
                 else return;
             }
             else
-                rootFolder = Environment.project.projectFilePath!.FileLocation().FileLocation(); // when dialog appears, the selected location is used to save the root folder containing the .gsp file.
-                                                                                                 // so given the path of the .gsp, first FileLocation() would return the root folder,
-                                                                                                 // and second would return the folder that was selected in
-                                                                                                 // the dialog when the project was first saved.
-            
-            if (Environment.project.projectFilePath != null && string.IsNullOrWhiteSpace(Environment.project.name))
-                Environment.project.name = Environment.project.projectFilePath.FileNameWithoutExtension();
-            Environment.project.Save(rootFolder);
+                path = Environment.project.projectFilePath!;
+
+            Environment.project.Save(path);
         }
 
         // make the toolstrip enabled with 1 click when form is not focused
@@ -679,7 +668,7 @@ namespace ArcadeMaker.IDE
             int WM_PARENTNOTIFY = 0x0210;
             if (!this.Focused && m.Msg == WM_PARENTNOTIFY)
             {
-                // Make this form auto-grab the focus when menu/controls are clicked
+                // make this form auto-grab the focus when menu / controls are clicked
                 this.Activate();
             }
             base.WndProc(ref m);
@@ -690,7 +679,7 @@ namespace ArcadeMaker.IDE
             Environment.project = new GameProject("escape_equal_names");
 
             OpenFileDialog fileDialog = new OpenFileDialog();
-            fileDialog.Filter = "GameStudio Projects|*.gsp";
+            fileDialog.Filter = $"{Global.ProgramName} Projects|*{GameProject.FileFormats.ArcadeMakerProject};*{GameProject.FileFormats.ArcadeMakerBundledProject}";
             if (fileDialog.ShowDialog() == DialogResult.OK)
             {
                 OpenProject(GameProject.Open(fileDialog.FileName, out object[] pTree), pTree);
@@ -953,6 +942,88 @@ namespace ArcadeMaker.IDE
         private void OnDebugBuild(object? sender, HashSet<ProjectError> e)
         {
             errorsBox.FillErrors(e);
+        }
+
+        private Font debugConsoleInputFont;
+        private bool firstDebugConsoleLine = true;
+        private void DebugConsoleWriteLine(bool input) => DebugConsoleWriteLine("", input);
+        private void DebugConsoleWriteLine(object? text, bool input)
+        {
+            debugConsoleInputFont ??= new(debugConsoleBox.Font, FontStyle.Bold);
+
+            // print
+            Debugging.Debug.InvokeIfRequired(debugConsoleBox, () =>
+            {
+                if (!firstDebugConsoleLine)
+                {
+                    // add new line and set its font to normal, so next line will be in regular format when added
+                    debugConsoleBox.AppendText("\n");
+                    debugConsoleBox.SelectionStart = debugConsoleBox.Text.Length - 1;
+                    debugConsoleBox.SelectionLength = 1;
+                    debugConsoleBox.SelectionFont = debugConsoleBox.Font;
+                }
+
+                string newLine = text?.ToString() ?? "NULL";
+                debugConsoleBox.AppendText((debugConsoleTimestampBox.Checked ? DateTime.Now.ToString("HH:mm:ss.fff") : "") + "> " + newLine);
+
+                // set input text style to bold
+                if (input && newLine.Length > 0)
+                {
+                    // select new line
+                    debugConsoleBox.SelectionStart = debugConsoleBox.Text.Length - newLine.Length;
+                    debugConsoleBox.SelectionLength = newLine.Length;
+
+                    // set its font to bold
+                    debugConsoleBox.SelectionFont = debugConsoleInputFont;
+
+                    // unselect
+                    debugConsoleBox.SelectionLength = 0;
+                    debugConsoleBox.SelectionStart = debugConsoleBox.Text.Length - 1;
+                    debugConsoleBox.SelectionFont = debugConsoleBox.Font;
+                }
+
+                debugConsoleBox.ScrollToCaret();
+                firstDebugConsoleLine = false;
+            });
+        }
+
+        private void debugInputBtn_Click(object sender, EventArgs e)
+        {
+            string input = debugInputBox.Text;
+            DebugConsoleWriteLine(input, true);
+            debugInputBox.Text = "";
+
+            DebugConsole.SendDebugInput(input);
+        }
+
+        private void debugInputBox_TextChanged(object sender, EventArgs e)
+        {
+            bool invalid = debugInputBox.Text.Length == 0;
+            if (!invalid && DebugConsole.InputValidator?.Invoke(debugInputBox.Text) is { } error)
+            {
+                debugInputErrorProvider.SetError(debugInputBox, error);
+                invalid = true;
+            }
+            else
+                debugInputErrorProvider.SetError(debugInputBox, "");
+
+            debugInputBtn.Enabled = !invalid;
+        }
+
+        private void clearDebugConsoleBtn_Click(object sender, EventArgs e)
+        {
+            debugConsoleBox.Text = "";
+            firstDebugConsoleLine = true;
+        }
+
+        private void debugInputBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                debugInputBtn.PerformClick();
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+            }
         }
     }
 
