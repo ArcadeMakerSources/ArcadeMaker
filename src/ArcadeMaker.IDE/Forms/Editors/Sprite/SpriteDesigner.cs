@@ -60,19 +60,27 @@ partial class SpriteDesigner : Form, IDisposable
         pressedButton = e.Button;
         mouseDownPosition = e.Location;
         onTheMoveRecord.Clear();
+
+        if (selectedTool.OnMouseDown)
+        {
+            Draw(e.Location, false);
+        }
     }
 
     private void imageBox_MouseMove(object sender, MouseEventArgs e)
     {
         if (pressedButton == MouseButtons.None)
             return;
-        
-        previewDrawingOperation = Draw(e.Location, true);
 
-        if (selectedTool.OnTheMove)
+        if (!selectedTool.DisablePreview)
         {
-            // record the full move as 1 drawing
-            onTheMoveRecord.Add(previewDrawingOperation);
+            previewDrawingOperation = Draw(e.Location, true);
+
+            if (selectedTool.OnTheMove)
+            {
+                // record the full move as 1 drawing
+                onTheMoveRecord.Add(previewDrawingOperation);
+            }
         }
 
         imageBox.Invalidate();
@@ -88,7 +96,7 @@ partial class SpriteDesigner : Form, IDisposable
             drawingOperations.Add(JoinDrawingOperations(onTheMoveRecord.ToArray() /* keep ToArray(), otherwise the drawing will disappear on Clear()!! */));
             imageBox.Invalidate();
         }
-        else
+        else if (selectedTool.OnMouseUp)
             Draw(e.Location, false);
 
         pressedButton = MouseButtons.None;
@@ -193,6 +201,7 @@ partial class SpriteDesigner : Form, IDisposable
         toolbox.Add(ellipseBtn, new EllipseDrawer());
         toolbox.Add(lineBtn, new LineDrawer());
         toolbox.Add(penBtn, new PenTool());
+        toolbox.Add(fillBtn, new BucketTool(() => currentImage));
 
         // subscribe buttons to listener
         foreach (Button btn in toolbox.Keys)
@@ -212,7 +221,7 @@ partial class SpriteDesigner : Form, IDisposable
         selectedTool = tool;
     }
 
-    private Bitmap CopyImage(Bitmap image)
+    private static Bitmap CopyImage(Bitmap image)
     {
         Bitmap newImage = new(image.Width, image.Height);
         using (Graphics graphics = Graphics.FromImage(newImage))
