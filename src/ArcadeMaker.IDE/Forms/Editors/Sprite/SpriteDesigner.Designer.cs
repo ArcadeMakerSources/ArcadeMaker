@@ -157,6 +157,7 @@ namespace ArcadeMaker.IDE
             // undoBtn
             // 
             undoBtn.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            undoBtn.Enabled = false;
             undoBtn.Image = (Image)resources.GetObject("undoBtn.Image");
             undoBtn.ImageTransparentColor = Color.Magenta;
             undoBtn.Name = "undoBtn";
@@ -167,6 +168,7 @@ namespace ArcadeMaker.IDE
             // redoBtn
             // 
             redoBtn.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            redoBtn.Enabled = false;
             redoBtn.Image = (Image)resources.GetObject("redoBtn.Image");
             redoBtn.ImageTransparentColor = Color.Magenta;
             redoBtn.Name = "redoBtn";

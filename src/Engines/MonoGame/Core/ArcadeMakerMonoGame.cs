@@ -34,6 +34,8 @@ namespace ArcadeMaker.Engines.MonoGame.Core
     /// </summary>
     public sealed partial class ArcadeMakerMonoGame : Game, IGame
     {
+        public static ArcadeMakerMonoGame? Instance { get; private set; }
+
         public event EventHandler<RuntimeException>? OnExpRuntimeError;
         public event EventHandler<Exception>? OnCsError;
 
@@ -124,6 +126,8 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         /// </summary>
         private void Setup()
         {
+            Instance = this;
+
             graphicsDeviceManager = new GraphicsDeviceManager(this);
 
             // share GraphicsDeviceManager as a service.

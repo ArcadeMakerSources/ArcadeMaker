@@ -103,7 +103,9 @@ namespace ArcadeMaker.IDE
                 {
                     try
                     {
-                        images.Images[index] = designer.GetResult();
+                        var result = designer.GetResult();
+                        images.Images[index] = result;
+                        imageListView.SelectedItems[0].Tag = result;
                         imageListView.Refresh();
                     }
                     catch { }

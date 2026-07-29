@@ -340,22 +340,13 @@ namespace ArcadeMaker.IDE
             return destImage;
         }
 
-
-        public static void DrawTransparentBackground(this PictureBox box)
+        public static Bitmap Copy(this Bitmap image)
         {
-            System.Drawing.Bitmap image = new System.Drawing.Bitmap(32, 32);
-            const int rectSize = 16;
-            using (Graphics g = Graphics.FromImage(image))
-            {
-                Pen pen = new Pen(Color.White);
-                g.FillRectangle(pen.Brush, 0, 0, rectSize, rectSize);
-                pen.Color = Color.Gray;
-                g.FillRectangle(pen.Brush, rectSize, 0, rectSize, rectSize);
-                g.FillRectangle(pen.Brush, 0, rectSize, rectSize, rectSize);
-                pen.Color = Color.White;
-                g.FillRectangle(pen.Brush, rectSize, rectSize, rectSize, rectSize);
-            }
-            box.BackgroundImage = image;
+            // Image.Clone() is problematic, so we'll manually create an empty new image and draw the original on top of it
+            Bitmap bmp = new(image.Width, image.Height);
+            using Graphics graphics = Graphics.FromImage(bmp);
+            graphics.DrawImage(image, 0, 0);
+            return bmp;
         }
 
         public static bool ImageFileIsSpriteStrip(string path, out int count)

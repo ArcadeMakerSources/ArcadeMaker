@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Drawing;
 using DrawingOperation = System.Action<System.Drawing.Graphics>;
 
@@ -16,7 +17,7 @@ partial class SpriteDesigner : Form, IDisposable
     private int thickness = 1;
 
     // draw variables
-    private readonly List<DrawingOperation> drawingOperations = [];
+    private readonly ObservableCollection<DrawingOperation> drawingOperations = [];
     private readonly Stack<DrawingOperation> redoDrawingOperations = [];
     private Point mouseDownPosition;
     private System.Windows.Forms.MouseButtons pressedButton = MouseButtons.None;
@@ -27,7 +28,7 @@ partial class SpriteDesigner : Form, IDisposable
     private const float ZOOM_DIFF = 0.2f;
     private float zoom = 1;
 
-    enum FillTypes
+    private enum FillTypes
     {
         Outline,
         Fill,
@@ -38,7 +39,7 @@ partial class SpriteDesigner : Form, IDisposable
     {
         InitializeComponent();
 
-        originalImage = CopyImage(image ?? throw new ArgumentNullException(nameof(image)));
+        originalImage = (image ?? throw new ArgumentNullException(nameof(image))).Copy();
         currentImage = originalImage;
 
         // init toolbox
@@ -50,6 +51,8 @@ partial class SpriteDesigner : Form, IDisposable
         // init image view
         imageBox.Image = currentImage;
         imageBox.Size = currentImage.Size;
+
+        drawingOperations.CollectionChanged += (s, e) => SetUndoRedoEnabled();
     }
 
     private void imageBox_MouseDown(object sender, MouseEventArgs e)
@@ -123,12 +126,9 @@ partial class SpriteDesigner : Form, IDisposable
         DrawingOperation op = selectedTool.Draw(col1, col2, new(x1, y1), new(x2, y2), fillType, thickness);
         if (!preview)
         {
+            redoDrawingOperations.Clear();
             drawingOperations.Add(op);
             imageBox.Invalidate();
-        }
-        else
-        {
-            redoDrawingOperations.Clear();
         }
 
         return op;
@@ -143,9 +143,13 @@ partial class SpriteDesigner : Form, IDisposable
 
     public Bitmap GetResult()
     {
-        using (Graphics graphics = Graphics.FromImage(originalImage))
+        Bitmap bmp = new(originalImage.Width, originalImage.Height);
+        using (Graphics graphics = Graphics.FromImage(bmp))
+        {
+            graphics.DrawImage(originalImage, 0, 0);
             DrawResult(graphics);
-        return originalImage;
+        }
+        return bmp;
     }
 
     public static DrawingOperation JoinDrawingOperations(params IEnumerable<DrawingOperation> drawingOperations) => graphics =>
@@ -165,7 +169,7 @@ partial class SpriteDesigner : Form, IDisposable
                 graphics.FillRectangle(col ? Brushes.White : Brushes.Gray, x, y, size, size);
                 col = !col;
             }
-            col = !col;
+            col = (x / size) % 2 == 0;
         }
     }
 
@@ -201,7 +205,7 @@ partial class SpriteDesigner : Form, IDisposable
         toolbox.Add(ellipseBtn, new EllipseDrawer());
         toolbox.Add(lineBtn, new LineDrawer());
         toolbox.Add(penBtn, new PenTool());
-        toolbox.Add(fillBtn, new BucketTool(() => currentImage));
+        toolbox.Add(fillBtn, new BucketTool(GetResult));
 
         // subscribe buttons to listener
         foreach (Button btn in toolbox.Keys)
@@ -219,16 +223,6 @@ partial class SpriteDesigner : Form, IDisposable
             return;
 
         selectedTool = tool;
-    }
-
-    private static Bitmap CopyImage(Bitmap image)
-    {
-        Bitmap newImage = new(image.Width, image.Height);
-        using (Graphics graphics = Graphics.FromImage(newImage))
-        {
-            graphics.DrawImage(image, 0, 0);
-        }
-        return image;
     }
 
     private void width1Btn_Click(object sender, EventArgs e)
@@ -308,24 +302,34 @@ partial class SpriteDesigner : Form, IDisposable
         previewDrawingOperation = null;
     }
 
-    private void undoBtn_Click(object sender, EventArgs e)
+    private void Undo()
     {
         if (drawingOperations.Count == 0)
             return;
 
         DrawingOperation undo = drawingOperations.Last();
-        drawingOperations.Remove(undo);
         redoDrawingOperations.Push(undo);
+        drawingOperations.Remove(undo);
         imageBox.Invalidate();
     }
 
-    private void redoBtn_Click(object sender, EventArgs e)
+    private void Redo()
     {
         if (redoDrawingOperations.Count == 0)
             return;
 
         drawingOperations.Add(redoDrawingOperations.Pop());
         imageBox.Invalidate();
+    }
+
+    private void undoBtn_Click(object sender, EventArgs e) => Undo();
+
+    private void redoBtn_Click(object sender, EventArgs e) => Redo();
+
+    private void SetUndoRedoEnabled()
+    {
+        undoBtn.Enabled = drawingOperations.Count >= 1;
+        redoBtn.Enabled = redoDrawingOperations.Count >= 1;
     }
 
     private void zoomInBtn_Click(object sender, EventArgs e)

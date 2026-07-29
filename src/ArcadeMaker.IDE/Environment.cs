@@ -1,4 +1,5 @@
-﻿using ArcadeMaker.IDE.Items;
+﻿using ArcadeMaker.Engines.MonoGame.Core;
+using ArcadeMaker.IDE.Items;
 using Microsoft.CSharp;
 using Mono.Cecil;
 using System;
@@ -124,7 +125,9 @@ namespace ArcadeMaker.IDE
             isGameRunning = true;
 
             if (run)
+            {
                 Engines.MonoGame.Platforms.WindowsDX.Program.Main([debugPath]);
+            }
             else
             {
                 string dll_winDX = typeof(Engines.MonoGame.Platforms.WindowsDX.Program).Assembly.Location;

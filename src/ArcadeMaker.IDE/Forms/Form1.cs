@@ -5,6 +5,7 @@ using ArcadeMaker.IDE.Properties;
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -592,9 +593,14 @@ namespace ArcadeMaker.IDE
 
         private async void saveExeBtn_Click(object sender, EventArgs e)
         {
-            ProgressForm frm = new ProgressForm();
+            ProgressForm frm = new();
             frm.Show();
-            await Task.Run(() => { Environment.GenerateExe(run: true); frm.Close(); });
+
+            await Task.Run(() =>
+            {
+                Environment.GenerateExe(run: true);
+                frm.Close();
+            });
         }
 
         private async void saveGameBtn_Click(object sender, EventArgs e)

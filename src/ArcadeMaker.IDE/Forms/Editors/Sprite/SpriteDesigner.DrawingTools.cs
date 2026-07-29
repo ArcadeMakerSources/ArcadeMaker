@@ -114,7 +114,7 @@ partial class SpriteDesigner
         };
     }
 
-    class BucketTool(Func<Bitmap> imageGetter) : DrawingTool
+    class BucketTool(Func<Bitmap> resultImageGetter) : DrawingTool
     {
         public override string Name => "Bucket";
         public override bool OnTheMove => false;
@@ -122,12 +122,12 @@ partial class SpriteDesigner
         public override bool OnMouseUp => false;
         public override bool DisablePreview => true;
 
-        private Func<Bitmap> GetImage { get; } = imageGetter;
+        private Func<Bitmap> GetResultImage { get; } = resultImageGetter;
         private const int SENSITIVITY = 15;
 
         public override DrawingOperation Draw(Color col1, Color col2, Point p1, Point p2, FillTypes fillType, float thickness)
         {
-            Bitmap image = GetImage();
+            using Bitmap image = GetResultImage();
             List<Point> finalMap = [];
 
             // set the target color (the one to replace with newer color) to the current pixel (mouse position)
@@ -165,34 +165,46 @@ partial class SpriteDesigner
                 // scan-line fill:
                 {
                     int y1 = px.Y;
-                    while (y1 >= 0 && GetPixel(new(px.X, y1)) == targetCol)
+                    while (y1 >= 0 && GetPixel(new(px.X, y1)) is { } pxc && ColorCloseEnough(pxc))
                     {
                         y1--;
                     }
                     y1++;
                     bool spanLeft = false;
                     bool spanRight = false;
-                    while (y1 < image.Height && GetPixel(new(px.X, y1)) == targetCol)
+                    while (y1 < image.Height)
                     {
+                        Color? pxc = GetPixel(new(px.X, y1));
+                        if (pxc == null || !ColorCloseEnough(pxc.Value))
+                            break;
+
                         finalMap.Add(new(px.X, y1));
 
-                        if (!spanLeft && px.X > 0 && GetPixel(new(px.X - 1, y1)) == targetCol)
+                        Color? leftpx = GetPixel(new(px.X - 1, y1)), rightpx = GetPixel(new(px.X + 1, y1));
+
+                        if (leftpx != null)
                         {
-                            pixelsToCheck.Push(new Point(px.X - 1, y1));
-                            spanLeft = true;
+                            if (!spanLeft && px.X > 0 && ColorCloseEnough(leftpx.Value))
+                            {
+                                pixelsToCheck.Push(new(px.X - 1, y1));
+                                spanLeft = true;
+                            }
+                            else if (spanLeft && px.X - 1 == 0 && !ColorCloseEnough(leftpx.Value))
+                            {
+                                spanLeft = false;
+                            }
                         }
-                        else if (spanLeft && px.X - 1 == 0 && GetPixel(new(px.X - 1, y1)) != targetCol)
+                        if (rightpx != null)
                         {
-                            spanLeft = false;
-                        }
-                        if (!spanRight && px.X < image.Width - 1 && GetPixel(new(px.X + 1, y1)) == targetCol)
-                        {
-                            pixelsToCheck.Push(new(px.X + 1, y1));
-                            spanRight = true;
-                        }
-                        else if (spanRight && px.X < image.Width - 1 && GetPixel(new(px.X + 1, y1)) != targetCol)
-                        {
-                            spanRight = false;
+                            if (!spanRight && px.X < image.Width - 1 && ColorCloseEnough(rightpx.Value))
+                            {
+                                pixelsToCheck.Push(new(px.X + 1, y1));
+                                spanRight = true;
+                            }
+                            else if (spanRight && px.X < image.Width - 1 && !ColorCloseEnough(rightpx.Value))
+                            {
+                                spanRight = false;
+                            }
                         }
                         y1++;
                     }
@@ -218,10 +230,12 @@ partial class SpriteDesigner
                 }
                 catch (Exception ex)
                 {
-                    _ = 0;
+                    _ = ex;
                     return null;
                 }
             }
+
+            bool ColorCloseEnough(Color c) => c.GetDifference(targetCol) <= SENSITIVITY;
         }
     }
 }
