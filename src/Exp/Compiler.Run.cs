@@ -856,7 +856,10 @@ public partial class Interpreter
         // insert arguments
         int i = 0;
         foreach (var param in parameters)
-            func.ParamVariables[i++].Value = param;
+        {
+            if (i < func.ParamVariables.Length)
+                func.ParamVariables[i++].Value = param;
+        }
 
         // on non-static funcs, set parent VS to the instance we're calling on
         var prevParent = func.Parent;

@@ -1,5 +1,6 @@
 ﻿using ArcadeMaker.Core.Math.Shapes;
 using ArcadeMaker.Core.Models;
+using ArcadeMaker.Core.Resources;
 using ArcadeMaker.Core.Resources.Serializeables;
 using Exp;
 using Exp.Spans;
@@ -16,6 +17,7 @@ public class Instance : Exp.Instance
     public const int NUMBER_OF_ALARMS = 11;
 
     public ObjectModel Model { get; }
+    public IGame Game { get; }
     public int FramesSinceLastImageIndex { get; set; }
 
     [ExpProperty]
@@ -53,6 +55,9 @@ public class Instance : Exp.Instance
     [ExpProperty]
     public TypeVariable ImageYScale { get; }
 
+    [ExpProperty]
+    public TypeVariable OnPathStepFinished { get; }
+
     public Rect? Mask { get; private set; }
 
     private double depth;
@@ -62,6 +67,20 @@ public class Instance : Exp.Instance
 
     [ExpProperty]
     public TypeVariable Solid { get; }
+
+    public Sprite? Sprite
+    {
+        get;
+        set
+        {
+            field = value;
+            ImageIndex?.Value = 0.ToExp(); // first Sprite init happens before ImageIndex property init, so keep the '?'
+            InitMask();
+        }
+    }
+
+    [ExpProperty]
+    public CustomVariable SpriteID { get; }
 
     public (int number, ObjectEvent? ev)[] Alarm { get; } = new (int, ObjectEvent)[NUMBER_OF_ALARMS];
 
@@ -80,11 +99,12 @@ public class Instance : Exp.Instance
         }
     }
 
-    public Instance(ObjectModel model) : base(model.Class, addProperties: false)
+    public Instance(IGame game, ObjectModel model) : base(model.Class, addProperties: false)
     {
         this.Model = model;
+        this.Game = game;
 
-        InitMask();
+        Sprite = model.Sprite;
 
         // assign properties
         var isNumChecker = new Func<IValue?, bool>(v => v?.IsNumber == true);
@@ -108,6 +128,9 @@ public class Instance : Exp.Instance
         depth = ((double)model.InitValues.Depth);
         Depth = new CustomVariable("depth", () => depth.ToExp(), SetDepth);
         Solid = InitVar("solid", model.InitValues.Solid.ToExp(), isBoolChecker, ValueHelper.tbool);
+        OnPathStepFinished = InitVar("onPathStepFinished", null, val => val is null or FuncPntr, ValueHelper.tfunc);
+        SpriteID = new("spriteID", GetSpriteID, SetSprite);
+        Vars.Add(SpriteID);
 
         // init alarms
         for (int alarmIndex = 0; alarmIndex < NUMBER_OF_ALARMS; alarmIndex++)
@@ -117,6 +140,13 @@ public class Instance : Exp.Instance
         }
 
         AssignExtraProperties();
+    }
+
+    public IValue GetSpriteID() => Sprite.ID.ToExp();
+    public void SetSprite(IValue? id)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        Sprite = Game.Sprites.FirstOrDefault(spr => spr.ID == id.Number) ?? throw new ArgumentException("Bad ID.");
     }
 
     private void AssignExtraProperties()
@@ -157,7 +187,7 @@ public class Instance : Exp.Instance
         }
     }
 
-    private TypeVariable InitVar(string name, IValue initVal, Func<IValue?, bool> checker, string typeName)
+    private TypeVariable InitVar(string name, IValue? initVal, Func<IValue?, bool> checker, string typeName)
     {
         TypeVariable var = new(name, initVal, checker, typeName);
         Vars.Add(var);
@@ -200,7 +230,7 @@ public class Instance : Exp.Instance
 
     private void InitMask()
     {
-        var instMask = Model.Sprite?.Mask;
+        var instMask = Sprite?.Mask;
 
         if (instMask == null)
             return;
@@ -209,8 +239,8 @@ public class Instance : Exp.Instance
         {
             Width = instMask.Right - instMask.Left + 1,
             Height = instMask.Bottom - instMask.Top + 1,
-            OriginX = Model.Sprite!.OriginX - instMask.Left + 1,
-            OriginY = Model.Sprite.OriginY - instMask.Top + 1
+            OriginX = Sprite!.OriginX - instMask.Left + 1,
+            OriginY = Sprite.OriginY - instMask.Top + 1
         };
     }
 

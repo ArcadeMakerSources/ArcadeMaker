@@ -328,6 +328,10 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
                 {
                     instance.Hspeed.Value = hsp.ToExp();
                     instance.Vspeed.Value = vsp.ToExp();
+
+                    // call onPathStepFinished
+                    if (instance.CurrentPathDrive.PathStepIndex > 1 && instance.OnPathStepFinished.Value is FuncPntr fn)
+                        fn.Call(Interpreter, [instance.CurrentPathDrive.Path.ID.ToExp()]);
                 }
             }
 
@@ -378,10 +382,10 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
 
     private static void UpdateImageIndex(Instance instance)
     {
-        if (instance.Model.Sprite != null && instance.ImageSpeed.Value!.Number > 0 && instance.Model.Sprite.NumberOfImages >= 2 && ++instance.FramesSinceLastImageIndex >= instance.ImageSpeed.Value?.Number)
+        if (instance.Sprite != null && instance.ImageSpeed.Value!.Number > 0 && instance.Sprite.NumberOfImages >= 2 && ++instance.FramesSinceLastImageIndex >= instance.ImageSpeed.Value?.Number)
         {
             instance.FramesSinceLastImageIndex = 0;
-            double nextIndex = instance.ImageIndex.Value!.Number + 1 >= instance.Model.Sprite.NumberOfImages ? 0 : instance.ImageIndex.Value.Number + 1;
+            double nextIndex = instance.ImageIndex.Value!.Number + 1 >= instance.Sprite.NumberOfImages ? 0 : instance.ImageIndex.Value.Number + 1;
             instance.ImageIndex.Value = nextIndex.ToExp();
         }
     }
@@ -451,7 +455,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     public Runtime.Instance CreateInstance(Exp.Instance? _, IValue?[] args)
     {
         ObjectModel model = Game.Objects.FirstOrDefault(m => m.Class.ExpType == args[2].ThrowIfNull()) ?? throw new ArgumentException("Value of argument type must be a type of a game object.");
-        Runtime.Instance inst = new(model);
+        Runtime.Instance inst = new(Game, model);
         inst.X.Value = args[0];
         inst.Y.Value = args[1];
         Game.GetActivatedRoom().AddInstance(inst);
@@ -499,7 +503,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         if (!Game.Rooms.Contains(room.Model))
             throw new Exception("The specified room is not part of the game.");
 
-        // if there's an existing room ( =it's not the beginning of the game), destroy them all
+        // if there's an existing room ( =it's not the beginning of the game), destroy all instances
         if (Game.CurrentRoom != null)
         {
             while (Game.CurrentRoom.Instances.Count >= 1)
@@ -542,7 +546,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         if (!Game.Rooms.Contains(roomModel))
             throw new Exception("The specified room is not part of the game.");
 
-        var roomInstance = new RoomInstance(roomModel);
+        var roomInstance = new RoomInstance(Game, roomModel);
         GoToRoom(roomInstance);
     }
 

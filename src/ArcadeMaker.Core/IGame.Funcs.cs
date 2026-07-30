@@ -52,13 +52,37 @@ public partial interface IGame
     /// <returns>The received input number.</returns>
     [ExpFunc(0, 1)]
     [Param("message", ParamType.Any, "A message to print to the debug console before picking the value.", Optional = true)]
-    public IValue DebugReadNumber(Exp.Instance? _, IValue?[] args)
+    IValue DebugReadNumber(Exp.Instance? _, IValue?[] args)
     {
         if (args is { Length: > 0 })
             DebugLog(null, [args[0]]);
 
         double num = double.Parse(DebugConsole.ReadLine(line => double.TryParse(line, out num) ? null : "A number was expected."));
         return num.ToExp();
+    }
+
+    /// <summary>
+    /// Returns an array of all the keyboard keys that are currently pressed.
+    /// </summary>
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">(Unused).</param>
+    /// <returns>An <see cref="Exp.Instance"/> which its <see cref="Exp.Instance.ArrayValues"/> property contains all of the currently pressed keys.</returns>
+    [ExpFunc]
+    Exp.Instance GetPressedKeys(Exp.Instance? _, IValue?[] args);
+
+    /// <summary>
+    /// Returns an array of values holding all of the keyboard keys that are currently being pressed.
+    /// </summary>
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">(Unused).</param>
+    /// <returns>An <see cref="Exp.Instance"/> which its <see cref="Exp.Instance.ArrayValues"/> property contains all of the currently pressed keys.</returns>
+    [ExpFunc]
+    IValue? GetPressedKey(Exp.Instance? _, IValue?[] args)
+    {
+        var keys = GetPressedKeys(_, args);
+        if (keys.ArrayValues?.Length > 0)
+            return keys.ArrayValues[0];
+        return null;
     }
 
     /// <summary>
@@ -227,15 +251,18 @@ public partial interface IGame
         var y = args[1].ThrowIfNull().Number;
 
         // create a Rect
-        var instMask = inst.Model.Sprite!.Mask;
+        if (inst.Sprite == null)
+            return false.ToExp();
+
+        var instMask = inst.Sprite.Mask;
         var instRect = new Rect
         {
             X = inst.X.Value!.Number,
             Y = inst.Y.Value!.Number,
             Width = instMask.Right - instMask.Left + 1,
             Height = instMask.Bottom - instMask.Top + 1,
-            OriginX = inst.Model.Sprite.OriginX - instMask.Left + 1,
-            OriginY = inst.Model.Sprite.OriginY - instMask.Top + 1,
+            OriginX = inst.Sprite.OriginX - instMask.Left + 1,
+            OriginY = inst.Sprite.OriginY - instMask.Top + 1,
             Angle = inst.ImageAngle.Value!.Number
         };
 
@@ -257,7 +284,7 @@ public partial interface IGame
     {
         var inst = (Runtime.Instance)expinst!;
 
-        if (inst.Model.Sprite == null)
+        if (inst.Sprite == null)
             return false;
 
         var x = args[0].ThrowIfNull().Number;
@@ -272,7 +299,7 @@ public partial interface IGame
         {
             foreach (var i in GetActivatedRoom().Instances)
             {
-                if (args.Length == 2 || (i.Model.Sprite != null && i.def.ExpType == args[2] && ((IValue)PlaceMeeting(x, y, i)).Bool))
+                if (args.Length == 2 || (i.Sprite != null && i.def.ExpType == args[2] && ((IValue)PlaceMeeting(x, y, i)).Bool))
                     return true;
             }
             return false;
@@ -364,21 +391,23 @@ public partial interface IGame
     /// <param name="_"></param>
     /// <param name="args">(pointX, pointY, type (null for any)).</param>
     /// <returns>The nearest instance, or <c>null</c> if there is no any instance in the room.</returns>
-    [ExpFunc(2, 3)]
+    [ExpFunc(2, 3, 4)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("type", ParamType.Number, "The type to get its nearest instance.", Optional = true)]
+    [Param("ignore", ParamType.GameObject, "An instance to ignore.", Optional = true)]
     Runtime.Instance? NearestInstance(Exp.Instance? _, IValue?[] args)
     {
         args[0].ThrowIfNull();
         args[1].ThrowIfNull();
         IValue? type = args.Length >= 3 ? args[2] : null;
+        IValue? instToIgnore = args.Length >= 4 ? args[3] : null;
 
         KeyValuePair<Runtime.Instance?, double> nearest = new(null, -1);
         bool first = true;
         foreach (var inst in GetActivatedRoom().Instances)
         {
-            if (type == null || type == inst.Model.Class.ExpType)
+            if (inst != instToIgnore && (type == null || type == inst.Model.Class.ExpType))
             {
                 double distance = Math.Formulas.DistanceBetween(args[0]!.Number, args[1]!.Number, inst.X.Value!.Number, inst.Y.Value!.Number);
                 if (first || distance < nearest.Value)
@@ -396,19 +425,21 @@ public partial interface IGame
     /// <param name="_"></param>
     /// <param name="args">(pointX, pointY, type (null for any)).</param>
     /// <returns>The furthest instance, or <c>null</c> if there is no any instance in the room.</returns>
-    [ExpFunc(2, 3)]
+    [ExpFunc(2, 3, 4)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("type", ParamType.Number, "The type to get its furthest instance.", Optional = true)]
+    [Param("ignore", ParamType.GameObject, "An instance to ignore.", Optional = true)]
     Runtime.Instance? FurthestInstance(Exp.Instance? _, IValue?[] args)
     {
         Extensions.ThrowIfNull(args[0], args[1]);
         IValue? type = args.Length >= 3 ? args[2] : null;
+        IValue? instToIgnore = args.Length >= 4 ? args[3] : null;
 
         KeyValuePair<Runtime.Instance?, double> furthest = new(null, -1);
         foreach (var inst in GetActivatedRoom().Instances)
         {
-            if (type == null || type == inst.Model.Class.ExpType)
+            if (inst != instToIgnore && (type == null || type == inst.Model.Class.ExpType))
             {
                 double distance = Math.Formulas.DistanceBetween(args[0]!.Number, args[1]!.Number, inst.X.Value!.Number, inst.Y.Value!.Number);
                 if (distance > furthest.Value)
@@ -800,4 +831,35 @@ public partial interface IGame
     [ExpFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its port height.")]
     IValue GetViewPortHeight(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortHeight.ToExp();
+
+    /// <summary>
+    /// Gets the ID of the resource (sprite, path, etc.) with the given name.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">Arguments where args[0] is the resource name.</param>
+    /// <returns>The ID of the resource with the given name, or null if there's no resource with this name.</returns>
+    [ExpFunc(1)]
+    [Param("name", ParamType.String, "The name of the resource to find its ID.")]
+    IValue? GetResByName(Exp.Instance? _, IValue?[] args)
+    {
+        string name = args[0].ThrowIfNull().ToString()!;
+        IEnumerable<ISetsID>[] resLists = [Sprites, Sounds, Paths, Rooms];
+
+        foreach (var ls in resLists)
+        {
+            if (ls.FirstOrDefault(res => res.Name == name) is { } res)
+                return res.ID.ToExp();
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the index of the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(unused).</param>
+    /// <returns>The index of the currently activated room as a <see cref="NumberValue"/>.</returns>
+    [ExpFunc]
+    IValue GetRoomIndex(Exp.Instance? _, IValue?[] args) => Rooms.IndexOf(GetActivatedRoom().Model).ToExp();
 }

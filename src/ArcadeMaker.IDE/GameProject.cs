@@ -289,9 +289,9 @@ namespace ArcadeMaker.IDE
             // save all scripts
             foreach (GameScript script in scripts)
             {
-                string p = path + @"\" + script.name + ".cs", gspPath = @"\" + script.name + ".cs";
-                SaveText(gspPath, script.Script);
-                var sscript = new SerializeableGameScript { name = script.name, path = gspPath };
+                string p = @"\" + script.name + ".cs";
+                SaveText(p, script.Script);
+                var sscript = new SerializeableGameScript { name = script.name, path = p };
                 sitems.Add(sscript);
             }
             foreach (GameObject obj in objects)
@@ -681,13 +681,12 @@ namespace ArcadeMaker.IDE
                         gpath.close = spath.close;
                         project.items.Add(gpath);
                     }
-                    else if (item is SerializeableGameScript)
+                    else if (item is SerializeableGameScript sscript)
                     {
-                        var sscript = item as SerializeableGameScript;
-                        GameScript script = new GameScript(sscript.name);
+                        GameScript script = new(sscript.name);
                         try
                         {
-                            script.Script = LoadText(projectFileLocation + sscript.path);
+                            script.Script = LoadText(sscript.path);
                         }
                         catch
                         {

@@ -104,8 +104,15 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             this.BundledProjectFileStream = bundledProjectFileStream;
             Setup();
 
-            // load game data
-            ((IGame)this).LoadFromProjectFile(bundledProjectFileStream, null);
+            try
+            {
+                // load game data
+                ((IGame)this).LoadFromProjectFile(bundledProjectFileStream, null);
+            }
+            catch (Exception ex)
+            {
+                Exit();
+            }
 
             bundledProjectFileStream.Position = 0;
         }
@@ -115,8 +122,15 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             this.ProjectFilePath = projectFilePath;
             Setup();
 
-            // load game data
-            ((IGame)this).LoadFromProjectFile(null, projectFilePath);
+            try
+            {
+                // load game data
+                ((IGame)this).LoadFromProjectFile(null, projectFilePath);
+            }
+            catch (Exception ex)
+            {
+                Exit();
+            }
         }
 
         /// <summary>
@@ -451,16 +465,16 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
         public Exp.Void DrawInstance(ArcadeMaker.Core.Runtime.Instance inst)
         {
-            if (inst.Model.Sprite == null)
+            if (inst.Sprite == null)
                 return Exp.Void.Return;
 
             Vector2 position = new((float)inst.X.Value!.Number, (float)inst.Y.Value!.Number);
-            Vector2 origin = new(inst.Model.Sprite.OriginX, inst.Model.Sprite.OriginY);
+            Vector2 origin = new(inst.Sprite.OriginX, inst.Sprite.OriginY);
             Vector2 scale = new((float)inst.ImageXScale.Value!.Number, (float)inst.ImageYScale.Value!.Number);
 
             // TODO: validate visibilty as a condition for drawing, respecting scale
             
-            MainTextureAtlas.GetRegion(inst.Model.Sprite, (int)inst.ImageIndex.Value!.Number)?.Draw(
+            MainTextureAtlas.GetRegion(inst.Sprite, (int)inst.ImageIndex.Value!.Number)?.Draw(
                 SpriteBatch,
                 position,
                 Color.White,
@@ -504,6 +518,15 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         private GamePadState PrevGamepad3State { get; set; }
         private GamePadState PrevGamepad4State { get; set; }
         private MouseState PrevMouseState { get; set; }
+
+        public Exp.Instance GetPressedKeys(Exp.Instance? _, IValue?[] args)
+        {
+            var keys = KeyboardState.GetPressedKeys();
+            IValue[] expKeys = new IValue[keys.Length];
+            for (int i = 0; i < keys.Length; i++)
+                expKeys[i] = ((int)keys[i]).ToExp();
+            return new(ClassDefSpan.ExpArrayDef, expKeys);
+        }
 
         public BoolValue KeyDown(Exp.Instance? _, IValue?[] args)
         {

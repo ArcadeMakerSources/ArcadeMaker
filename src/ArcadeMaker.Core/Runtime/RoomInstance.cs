@@ -9,6 +9,8 @@ namespace ArcadeMaker.Core.Runtime
     public class RoomInstance
     {
         public RoomModel Model { get; }
+        public IGame Game { get; }
+
         public List<RoomBackground> Backgrounds { get; } = [];
         private readonly List<Instance> instances = [];
         public List<Instance> Instances => instances;
@@ -26,14 +28,15 @@ namespace ArcadeMaker.Core.Runtime
         }
 
         private bool isSorted = false;
-        public RoomInstance(RoomModel model)
+        public RoomInstance(IGame game, RoomModel model)
         {
             this.Model = model;
+            this.Game = game;
 
             // add all instances from the init map
             foreach (var item in model.InitMap.Items)
             {
-                var instance = new Instance(item.Object);
+                var instance = new Instance(game, item.Object);
                 instance.X.Value = item.X.ToExp();
                 instance.Y.Value = item.Y.ToExp();
                 instance.DepthChanged += MarkDepthChanged;
