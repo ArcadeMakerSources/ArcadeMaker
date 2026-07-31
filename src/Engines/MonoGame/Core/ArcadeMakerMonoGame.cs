@@ -628,6 +628,16 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             return Exp.Void.Return;
         }
 
+        public (float width, float height) GetTextSize(string? text, int? fontId)
+        {
+            var font = fontId == null ? Fonts.Current : Fonts.All.FirstOrDefault(f => f.Key.ID == fontId.Value).Value;
+            if (font == null)
+                throw new Exception("Font not found.");
+
+            Vector2 size = font.MeasureString(text ?? "NULL");
+            return (size.X, size.Y);
+        }
+
         public Exp.Void SetFont(Exp.Instance? _, IValue?[] args)
         {
             Fonts.Current = Fonts.All.FirstOrDefault(f => f.Key.ID == args[0].ThrowIfNull().Number).Value ?? throw new ArgumentException($"No font with ID {args[0]?.Number} found.");

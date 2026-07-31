@@ -530,6 +530,30 @@ public partial interface IGame
     Exp.Void DrawText(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
+    /// Returns the width of the specified text when drawing with the current / specified font.
+    /// </summary>
+    /// <returns>The width of the specified text when drawing with the current / specified font.</returns>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(text?, [fontID]).</param>
+    [ExpFunc(1, 2)]
+    [Param("text?", ParamType.Any, "The text to measure its width.")]
+    [Param("fontID", ParamType.Number, "The ID of the font to calculate on", Optional = true)]
+    IValue GetTextWidth(Exp.Instance? _, IValue?[] args) => ((double)GetTextSize(args[0]?.ToString(), args.Length >= 2 ? ((int?)args[1]?.Number) : null).width).ToExp();
+
+    /// <summary>
+    /// Returns the height of the specified text when drawing with the current / specified font.
+    /// </summary>
+    /// <returns>The height of the specified text when drawing with the current / specified font.</returns>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(text?, [fontID]).</param>
+    [ExpFunc(1, 2)]
+    [Param("text?", ParamType.Any, "The text to measure its height.")]
+    [Param("fontID", ParamType.Number, "The ID of the font to calculate on", Optional = true)]
+    IValue GetTextHeight(Exp.Instance? _, IValue?[] args) => ((double)GetTextSize(args[0]?.ToString(), args.Length >= 2 ? ((int?)args[1]?.Number) : null).height).ToExp();
+
+    (float width, float height) GetTextSize(string? text, int? fontId);
+
+    /// <summary>
     /// Sets the current font for subsequent text drawing operations.
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>

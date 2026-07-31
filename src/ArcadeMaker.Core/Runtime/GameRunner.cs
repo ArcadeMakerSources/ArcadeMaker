@@ -533,7 +533,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         Game.SetWindowsSize(winWidth, winHeight);
 
         // run all create events for the new room
-        foreach (var instance in room.Instances)
+        foreach (var instance in room.Instances.ToArray()) // ToArray() to prevent collection modification while iterating
         {
             if (instance.Model.CreateEvent != null)
                 foreach (var script in instance.Model.CreateEvent.Docs)

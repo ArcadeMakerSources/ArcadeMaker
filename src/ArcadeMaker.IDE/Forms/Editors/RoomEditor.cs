@@ -327,6 +327,7 @@ namespace ArcadeMaker.IDE
         {
             if (e.Button == MouseButtons.Left)
             {
+                colorPicker.Color = room.backColor;
                 if (colorPicker.ShowDialog() == DialogResult.OK)
                 {
                     room.backColor = colorPicker.Color;

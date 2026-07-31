@@ -742,6 +742,20 @@ public partial class Interpreter
                         vars.ForEach(v => v.Def = enumcls);
                         enumcls.Vars.AddRange(vars);
                         def = enumcls;
+
+                        // add getValueName(val) function
+                        ExternFunc getValName = new(GetValName, [1], "getValueName");
+                        AddExternFunc(getValName, enumcls, true);
+
+                        Instance GetValName(Exp.Instance? _, IValue?[] val)
+                        {
+                            if (val == null || val.Length == 0 || val[0] == null)
+                                ThrowRuntime("Argument 'val' cannot be null.", RuntimeException.ARGUMENT_NULL);
+                            var result = enm.Values.FirstOrDefault(ev => ev.Value == val[0]!.Number);
+                            if (result == null)
+                                ThrowRuntime($"The given value ({val?.GetExpTypeName(true)}) is not defined in the enum ({enumcls.GetExpTypeName(false)}).", RuntimeException.INVALID_ARGUMENT);
+                            return result?.Name.ToExpString()!;
+                        }
                     }
 
                     definations.Add(def);

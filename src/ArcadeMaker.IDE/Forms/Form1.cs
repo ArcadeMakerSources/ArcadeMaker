@@ -875,9 +875,18 @@ namespace ArcadeMaker.IDE
             {
                 int targetIndex = 0;
 
-                if (targetNode.Tag is GameItem)
+                if (targetNode.Tag is GameItem item)
                 {
                     targetIndex = targetNode.Index;
+
+                    // try moving the dragged item in the project collection as well
+                    if (draggedNode.Tag is GameItem draggedItem)
+                    {
+                        int projectOldIndex = Environment.project.items.IndexOf(item);
+                        int projectNewIndex = Environment.project.items.IndexOf(draggedItem);
+                        if (projectOldIndex >= 0 && projectNewIndex >= 0)
+                            Environment.project.items.Move(projectOldIndex, projectNewIndex);
+                    }
                 }
 
                 // remove the node from its current location and add it to the node at the drop location
