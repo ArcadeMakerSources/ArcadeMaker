@@ -56,31 +56,33 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
             if (model.ExtraProperties.Length == 0)
                 continue;
 
-            // create a script that initializes the property for an instance
-            string initializerScript = $"using {ExpSrc.ExpSrc.EngineNamespace}\nusing {ExpSrc.ExpSrc.GameNamespace}\n\n";
+            // create a script that initializes the property for an instance.
+            // don't add new lines between and after usings, so that the line number of an error in the
+            // property initializer will match the property index
+            string initializerScript = $"using {Interpreter.STD_NAMESPACE} using {ExpSrc.ExpSrc.EngineNamespace} using {ExpSrc.ExpSrc.GameNamespace} ";
 
             foreach (var extrap in model.ExtraProperties)
             {
                 initializerScript += $"{extrap.Name} = {extrap.InitValueCode} /* */\n"; // add /* */ to prevent issues with properties with code that ends with a comment
             }
 
-            // add the initializer script to the create event of the object
+            // create the initializer script document
             InstanceScriptDocument initializerDoc = new(model.Name + ".PropertiesInitializer", model.Class, initializerScript);
             initializerDoc.TryPrepare(Interpreter, out var errors);
             InitializersErrors.AddRange(errors);
 
-            // if create event is not set, create it
-            var createEv = model.GetEvent(ObjectEvent.EventType.Create);
-            if (createEv == null)
-            {
-                createEv = new(ObjectEvent.EventType.Create, []);
-                createEv.CreateDocs(model.Class);
-                model.Events.Add(createEv);
-                model.CreateEvent = createEv;
-            }
+            //// if create event is not set, create it (UPDATE: now we save it to ObjectModel.PropertiesInitializer)
+            //var createEv = model.GetEvent(ObjectEvent.EventType.Create);
+            //if (createEv == null)
+            //{
+            //    createEv = new(ObjectEvent.EventType.Create, []);
+            //    createEv.CreateDocs(model.Class);
+            //    model.Events.Add(createEv);
+            //    model.CreateEvent = createEv;
+            //}
 
-            // insert the initializer doc to create event
-            createEv.InsertDoc(0, initializerDoc, false);
+            // save
+            model.PropertiesInitializer = initializerDoc;
         }
 
         if (InitializersErrors.Count > 0)
@@ -461,11 +463,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         Game.GetActivatedRoom().AddInstance(inst);
 
         // run create event
-        if (inst.Model.CreateEvent != null)
-        {
-            foreach (var script in inst.Model.CreateEvent.Docs)
-                script.Run(Interpreter, inst);
-        }
+        inst.FireCreateEvent(Interpreter);
 
         return inst;
     }
@@ -535,9 +533,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         // run all create events for the new room
         foreach (var instance in room.Instances.ToArray()) // ToArray() to prevent collection modification while iterating
         {
-            if (instance.Model.CreateEvent != null)
-                foreach (var script in instance.Model.CreateEvent.Docs)
-                    script.Run(Interpreter, instance);
+            instance.FireCreateEvent(Interpreter);
         }
     }
 

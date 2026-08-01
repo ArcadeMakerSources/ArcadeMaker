@@ -747,13 +747,13 @@ public partial class Interpreter
                         ExternFunc getValName = new(GetValName, [1], "getValueName");
                         AddExternFunc(getValName, enumcls, true);
 
-                        Instance GetValName(Exp.Instance? _, IValue?[] val)
+                        Instance GetValName(Exp.Instance? _, IValue?[] args)
                         {
-                            if (val == null || val.Length == 0 || val[0] == null)
+                            if (args == null || args.Length == 0 || args[0] == null)
                                 ThrowRuntime("Argument 'val' cannot be null.", RuntimeException.ARGUMENT_NULL);
-                            var result = enm.Values.FirstOrDefault(ev => ev.Value == val[0]!.Number);
+                            var result = enm.Values.FirstOrDefault(ev => ev.Value == args[0]!.Number);
                             if (result == null)
-                                ThrowRuntime($"The given value ({val?.GetExpTypeName(true)}) is not defined in the enum ({enumcls.GetExpTypeName(false)}).", RuntimeException.INVALID_ARGUMENT);
+                                ThrowRuntime($"The given value ({args[0]!.Number}) is not defined in the enum ({enumcls.GetExpTypeName(false)}).", RuntimeException.INVALID_ARGUMENT);
                             return result?.Name.ToExpString()!;
                         }
                     }

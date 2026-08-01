@@ -43,7 +43,7 @@ public class Variable : IExpItem, INamedValue
     }
 
     public bool Private { get; set; }
-    internal bool Const { get; }
+    public bool Const { get; set; }
     internal Span? SettingSpan { get; }
 
     public Variable(string name, IValue? value, Span? settingSpan = null, bool prvt = false, bool cons = false)

@@ -20,7 +20,8 @@ namespace ArcadeMaker.Core.Models
         public (int Depth, bool Visible, bool Solid) InitValues { get; set; }
         public ObjectProperty[] ExtraProperties { get; }
 
-        internal ObjectEvent? CreateEvent { get; set; } // setter is required for the properties initializer generator
+        internal InstanceScriptDocument? PropertiesInitializer { get; set; }
+        internal ObjectEvent? CreateEvent { get; private set; }
         internal ObjectEvent? StepEvent { get; private set; }
         internal ObjectEvent? DrawEvent { get; private set; }
         internal ObjectEvent? DestroyEvent { get; private set; }
