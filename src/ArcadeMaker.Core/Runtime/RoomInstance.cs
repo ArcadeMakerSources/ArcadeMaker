@@ -39,6 +39,7 @@ namespace ArcadeMaker.Core.Runtime
                 var instance = new Instance(game, item.Object);
                 instance.X.Value = item.X.ToExp();
                 instance.Y.Value = item.Y.ToExp();
+                instance.ImageIndex.Value = item.ImageIndex.ToExp();
                 instance.DepthChanged += MarkDepthChanged;
                 AddInstance(instance);
             }

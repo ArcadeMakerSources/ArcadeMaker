@@ -209,7 +209,7 @@ public partial interface IGame
                     // translate to init map
                     List<RoomInitMap.Item> items = [];
                     foreach (var obj in sroom.objects)
-                        items.Add(new(obj.x, obj.y, Objects.First(model => obj.obj == model.Name)));
+                        items.Add(new(obj.x, obj.y, obj.imageIndex, Objects.First(model => obj.obj == model.Name)));
                     RoomInitMap initMap = new([.. items]);
 
                     Color bcol = Color.FromArgb(sroom.backColor.A, sroom.backColor.R, sroom.backColor.G, sroom.backColor.B);

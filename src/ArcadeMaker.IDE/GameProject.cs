@@ -321,7 +321,7 @@ namespace ArcadeMaker.IDE
                 SerializeableRoomObject[] robjs = new SerializeableRoomObject[room.objects.Count];
                 for (int i = 0; i < robjs.Length; i++)
                 {
-                    robjs[i] = new SerializeableRoomObject { id = room.objects[i].id, obj = room.objects[i].obj.name, x = room.objects[i].x, y = room.objects[i].y };
+                    robjs[i] = new SerializeableRoomObject { id = room.objects[i].id, obj = room.objects[i].obj.name, x = room.objects[i].x, y = room.objects[i].y, imageIndex = room.objects[i].imageIndex };
                     if (room.objects[i].HasCustomCreationCode())
                         robjs[i].creationCode = room.objects[i].Script;
                 }
@@ -727,9 +727,8 @@ namespace ArcadeMaker.IDE
                         }
                         project.items.Add(obj);
                     }
-                    else if (item is SerializeableGameRoom)
+                    else if (item is SerializeableGameRoom sroom)
                     {
-                        var sroom = item as SerializeableGameRoom;
                         GameRoom room;
                         if (sroom.index >= 0)
                             room = new GameRoom(sroom.name, sroom.index);
@@ -806,7 +805,7 @@ namespace ArcadeMaker.IDE
                         {
                             if (!srobj.id.StartsWith("R"))
                                 srobj.id = $"R{room.index}INST{sroomIndex++}";
-                            RoomObject robj = new RoomObject(srobj.id, srobj.x, srobj.y, project.items.OfType<GameObject>().ToList().Find(obj => obj.name == srobj.obj));
+                            RoomObject robj = new RoomObject(srobj.id, srobj.x, srobj.y, srobj.imageIndex, project.items.OfType<GameObject>().ToList().Find(obj => obj.name == srobj.obj));
                             if (srobj.creationCode != null)
                                 robj.Script = srobj.creationCode;
                             room.objects.Add(robj);
@@ -994,7 +993,7 @@ namespace ArcadeMaker.IDE
     public class SerializeableRoomObject
     {
         public string id = "Undefined";
-        public int x, y;
+        public int x, y, imageIndex;
         public string obj;
         public string creationCode = null;
     }

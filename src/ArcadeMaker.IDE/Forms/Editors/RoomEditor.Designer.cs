@@ -31,6 +31,7 @@ namespace ArcadeMaker.IDE
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             label1 = new Label();
             nameBox = new TextBox();
             boardPanel = new Panel();
@@ -45,6 +46,8 @@ namespace ArcadeMaker.IDE
             label5 = new Label();
             tabControl1 = new TabControl();
             tabPage1 = new TabPage();
+            imageIndexListView = new ListView();
+            imageIndexList = new ImageList(components);
             deleteUnderlyingBox = new CheckBox();
             objAddSelectPanel = new PictureBox();
             objAddSelectBox = new GameObjectPickerBox();
@@ -157,9 +160,9 @@ namespace ArcadeMaker.IDE
             // 
             // nameBox
             // 
-            nameBox.Location = new Point(76, 6);
+            nameBox.Location = new Point(83, 6);
             nameBox.Name = "nameBox";
-            nameBox.Size = new Size(101, 23);
+            nameBox.Size = new Size(94, 23);
             nameBox.TabIndex = 1;
             nameBox.TextChanged += nameBox_TextChanged;
             // 
@@ -273,6 +276,7 @@ namespace ArcadeMaker.IDE
             // 
             // tabPage1
             // 
+            tabPage1.Controls.Add(imageIndexListView);
             tabPage1.Controls.Add(deleteUnderlyingBox);
             tabPage1.Controls.Add(objAddSelectPanel);
             tabPage1.Controls.Add(objAddSelectBox);
@@ -285,6 +289,25 @@ namespace ArcadeMaker.IDE
             tabPage1.TabIndex = 0;
             tabPage1.Text = "Objects";
             tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // imageIndexListView
+            // 
+            imageIndexListView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            imageIndexListView.FullRowSelect = true;
+            imageIndexListView.LargeImageList = imageIndexList;
+            imageIndexListView.Location = new Point(6, 6);
+            imageIndexListView.MultiSelect = false;
+            imageIndexListView.Name = "imageIndexListView";
+            imageIndexListView.Size = new Size(171, 249);
+            imageIndexListView.TabIndex = 5;
+            imageIndexListView.UseCompatibleStateImageBehavior = false;
+            imageIndexListView.MouseDown += imageIndexListView_MouseDown;
+            // 
+            // imageIndexList
+            // 
+            imageIndexList.ColorDepth = ColorDepth.Depth32Bit;
+            imageIndexList.ImageSize = new Size(32, 32);
+            imageIndexList.TransparentColor = Color.Transparent;
             // 
             // deleteUnderlyingBox
             // 
@@ -1156,5 +1179,7 @@ namespace ArcadeMaker.IDE
         private System.Windows.Forms.PictureBox objAddSelectPanel;
         private System.Windows.Forms.Panel boardParentPanel;
         private System.Windows.Forms.Button resetAllCreationCodesBtn;
+        private ListView imageIndexListView;
+        private ImageList imageIndexList;
     }
 }

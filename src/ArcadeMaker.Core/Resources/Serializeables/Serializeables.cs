@@ -196,7 +196,7 @@ public class SerializeableGameScript : SerializeableGameItem
 public class SerializeableRoomObject
 {
     public string id = "Undefined";
-    public int x, y;
+    public int x, y, imageIndex;
     public string obj;
     public string creationCode = null;
 }

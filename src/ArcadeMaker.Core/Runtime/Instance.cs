@@ -1,4 +1,5 @@
-﻿using ArcadeMaker.Core.Math.Shapes;
+﻿using ArcadeMaker.Core.ExpSrc.Drawing;
+using ArcadeMaker.Core.Math.Shapes;
 using ArcadeMaker.Core.Models;
 using ArcadeMaker.Core.Resources;
 using ArcadeMaker.Core.Resources.Serializeables;
@@ -54,6 +55,10 @@ public class Instance : Exp.Instance
 
     [ExpProperty]
     public TypeVariable ImageYScale { get; }
+
+    [ExpProperty]
+    public TypeVariable ImageAlpha { get; }
+    private static readonly IValue expWhiteColor = ((double)Color.White).ToExp();
 
     [ExpProperty]
     public TypeVariable OnPathStepFinished { get; }
@@ -126,6 +131,7 @@ public class Instance : Exp.Instance
         ImageAngle = InitVar("imageAngle", zero, isNumChecker, ValueHelper.tnum);
         ImageXScale = InitVar("imageXScale", one, isNumChecker, ValueHelper.tnum);
         ImageYScale = InitVar("imageYScale", one, isNumChecker, ValueHelper.tnum);
+        ImageAlpha = InitVar("imageAlpha", expWhiteColor, isNumChecker, ValueHelper.tnum);
         depth = ((double)model.InitValues.Depth);
         Depth = new CustomVariable("depth", () => depth.ToExp(), SetDepth);
         Solid = InitVar("solid", model.InitValues.Solid.ToExp(), isBoolChecker, ValueHelper.tbool);

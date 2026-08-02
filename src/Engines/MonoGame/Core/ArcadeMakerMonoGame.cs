@@ -477,7 +477,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             MainTextureAtlas.GetRegion(inst.Sprite, (int)inst.ImageIndex.Value!.Number)?.Draw(
                 SpriteBatch,
                 position,
-                Color.White,
+                new((uint)inst.ImageAlpha.Value!.Number),
                 (float)ArcadeMaker.Core.Math.Formulas.DegreesToRadians(inst.ImageAngle.Value!.Number),
                 origin,
                 scale,

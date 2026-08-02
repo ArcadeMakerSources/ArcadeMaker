@@ -28,7 +28,7 @@ public class RoomModel(string name, string caption, int w, int h, Color backgrou
 
 public class RoomInitMap(RoomInitMap.Item[] items)
 {
-    public record struct Item(double X, double Y, ObjectModel Object);
+    public record struct Item(double X, double Y, int ImageIndex, ObjectModel Object);
     public Item[] Items => items;
 }
 
