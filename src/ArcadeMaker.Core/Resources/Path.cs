@@ -25,9 +25,7 @@ public class Path : ISetsID
     }
 
     public string Name { get; }
-
-    private static int idCounter = 0;
-    public int ID { get; } = idCounter++;
+    public int ID { get; } = Core.ID.Generate();
 
     public double StartPositionX { get; }
     public double StartPositionY { get; }

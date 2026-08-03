@@ -250,23 +250,11 @@ public partial interface IGame
         var x = args[0].ThrowIfNull().Number;
         var y = args[1].ThrowIfNull().Number;
 
-        // create a Rect
-        if (inst.Sprite == null)
+        // false if no mask
+        if (inst.Mask == null)
             return false.ToExp();
 
-        var instMask = inst.Sprite.Mask;
-        var instRect = new Rect
-        {
-            X = inst.X.Value!.Number,
-            Y = inst.Y.Value!.Number,
-            Width = instMask.Right - instMask.Left + 1,
-            Height = instMask.Bottom - instMask.Top + 1,
-            OriginX = inst.Sprite.OriginX - instMask.Left + 1,
-            OriginY = inst.Sprite.OriginY - instMask.Top + 1,
-            Angle = inst.ImageAngle.Value!.Number
-        };
-
-        return SeparatingAxisTheorem.IsPointInRectangle(x, y, instRect).ToExp();
+        return SeparatingAxisTheorem.IsPointInRectangle(x, y, inst.Mask).ToExp();
     }
 
     /// <summary>
@@ -608,7 +596,7 @@ public partial interface IGame
     Exp.Void DrawPath(Exp.Instance? _, IValue?[] args)
     {
         // get parameters
-        Resources.Path path = Paths.FirstOrDefault(p => p.ID == (int)args[0].ThrowIfNull().Number) ?? throw new ArgumentException($"No path with ID {(int)args[4].ThrowIfNull().Number} was found.");
+        Resources.Path path = Paths.GetById((int)args[0].ThrowIfNull().Number);
 
         double x = path.StartPositionX, y = path.StartPositionY;
         if (args.Length == 4)
@@ -694,7 +682,7 @@ public partial interface IGame
 
         // get path
         int id = (int)args[0].ThrowIfNull().Number;
-        Resources.Path path = Paths.FirstOrDefault(p => p.ID == id) ?? throw new ArgumentException($"No path with ID {id} was found.");
+        Resources.Path path = Paths.GetById(id);
 
         // get speed
         double speed = args[1].ThrowIfNull().Number;

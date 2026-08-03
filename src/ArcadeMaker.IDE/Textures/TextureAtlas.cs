@@ -28,7 +28,7 @@ internal static class TextureAtlas
         foreach (var texture in textures)
         {
             texture.Rect = rects.First(r => r.Id == texture.RectID);
-            texture.Rect = texture.Rect with { X = texture.Rect.X + SPACING, Y = texture.Rect.Y + SPACING, Width = texture.Rect.Width - SPACING, Height = texture.Rect.Height - 2 };
+            texture.Rect = texture.Rect with { X = texture.Rect.X + SPACING, Y = texture.Rect.Y + SPACING, Width = texture.Rect.Width - SPACING * 2, Height = texture.Rect.Height - SPACING * 2 };
             graphics.DrawImage(texture.Image, texture.Rect.X, texture.Rect.Y);
         }
 

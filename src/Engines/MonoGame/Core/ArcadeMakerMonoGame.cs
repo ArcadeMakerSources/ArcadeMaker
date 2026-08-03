@@ -1,5 +1,6 @@
 using ArcadeMaker.Core;
 using ArcadeMaker.Core.ExpSrc;
+using ArcadeMaker.Core.Math;
 using ArcadeMaker.Core.Models;
 using ArcadeMaker.Core.Resources;
 using ArcadeMaker.Core.Resources.Serializeables;
@@ -59,6 +60,9 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             {
                 field = value;
 
+                if (value != null)
+                    roomBounds = new(0, 0, value.Model.Width, value.Model.Height);
+
                 // load cameras
                 Cameras.Clear();
 
@@ -83,6 +87,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
         // runtime private data
         private GameRunner<ArcadeMakerMonoGame> GameRunner { get; set; }
+        private RectangleF roomBounds;
 
         // project file info
         private string? ProjectFilePath { get; }
@@ -399,7 +404,13 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
                         try
                         {
-                            GameRunner.FireDraw();
+                            foreach (var instance in CurrentRoom!.SortedInstances)
+                            {
+                                if (instance.Model.OverridesDrawEvent)
+                                    GameRunner.RunDrawEvent(instance);
+                                else
+                                    DrawInstance(instance);
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -424,7 +435,13 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
                 try
                 {
-                    GameRunner.FireDraw();
+                    foreach (var instance in CurrentRoom!.SortedInstances)
+                    {
+                        if (instance.Model.OverridesDrawEvent)
+                            GameRunner.RunDrawEvent(instance);
+                        else
+                            DrawInstance(instance);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -471,10 +488,24 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             Vector2 position = new((float)inst.X.Value!.Number, (float)inst.Y.Value!.Number);
             Vector2 origin = new(inst.Sprite.OriginX, inst.Sprite.OriginY);
             Vector2 scale = new((float)inst.ImageXScale.Value!.Number, (float)inst.ImageYScale.Value!.Number);
+            TextureRegion? region = MainTextureAtlas.GetRegion(inst.Sprite, (int)inst.ImageIndex.Value!.Number);
 
-            // TODO: validate visibilty as a condition for drawing, respecting scale
-            
-            MainTextureAtlas.GetRegion(inst.Sprite, (int)inst.ImageIndex.Value!.Number)?.Draw(
+            if (region == null)
+                return Exp.Void.Return;
+
+            // validate visibilty as a condition for drawing, respecting scale
+            var view = CurrentViewIndex >= 0 ? Cameras[CurrentViewIndex].camera.BoundingRectangle : roomBounds;
+            float regionW = region.Width * scale.X, regionH = region.Height * scale.Y;
+            double halfDiagonalInst = System.Math.Sqrt(regionW * regionW + regionH * regionH) / 2;
+            double halfDiagonalView = System.Math.Sqrt(view.Width * view.Width + view.Height * view.Height) / 2;
+            if (Formulas.DistanceBetween(
+                position.X + regionW / 2 - origin.X * scale.X,
+                position.Y + regionH / 2 - origin.Y * scale.Y,
+                view.X + view.Width / 2,
+                view.Y + view.Height / 2) > halfDiagonalInst + halfDiagonalView)
+                return Exp.Void.Return;
+
+            region?.Draw(
                 SpriteBatch,
                 position,
                 new((uint)inst.ImageAlpha.Value!.Number),
@@ -603,7 +634,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         {
             // parameters
             Vector2 pos = new((float)args[0].ThrowIfNull().Number, (float)args[1].ThrowIfNull().Number);
-            Sprite sprite = Sprites.FirstOrDefault(s => s.ID == args[2].ThrowIfNull().Number) ?? throw new ArgumentException($"No sprite with ID '{args[2]}' found.");
+            Sprite sprite = Sprites.GetById((int)args[2].ThrowIfNull().Number);
             double imageIndex = args[3].ThrowIfNull().Number;
 
             int angle = args.Length >= 5 ? (int)args[4].ThrowIfNull().Number : 0;
@@ -630,9 +661,11 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
         public (float width, float height) GetTextSize(string? text, int? fontId)
         {
-            var font = fontId == null ? Fonts.Current : Fonts.All.FirstOrDefault(f => f.Key.ID == fontId.Value).Value;
+            var gameFont = fontId == null ? null : Fonts.All.Keys.GetById(fontId.Value);
+            var font = gameFont == null ? Fonts.Current : (Fonts.All.TryGetValue(gameFont, out var _font) ? _font : _font!);
+
             if (font == null)
-                throw new Exception("Font not found.");
+                throw new Exception("No font was selected");
 
             Vector2 size = font.MeasureString(text ?? "NULL");
             return (size.X, size.Y);
@@ -640,7 +673,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
         public Exp.Void SetFont(Exp.Instance? _, IValue?[] args)
         {
-            Fonts.Current = Fonts.All.FirstOrDefault(f => f.Key.ID == args[0].ThrowIfNull().Number).Value ?? throw new ArgumentException($"No font with ID {args[0]?.Number} found.");
+            Fonts.Current = Fonts.All.FirstOrDefault(f => f.Key.ID == args[0].ThrowIfNull().Number).Value ?? throw new ArcadeMaker.Core.Exceptions.ResourceNotFoundException((int)args[0]!.Number);
             return Exp.Void.Return;
         }
 

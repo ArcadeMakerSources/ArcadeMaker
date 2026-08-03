@@ -6,7 +6,7 @@ namespace ArcadeMaker.Core.Math.Shapes
 {
     public class Rect : Shape
     {
-        public int Width { get; init; }
-        public int Height { get; init; }
+        public virtual int Width { get; init; }
+        public virtual int Height { get; init; }
     }
 }

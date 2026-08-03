@@ -6,8 +6,7 @@ namespace ArcadeMaker.Core.Resources;
 
 public class Sprite(string name, string? imageFile, int numOfImages, int originX, int originY, SpriteMask mask) : ISetsID
 {
-    private static int idCounter = 0;
-    public int ID { get; } = idCounter++;
+    public int ID { get; } = Core.ID.Generate();
 
     public string Name => name;
     public string? ImageFile => imageFile;

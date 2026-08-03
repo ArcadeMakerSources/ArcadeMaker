@@ -392,17 +392,11 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         }
     }
 
-    public void FireDraw()
+    public void RunDrawEvent(Runtime.Instance instance)
     {
-        // run all draw events for the current room
-        foreach (var instance in Game.GetActivatedRoom().SortedInstances)
-        {
-            if (instance.Model.DrawEvent?.Docs.Count >= 1)
-                foreach (var script in instance.Model.DrawEvent.Docs)
-                    script.Run(Interpreter, instance, Game.CurrentViewIndex.ToExp());
-            else
-                Game.DrawInstance(instance);
-        }
+        // this must be called after validating that instance.OverridesDrawEvent is true
+        foreach (var script in instance.Model.DrawEvent!.Docs)
+            script.Run(Interpreter, instance, Game.CurrentViewIndex.ToExp());
     }
 
     /// <summary>
@@ -557,8 +551,8 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     public Exp.Void GoToRoom(Exp.Instance? _, IValue?[] args)
     {
         // find the room by the ID
-        double ID = args[0].ThrowIfNull().Number;
-        RoomModel model = Game.Rooms.FirstOrDefault(r => ID == r.ID) ?? throw new ArgumentException($"There is no room with ID {ID}.");
+        int ID = (int)args[0].ThrowIfNull().Number;
+        RoomModel model = Game.Rooms.GetById(ID);
 
         // go to it
         GoToRoom(model);
@@ -566,6 +560,13 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         return Exp.Void.Return;
     }
 
+    /// <summary>
+    /// Goes to next room.
+    /// </summary>
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">(Unused).</param>
+    /// <returns></returns>
+    /// <exception cref="NoActivatedRoomException"></exception>
     [ExpFunc]
     public Exp.Void GoToNextRoom(Exp.Instance? _, IValue?[] args)
     {
@@ -582,6 +583,12 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         return Exp.Void.Return;
     }
 
+    /// <summary>
+    /// Destroys all instances in the room, and then restarts it.
+    /// </summary>
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">(Unused).</param>
+    /// <returns></returns>
     [ExpFunc]
     public Exp.Void RestartRoom(Exp.Instance? _, IValue?[] args)
     {

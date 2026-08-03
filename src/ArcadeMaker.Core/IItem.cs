@@ -4,14 +4,25 @@ using System.Text;
 
 namespace ArcadeMaker.Core
 {
-    internal interface IItem
+    public interface IItem
     {
         string Name { get; }
     }
 
 
-    internal interface ISetsID : IItem
+    public interface ISetsID : IItem
     {
         int ID { get; }
+    }
+
+    public static class ID
+    {
+        private static int currentId = 0;
+        internal static int Generate() => currentId++;
+
+        public static T GetById<T>(this IEnumerable<T> list, int id) where T : ISetsID
+        {
+            return list.FirstOrDefault(item => item.ID == id) ?? throw new Exceptions.ResourceNotFoundException(id);
+        }
     }
 }

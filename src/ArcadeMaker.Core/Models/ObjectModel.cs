@@ -19,6 +19,7 @@ namespace ArcadeMaker.Core.Models
         public List<ObjectEvent> Events { get; }
         public (int Depth, bool Visible, bool Solid) InitValues { get; set; }
         public ObjectProperty[] ExtraProperties { get; }
+        public bool OverridesDrawEvent { get; private set; }
 
         internal InstanceScriptDocument? PropertiesInitializer { get; set; }
         internal ObjectEvent? CreateEvent { get; private set; }
@@ -117,6 +118,7 @@ namespace ArcadeMaker.Core.Models
             MouseReleaseEvents = [.. GetEvents<MouseButton>(ObjectEvent.EventType.MouseRelease)];
             CollisionEvents = [.. Events.OfType<CollisionEvent>()];
             AlarmEvents = [.. GetEvents<int>(ObjectEvent.EventType.Alarm)];
+            OverridesDrawEvent = DrawEvent != null;
         }
     }
 

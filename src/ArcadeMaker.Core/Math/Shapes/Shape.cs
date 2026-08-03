@@ -8,8 +8,8 @@ public abstract class Shape
 {
     public virtual double X { get; set; }
     public virtual double Y { get; set; }
-    public int OriginX { get; set; }
-    public int OriginY { get; set; }
+    public virtual int OriginX { get; set; }
+    public virtual int OriginY { get; set; }
 
     /// <summary>
     /// The angle in degrees.

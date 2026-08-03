@@ -8,8 +8,7 @@ namespace ArcadeMaker.Core.Models;
 
 public class RoomModel(string name, string caption, int w, int h, Color backgroundColor, RoomInitMap initMap) : IModel, ISetsID
 {
-    private static int idCounter = 0;
-    public int ID { get; } = idCounter++;
+    public int ID { get; } = Core.ID.Generate();
     internal Rect Bounds { get; } = new() { X = 0, Y = 0, Width = w, Height = h, Angle = 0, OriginX = 0, OriginY = 0 };
     public string Name => name;
     public string Caption => caption;

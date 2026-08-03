@@ -63,7 +63,7 @@ public class Instance : Exp.Instance
     [ExpProperty]
     public TypeVariable OnPathStepFinished { get; }
 
-    public Rect? Mask { get; private set; }
+    public MirrorRect? Mask { get; private set; }
 
     private double depth;
     public event EventHandler<double>? DepthChanged;
@@ -290,10 +290,14 @@ public class Instance : Exp.Instance
         }
     }
 
-    private class MirrorRect(Instance src) : Rect
+    public sealed class MirrorRect(Instance src) : Rect
     {
         public override double X { get => src.X.Value!.Number; set => src.X.Value = value.ToExp(); }
         public override double Y { get => src.Y.Value!.Number; set => src.Y.Value = value.ToExp(); }
+        public override int Width { get => (int)(field * src.ImageXScale.Value!.Number); init; }
+        public override int Height { get => (int)(field * src.ImageYScale.Value!.Number); init; }
         public override double Angle { get => src.ImageAngle.Value!.Number; set => src.ImageAngle.Value = value.ToExp(); }
+        public override int OriginX { get => (int)(field * src.ImageXScale.Value!.Number); set; }
+        public override int OriginY { get => (int)(field * src.ImageYScale.Value!.Number); set; }
     }
 }
