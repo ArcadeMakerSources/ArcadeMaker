@@ -23,7 +23,6 @@ Originally, ArcadeMaker started as a C#‑based engine where users wrote their g
 
 Because of this long, staggered development history, the IDE currently includes many features that the new engine backend does not yet support. For example:
 
-- Backgrounds — fully implemented in the IDE, but not yet implemented in the engine (this is the next feature planned).  
 - Object events — only Create, Step, and Draw events are currently functional.  
 - Parent objects — supported in the IDE, not yet implemented in the engine.  
 - View following speed — views can follow an object, but the view’s movement speed always matches the object’s speed, even if you set a custom follow speed. This should be straightforward to fix.

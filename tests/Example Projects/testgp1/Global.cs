@@ -1,4 +1,0 @@
-class Global ()
-{
-    static takeKey
-}

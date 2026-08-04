@@ -28,6 +28,7 @@ namespace ArcadeMaker.IDE
                     Color1Changed?.Invoke(this, value);
             }
         }
+
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Color Color2
         {
