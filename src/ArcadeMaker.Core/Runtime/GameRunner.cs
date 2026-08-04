@@ -482,10 +482,12 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
                 collisionEv.Resolve(Game);
         }
 
-            Game.CurrentRoom = room;
+        // init interpreter
+        Interpreter.Init();
 
-            Game.SetCaption(room.Model.Caption);
-            Game.BackColor = room.Model.BackgroundColor;
+        // make sure game has any rooms
+        if (Game.Rooms.Count == 0)
+            throw new Exception("A game must have at least 1 room.");
 
         // go to the first room in the list
         GoToRoom(Game.Rooms[0]);
