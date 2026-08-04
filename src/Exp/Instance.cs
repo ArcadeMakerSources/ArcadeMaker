@@ -13,7 +13,7 @@ public class Instance : IVarSystem, IValue, IExpItem
     public List<Variable> Vars { get; }
     public IVarSystem Parent { get; set; }
     public bool IsArray => ArrayValues != null;
-    internal IValue?[]? ArrayValues { get; }
+    public IValue?[]? ArrayValues { get; }
 
     public string TypeName => def.Name;
     bool IValue.IsInst => true;

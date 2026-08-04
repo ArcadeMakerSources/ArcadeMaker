@@ -196,7 +196,7 @@ public class SerializeableGameScript : SerializeableGameItem
 public class SerializeableRoomObject
 {
     public string id = "Undefined";
-    public int x, y;
+    public int x, y, imageIndex;
     public string obj;
     public string creationCode = null;
 }
@@ -217,8 +217,7 @@ public class SerializeableColor
 
 public class GameFont : ISetsID
 {
-    private static int idCounter = 0;
-    public int ID { get; set; } = idCounter++;
+    public int ID { get; set; } = Core.ID.Generate();
     public string Name { get; set; }
 
     public string family;

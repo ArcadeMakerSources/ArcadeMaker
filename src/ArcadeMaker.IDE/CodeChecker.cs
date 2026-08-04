@@ -122,7 +122,7 @@ namespace IntelliSense
                                 nextSpan = true;
                             break;
                         case SpanType.Symbol:
-                            isSep = !CSharpFilter.Operators.Contains(spanText + c);
+                            isSep = CSharpFilter.Operators.Contains(spanText + c);
                             if (isSep)
                                 nextSpan = true;
                             break;

@@ -104,14 +104,15 @@ namespace ArcadeMaker.IDE.Items
     public class RoomObject : IContainsScript
     {
         public readonly string id;
-        public int x, y;
+        public int x, y, imageIndex;
         public GameObject obj;
 
-        public RoomObject(string id, int x, int y, GameObject obj)
+        public RoomObject(string id, int x, int y, int imageIndex, GameObject obj)
         {
             this.id = id;
             this.x = x;
             this.y = y;
+            this.imageIndex = imageIndex;
             this.obj = obj;
 
             string[] use = new string[] { "System", "System.Collections.Generic", "System.Linq", "System.Threading.Tasks", "ArcadeMaker", "ArcadeMaker.Models", "ArcadeMaker.Controls", "ArcadeMaker.GameItems", "ArcadeMaker.Drawing" };

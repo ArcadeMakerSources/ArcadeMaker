@@ -56,31 +56,33 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
             if (model.ExtraProperties.Length == 0)
                 continue;
 
-            // create a script that initializes the property for an instance
-            string initializerScript = $"using {ExpSrc.ExpSrc.EngineNamespace}\nusing {ExpSrc.ExpSrc.GameNamespace}\n\n";
+            // create a script that initializes the property for an instance.
+            // don't add new lines between and after usings, so that the line number of an error in the
+            // property initializer will match the property index
+            string initializerScript = $"using {Interpreter.STD_NAMESPACE} using {ExpSrc.ExpSrc.EngineNamespace} using {ExpSrc.ExpSrc.GameNamespace} ";
 
             foreach (var extrap in model.ExtraProperties)
             {
                 initializerScript += $"{extrap.Name} = {extrap.InitValueCode} /* */\n"; // add /* */ to prevent issues with properties with code that ends with a comment
             }
 
-            // add the initializer script to the create event of the object
+            // create the initializer script document
             InstanceScriptDocument initializerDoc = new(model.Name + ".PropertiesInitializer", model.Class, initializerScript);
             initializerDoc.TryPrepare(Interpreter, out var errors);
             InitializersErrors.AddRange(errors);
 
-            // if create event is not set, create it
-            var createEv = model.GetEvent(ObjectEvent.EventType.Create);
-            if (createEv == null)
-            {
-                createEv = new(ObjectEvent.EventType.Create, []);
-                createEv.CreateDocs(model.Class);
-                model.Events.Add(createEv);
-                model.CreateEvent = createEv;
-            }
+            //// if create event is not set, create it (UPDATE: now we save it to ObjectModel.PropertiesInitializer)
+            //var createEv = model.GetEvent(ObjectEvent.EventType.Create);
+            //if (createEv == null)
+            //{
+            //    createEv = new(ObjectEvent.EventType.Create, []);
+            //    createEv.CreateDocs(model.Class);
+            //    model.Events.Add(createEv);
+            //    model.CreateEvent = createEv;
+            //}
 
-            // insert the initializer doc to create event
-            createEv.InsertDoc(0, initializerDoc, false);
+            // save
+            model.PropertiesInitializer = initializerDoc;
         }
 
         if (InitializersErrors.Count > 0)
@@ -328,6 +330,10 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
                 {
                     instance.Hspeed.Value = hsp.ToExp();
                     instance.Vspeed.Value = vsp.ToExp();
+
+                    // call onPathStepFinished
+                    if (instance.CurrentPathDrive.PathStepIndex > 1 && instance.OnPathStepFinished.Value is FuncPntr fn)
+                        fn.Call(Interpreter, [instance.CurrentPathDrive.Path.ID.ToExp()]);
                 }
             }
 
@@ -378,25 +384,19 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
 
     private static void UpdateImageIndex(Instance instance)
     {
-        if (instance.Model.Sprite != null && instance.ImageSpeed.Value!.Number > 0 && instance.Model.Sprite.NumberOfImages >= 2 && ++instance.FramesSinceLastImageIndex >= instance.ImageSpeed.Value?.Number)
+        if (instance.Sprite != null && instance.ImageSpeed.Value!.Number > 0 && instance.Sprite.NumberOfImages >= 2 && ++instance.FramesSinceLastImageIndex >= instance.ImageSpeed.Value?.Number)
         {
             instance.FramesSinceLastImageIndex = 0;
-            double nextIndex = instance.ImageIndex.Value!.Number + 1 >= instance.Model.Sprite.NumberOfImages ? 0 : instance.ImageIndex.Value.Number + 1;
+            double nextIndex = instance.ImageIndex.Value!.Number + 1 >= instance.Sprite.NumberOfImages ? 0 : instance.ImageIndex.Value.Number + 1;
             instance.ImageIndex.Value = nextIndex.ToExp();
         }
     }
 
-    public void FireDraw()
+    public void RunDrawEvent(Runtime.Instance instance)
     {
-        // run all draw events for the current room
-        foreach (var instance in Game.GetActivatedRoom().SortedInstances)
-        {
-            if (instance.Model.DrawEvent?.Docs.Count >= 1)
-                foreach (var script in instance.Model.DrawEvent.Docs)
-                    script.Run(Interpreter, instance, Game.CurrentViewIndex.ToExp());
-            else
-                Game.DrawInstance(instance);
-        }
+        // this must be called after validating that instance.OverridesDrawEvent is true
+        foreach (var script in instance.Model.DrawEvent!.Docs)
+            script.Run(Interpreter, instance, Game.CurrentViewIndex.ToExp());
     }
 
     /// <summary>
@@ -451,17 +451,13 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     public Runtime.Instance CreateInstance(Exp.Instance? _, IValue?[] args)
     {
         ObjectModel model = Game.Objects.FirstOrDefault(m => m.Class.ExpType == args[2].ThrowIfNull()) ?? throw new ArgumentException("Value of argument type must be a type of a game object.");
-        Runtime.Instance inst = new(model);
+        Runtime.Instance inst = new(Game, model);
         inst.X.Value = args[0];
         inst.Y.Value = args[1];
         Game.GetActivatedRoom().AddInstance(inst);
 
         // run create event
-        if (inst.Model.CreateEvent != null)
-        {
-            foreach (var script in inst.Model.CreateEvent.Docs)
-                script.Run(Interpreter, inst);
-        }
+        inst.FireCreateEvent(Interpreter);
 
         return inst;
     }
@@ -500,7 +496,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         if (!Game.Rooms.Contains(room.Model))
             throw new Exception("The specified room is not part of the game.");
 
-        // if there's an existing room ( =it's not the beginning of the game), destroy them all
+        // if there's an existing room ( =it's not the beginning of the game), destroy all instances
         if (Game.CurrentRoom != null)
         {
             while (Game.CurrentRoom.Instances.Count >= 1)
@@ -530,11 +526,9 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         Game.SetWindowsSize(winWidth, winHeight);
 
         // run all create events for the new room
-        foreach (var instance in room.Instances)
+        foreach (var instance in room.Instances.ToArray()) // ToArray() to prevent collection modification while iterating
         {
-            if (instance.Model.CreateEvent != null)
-                foreach (var script in instance.Model.CreateEvent.Docs)
-                    script.Run(Interpreter, instance);
+            instance.FireCreateEvent(Interpreter);
         }
     }
 
@@ -543,7 +537,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         if (!Game.Rooms.Contains(roomModel))
             throw new Exception("The specified room is not part of the game.");
 
-        var roomInstance = new RoomInstance(roomModel);
+        var roomInstance = new RoomInstance(Game, roomModel);
         GoToRoom(roomInstance);
     }
 
@@ -558,8 +552,8 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     public Exp.Void GoToRoom(Exp.Instance? _, IValue?[] args)
     {
         // find the room by the ID
-        double ID = args[0].ThrowIfNull().Number;
-        RoomModel model = Game.Rooms.FirstOrDefault(r => ID == r.ID) ?? throw new ArgumentException($"There is no room with ID {ID}.");
+        int ID = (int)args[0].ThrowIfNull().Number;
+        RoomModel model = Game.Rooms.GetById(ID);
 
         // go to it
         GoToRoom(model);
@@ -567,6 +561,13 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         return Exp.Void.Return;
     }
 
+    /// <summary>
+    /// Goes to next room.
+    /// </summary>
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">(Unused).</param>
+    /// <returns></returns>
+    /// <exception cref="NoActivatedRoomException"></exception>
     [ExpFunc]
     public Exp.Void GoToNextRoom(Exp.Instance? _, IValue?[] args)
     {
@@ -583,6 +584,12 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         return Exp.Void.Return;
     }
 
+    /// <summary>
+    /// Destroys all instances in the room, and then restarts it.
+    /// </summary>
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">(Unused).</param>
+    /// <returns></returns>
     [ExpFunc]
     public Exp.Void RestartRoom(Exp.Instance? _, IValue?[] args)
     {

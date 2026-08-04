@@ -1,4 +1,5 @@
 ﻿using ArcadeMaker.IDE.Items;
+using Exp;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -129,7 +130,8 @@ namespace ArcadeMaker.IDE
                     MessageBox.Show("Select an object to add");
                 else
                 {
-                    RoomObject ro = new RoomObject($"R{room.index}INST{objId++}", position.X, position.Y, selectedObj);
+                    int imageIndex = imageIndexListView.SelectedItems.Count == 0 ? 0 : imageIndexListView.SelectedItems[0].ImageIndex;
+                    RoomObject ro = new RoomObject($"R{room.index}INST{objId++}", position.X, position.Y, imageIndex, selectedObj);
 
                     if (deleteUnderlyingBox.Checked)
                     {
@@ -200,7 +202,10 @@ namespace ArcadeMaker.IDE
             foreach (RoomObject ro in objsToDraw)
             {
                 bool hasSprite = ro.obj.sprite != null;
-                Bitmap? image = hasSprite ? ro.obj.sprite!.image : noSpriteIcon;
+                int imageIndex = ro.imageIndex;
+                if (hasSprite && ro.obj.sprite!.images.Count <= imageIndex)
+                    imageIndex = 0;
+                Bitmap? image = hasSprite && ro.obj.sprite!.images.Count > 0 ? ro.obj.sprite!.images[imageIndex] : noSpriteIcon;
                 if (image != null)
                 {
                     if (image.HorizontalResolution != e.Graphics.DpiX || image.VerticalResolution != e.Graphics.DpiY)
@@ -327,6 +332,7 @@ namespace ArcadeMaker.IDE
         {
             if (e.Button == MouseButtons.Left)
             {
+                colorPicker.Color = room.backColor;
                 if (colorPicker.ShowDialog() == DialogResult.OK)
                 {
                     room.backColor = colorPicker.Color;
@@ -617,14 +623,24 @@ namespace ArcadeMaker.IDE
 
         private void objAddSelectPanel_MouseClick(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
+            if (e.Button == MouseButtons.Right)
                 objAddSelectBox.Menu?.Show(objAddSelectPanel, e.Location);
         }
 
         private void objAddSelectBox_SelectionChanged(object sender, GameObject e)
         {
             selectedObj = e;
-            objAddSelectPanel.Image = e != null && e.sprite != null && e.sprite.images.Count > 0 ? e.sprite.image : null;
+            //objAddSelectPanel.Image = e != null && e.sprite != null && e.sprite.images.Count > 0 ? e.sprite.image : null;
+            imageIndexListView.Items.Clear();
+            imageIndexList.Images.Clear();
+            if (e?.sprite != null)
+            {
+                imageIndexList.Images.AddRange([.. e.sprite.images]);
+                for (int i = 0; i < e.sprite.images.Count; i++)
+                {
+                    imageIndexListView.Items.Add(new ListViewItem { ImageIndex = i });
+                }
+            }
         }
 
         private RoomObject movingObj = null;
@@ -665,7 +681,10 @@ namespace ArcadeMaker.IDE
                     if (previewObj == null)
                     {
                         if (selectedObj != null)
-                            previewObj = new RoomObject("PREVIEW", position.X, position.Y, selectedObj);
+                        {
+                            int imageIndex = imageIndexListView.SelectedItems.Count == 0 ? 0 : imageIndexListView.SelectedItems[0].ImageIndex;
+                            previewObj = new RoomObject("PREVIEW", position.X, position.Y, imageIndex, selectedObj);
+                        }
                     }
                     else
                     {
@@ -758,6 +777,13 @@ namespace ArcadeMaker.IDE
             }
 
             return objs.ToArray();
+        }
+
+
+        private void imageIndexListView_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+                objAddSelectBox.ShowMenu(e.Location, imageIndexListView);
         }
     }
 }

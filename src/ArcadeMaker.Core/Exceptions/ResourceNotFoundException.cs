@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ArcadeMaker.Core.Exceptions;
 
-internal static class Types
+public class ResourceNotFoundException(int ID) : EngineException($"A resource with ID {ID} was not found.")
 {
     
 }

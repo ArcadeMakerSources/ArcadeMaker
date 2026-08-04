@@ -8,8 +8,7 @@ namespace ArcadeMaker.Core.Resources;
 
 public class Sound(string name, string filePath, float startVolume, float startPan, float startPitch, Sound.Types type) : ISetsID
 {
-    private static int idCounter = 0;
-    public int ID { get; } = idCounter++;
+    public int ID { get; } = Core.ID.Generate();
 
     public enum Formats
     {

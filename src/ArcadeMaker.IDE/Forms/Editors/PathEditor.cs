@@ -152,7 +152,7 @@ namespace ArcadeMaker.IDE
         private void AddPointToPanel(PathPoint pt, int index)
         {
             int btnSize = 10;
-            Button button = new Button { Location = pt - new Size(btnSize / 2, btnSize / 2) + new Size(scrollX, scrollY), Size = new Size(btnSize, btnSize), Cursor = Cursors.Arrow, Tag = pt };
+            Button button = new Button { Location = pt - new Size(btnSize / 2, btnSize / 2) + new Size(scrollX, scrollY), Size = new Size(btnSize, btnSize), Cursor = Cursors.Arrow, Tag = pt, BackColor = Color.Green };
             button.MouseDown += (s, e) =>
             {
                 if (e.Button == MouseButtons.Left)
@@ -164,7 +164,7 @@ namespace ArcadeMaker.IDE
                 {
                     Point loc = panel.PointToClient(Cursor.Position);
                     loc = new Point((int)(loc.X / snapXBox.Value) * (int)snapXBox.Value,
-                                    (int)(loc.Y / snapYBox.Value) * (int)snapYBox.Value) + new Size(scrollX, scrollY);
+                                    (int)(loc.Y / snapYBox.Value) * (int)snapYBox.Value);
                     button.Location = loc;
                 }
             };
@@ -176,8 +176,8 @@ namespace ArcadeMaker.IDE
                     {
                         holdedBtn = null;
                     }
-                    pt.x = button.Location.X;
-                    pt.y = button.Location.Y;
+                    pt.x = button.Location.X - scrollX;
+                    pt.y = button.Location.Y - scrollY;
                     panel.Invalidate();
                 }
             };

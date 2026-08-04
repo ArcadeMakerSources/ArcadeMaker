@@ -29,398 +29,402 @@ namespace ArcadeMaker.IDE
         /// </summary>
         private void InitializeComponent()
         {
-            this.okBtn = new System.Windows.Forms.Button();
-            this.zoomOutBtn = new System.Windows.Forms.Button();
-            this.zoomInBtn = new System.Windows.Forms.Button();
-            this.penBtn = new System.Windows.Forms.Button();
-            this.lineBtn = new System.Windows.Forms.Button();
-            this.fillBtn = new System.Windows.Forms.Button();
-            this.rectBtn = new System.Windows.Forms.Button();
-            this.imageBox = new System.Windows.Forms.PictureBox();
-            this.imagePanel = new System.Windows.Forms.Panel();
-            this.shapeDrawBtn = new System.Windows.Forms.Button();
-            this.shapeDrawFillBtn = new System.Windows.Forms.Button();
-            this.shapeFillBtn = new System.Windows.Forms.Button();
-            this.ellipseBtn = new System.Windows.Forms.Button();
-            this.pickColBtn = new System.Windows.Forms.Button();
-            this.drawFillGroupBox = new System.Windows.Forms.GroupBox();
-            this.widthGroupBox = new System.Windows.Forms.GroupBox();
-            this.width6Btn = new System.Windows.Forms.Button();
-            this.width5Btn = new System.Windows.Forms.Button();
-            this.width4Btn = new System.Windows.Forms.Button();
-            this.width3Btn = new System.Windows.Forms.Button();
-            this.width2Btn = new System.Windows.Forms.Button();
-            this.width1Btn = new System.Windows.Forms.Button();
-            this.toleranceBox = new System.Windows.Forms.TrackBar();
-            this.toleranceGroupBox = new System.Windows.Forms.GroupBox();
-            this.toleranceNumericBox = new System.Windows.Forms.NumericUpDown();
-            this.toolBox = new System.Windows.Forms.GroupBox();
-            this.colorPicker = new ArcadeMaker.IDE.GSColorPicker();
-            this.showGridBtn = new System.Windows.Forms.Button();
-            this.poffsetBox = new System.Windows.Forms.NumericUpDown();
-            ((System.ComponentModel.ISupportInitialize)(this.imageBox)).BeginInit();
-            this.imagePanel.SuspendLayout();
-            this.drawFillGroupBox.SuspendLayout();
-            this.widthGroupBox.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.toleranceBox)).BeginInit();
-            this.toleranceGroupBox.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.toleranceNumericBox)).BeginInit();
-            this.toolBox.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.poffsetBox)).BeginInit();
-            this.SuspendLayout();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SpriteDesigner));
+            okBtn = new Button();
+            penBtn = new Button();
+            lineBtn = new Button();
+            fillBtn = new Button();
+            rectBtn = new Button();
+            imageBox = new PictureBox();
+            imagePanel = new Panel();
+            toolStrip1 = new ToolStrip();
+            undoBtn = new ToolStripButton();
+            redoBtn = new ToolStripButton();
+            toolStripSeparator1 = new ToolStripSeparator();
+            zoomInBtn = new ToolStripButton();
+            zoomOutBtn = new ToolStripButton();
+            shapeDrawBtn = new Button();
+            shapeDrawFillBtn = new Button();
+            shapeFillBtn = new Button();
+            ellipseBtn = new Button();
+            pickColBtn = new Button();
+            drawFillGroupBox = new GroupBox();
+            widthGroupBox = new GroupBox();
+            width6Btn = new Button();
+            width5Btn = new Button();
+            width4Btn = new Button();
+            width3Btn = new Button();
+            width2Btn = new Button();
+            width1Btn = new Button();
+            toleranceBox = new TrackBar();
+            toleranceGroupBox = new GroupBox();
+            toleranceNumericBox = new NumericUpDown();
+            toolBox = new GroupBox();
+            colorPicker = new GSColorPicker();
+            ((System.ComponentModel.ISupportInitialize)imageBox).BeginInit();
+            imagePanel.SuspendLayout();
+            toolStrip1.SuspendLayout();
+            drawFillGroupBox.SuspendLayout();
+            widthGroupBox.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)toleranceBox).BeginInit();
+            toleranceGroupBox.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)toleranceNumericBox).BeginInit();
+            toolBox.SuspendLayout();
+            SuspendLayout();
             // 
             // okBtn
             // 
-            this.okBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.okBtn.Location = new System.Drawing.Point(12, 463);
-            this.okBtn.Name = "okBtn";
-            this.okBtn.Size = new System.Drawing.Size(75, 23);
-            this.okBtn.TabIndex = 2;
-            this.okBtn.Text = "OK";
-            this.okBtn.UseVisualStyleBackColor = true;
-            this.okBtn.Click += new System.EventHandler(this.okBtn_Click);
-            // 
-            // zoomOutBtn
-            // 
-            this.zoomOutBtn.Location = new System.Drawing.Point(150, 17);
-            this.zoomOutBtn.Name = "zoomOutBtn";
-            this.zoomOutBtn.Size = new System.Drawing.Size(26, 23);
-            this.zoomOutBtn.TabIndex = 3;
-            this.zoomOutBtn.Text = "-";
-            this.zoomOutBtn.UseVisualStyleBackColor = true;
-            this.zoomOutBtn.Click += new System.EventHandler(this.zoomOutBtn_Click);
-            // 
-            // zoomInBtn
-            // 
-            this.zoomInBtn.Location = new System.Drawing.Point(182, 17);
-            this.zoomInBtn.Name = "zoomInBtn";
-            this.zoomInBtn.Size = new System.Drawing.Size(26, 23);
-            this.zoomInBtn.TabIndex = 4;
-            this.zoomInBtn.Text = "+";
-            this.zoomInBtn.UseVisualStyleBackColor = true;
-            this.zoomInBtn.Click += new System.EventHandler(this.zoomInBtn_Click);
+            okBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            okBtn.Location = new Point(12, 463);
+            okBtn.Name = "okBtn";
+            okBtn.Size = new Size(75, 23);
+            okBtn.TabIndex = 2;
+            okBtn.Text = "OK";
+            okBtn.UseVisualStyleBackColor = true;
+            okBtn.Click += okBtn_Click;
             // 
             // penBtn
             // 
-            this.penBtn.Location = new System.Drawing.Point(12, 19);
-            this.penBtn.Name = "penBtn";
-            this.penBtn.Size = new System.Drawing.Size(26, 23);
-            this.penBtn.TabIndex = 5;
-            this.penBtn.Text = "✎";
-            this.penBtn.UseVisualStyleBackColor = true;
-            this.penBtn.Click += new System.EventHandler(this.penBtn_Click);
+            penBtn.Location = new Point(12, 19);
+            penBtn.Name = "penBtn";
+            penBtn.Size = new Size(26, 23);
+            penBtn.TabIndex = 5;
+            penBtn.Text = "✎";
+            penBtn.UseVisualStyleBackColor = true;
             // 
             // lineBtn
             // 
-            this.lineBtn.Location = new System.Drawing.Point(12, 48);
-            this.lineBtn.Name = "lineBtn";
-            this.lineBtn.Size = new System.Drawing.Size(26, 23);
-            this.lineBtn.TabIndex = 6;
-            this.lineBtn.Text = "\\";
-            this.lineBtn.UseVisualStyleBackColor = true;
-            this.lineBtn.Click += new System.EventHandler(this.lineBtn_Click);
+            lineBtn.Location = new Point(12, 48);
+            lineBtn.Name = "lineBtn";
+            lineBtn.Size = new Size(26, 23);
+            lineBtn.TabIndex = 6;
+            lineBtn.Text = "\\";
+            lineBtn.UseVisualStyleBackColor = true;
             // 
             // fillBtn
             // 
-            this.fillBtn.Location = new System.Drawing.Point(12, 77);
-            this.fillBtn.Name = "fillBtn";
-            this.fillBtn.Size = new System.Drawing.Size(26, 23);
-            this.fillBtn.TabIndex = 7;
-            this.fillBtn.Text = "+";
-            this.fillBtn.UseVisualStyleBackColor = true;
-            this.fillBtn.Click += new System.EventHandler(this.fillBtn_Click);
+            fillBtn.Location = new Point(12, 77);
+            fillBtn.Name = "fillBtn";
+            fillBtn.Size = new Size(26, 23);
+            fillBtn.TabIndex = 7;
+            fillBtn.Text = "+";
+            fillBtn.UseVisualStyleBackColor = true;
             // 
             // rectBtn
             // 
-            this.rectBtn.Location = new System.Drawing.Point(44, 48);
-            this.rectBtn.Name = "rectBtn";
-            this.rectBtn.Size = new System.Drawing.Size(26, 23);
-            this.rectBtn.TabIndex = 8;
-            this.rectBtn.Text = "▯";
-            this.rectBtn.UseVisualStyleBackColor = true;
-            this.rectBtn.Click += new System.EventHandler(this.rectBtn_Click);
+            rectBtn.Location = new Point(44, 48);
+            rectBtn.Name = "rectBtn";
+            rectBtn.Size = new Size(26, 23);
+            rectBtn.TabIndex = 8;
+            rectBtn.Text = "▯";
+            rectBtn.UseVisualStyleBackColor = true;
             // 
             // imageBox
             // 
-            this.imageBox.BackColor = System.Drawing.Color.Transparent;
-            this.imageBox.Location = new System.Drawing.Point(3, 3);
-            this.imageBox.Name = "imageBox";
-            this.imageBox.Size = new System.Drawing.Size(143, 123);
-            this.imageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.imageBox.TabIndex = 0;
-            this.imageBox.TabStop = false;
-            this.imageBox.Click += new System.EventHandler(this.imageBox_Click);
-            this.imageBox.MouseDown += new System.Windows.Forms.MouseEventHandler(this.imageBox_MouseDown);
-            this.imageBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.imageBox_MouseMove);
-            this.imageBox.MouseUp += new System.Windows.Forms.MouseEventHandler(this.imageBox_MouseUp);
+            imageBox.BackColor = Color.Transparent;
+            imageBox.Location = new Point(3, 27);
+            imageBox.Name = "imageBox";
+            imageBox.Size = new Size(143, 123);
+            imageBox.SizeMode = PictureBoxSizeMode.Zoom;
+            imageBox.TabIndex = 0;
+            imageBox.TabStop = false;
+            imageBox.Paint += imageBox_Paint;
+            imageBox.MouseDown += imageBox_MouseDown;
+            imageBox.MouseMove += imageBox_MouseMove;
+            imageBox.MouseUp += imageBox_MouseUp;
             // 
             // imagePanel
             // 
-            this.imagePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.imagePanel.AutoScroll = true;
-            this.imagePanel.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.imagePanel.Controls.Add(this.imageBox);
-            this.imagePanel.Location = new System.Drawing.Point(151, 46);
-            this.imagePanel.Name = "imagePanel";
-            this.imagePanel.Size = new System.Drawing.Size(428, 440);
-            this.imagePanel.TabIndex = 10;
+            imagePanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            imagePanel.AutoScroll = true;
+            imagePanel.BorderStyle = BorderStyle.Fixed3D;
+            imagePanel.Controls.Add(toolStrip1);
+            imagePanel.Controls.Add(imageBox);
+            imagePanel.Location = new Point(134, 26);
+            imagePanel.Name = "imagePanel";
+            imagePanel.Size = new Size(445, 460);
+            imagePanel.TabIndex = 10;
+            // 
+            // toolStrip1
+            // 
+            toolStrip1.Items.AddRange(new ToolStripItem[] { undoBtn, redoBtn, toolStripSeparator1, zoomInBtn, zoomOutBtn });
+            toolStrip1.Location = new Point(0, 0);
+            toolStrip1.Name = "toolStrip1";
+            toolStrip1.Size = new Size(441, 25);
+            toolStrip1.TabIndex = 1;
+            toolStrip1.Text = "toolStrip1";
+            // 
+            // undoBtn
+            // 
+            undoBtn.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            undoBtn.Enabled = false;
+            undoBtn.Image = (Image)resources.GetObject("undoBtn.Image");
+            undoBtn.ImageTransparentColor = Color.Magenta;
+            undoBtn.Name = "undoBtn";
+            undoBtn.Size = new Size(40, 22);
+            undoBtn.Text = "Undo";
+            undoBtn.Click += undoBtn_Click;
+            // 
+            // redoBtn
+            // 
+            redoBtn.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            redoBtn.Enabled = false;
+            redoBtn.Image = (Image)resources.GetObject("redoBtn.Image");
+            redoBtn.ImageTransparentColor = Color.Magenta;
+            redoBtn.Name = "redoBtn";
+            redoBtn.Size = new Size(38, 22);
+            redoBtn.Text = "Redo";
+            redoBtn.Click += redoBtn_Click;
+            // 
+            // toolStripSeparator1
+            // 
+            toolStripSeparator1.Name = "toolStripSeparator1";
+            toolStripSeparator1.Size = new Size(6, 25);
+            // 
+            // zoomInBtn
+            // 
+            zoomInBtn.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            zoomInBtn.Image = (Image)resources.GetObject("zoomInBtn.Image");
+            zoomInBtn.ImageTransparentColor = Color.Magenta;
+            zoomInBtn.Name = "zoomInBtn";
+            zoomInBtn.Size = new Size(23, 22);
+            zoomInBtn.Text = "+";
+            zoomInBtn.Click += zoomInBtn_Click;
+            // 
+            // zoomOutBtn
+            // 
+            zoomOutBtn.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            zoomOutBtn.Image = (Image)resources.GetObject("zoomOutBtn.Image");
+            zoomOutBtn.ImageTransparentColor = Color.Magenta;
+            zoomOutBtn.Name = "zoomOutBtn";
+            zoomOutBtn.Size = new Size(23, 22);
+            zoomOutBtn.Text = "-";
+            zoomOutBtn.Click += zoomOutBtn_Click;
             // 
             // shapeDrawBtn
             // 
-            this.shapeDrawBtn.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.shapeDrawBtn.Location = new System.Drawing.Point(6, 19);
-            this.shapeDrawBtn.Name = "shapeDrawBtn";
-            this.shapeDrawBtn.Size = new System.Drawing.Size(69, 23);
-            this.shapeDrawBtn.TabIndex = 11;
-            this.shapeDrawBtn.Text = "Border";
-            this.shapeDrawBtn.UseVisualStyleBackColor = true;
-            this.shapeDrawBtn.Click += new System.EventHandler(this.shapeDrawBtn_Click);
+            shapeDrawBtn.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 177);
+            shapeDrawBtn.Location = new Point(6, 19);
+            shapeDrawBtn.Name = "shapeDrawBtn";
+            shapeDrawBtn.Size = new Size(69, 23);
+            shapeDrawBtn.TabIndex = 11;
+            shapeDrawBtn.Text = "Border";
+            shapeDrawBtn.UseVisualStyleBackColor = true;
+            shapeDrawBtn.Click += shapeDrawBtn_Click;
             // 
             // shapeDrawFillBtn
             // 
-            this.shapeDrawFillBtn.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.shapeDrawFillBtn.Location = new System.Drawing.Point(6, 48);
-            this.shapeDrawFillBtn.Name = "shapeDrawFillBtn";
-            this.shapeDrawFillBtn.Size = new System.Drawing.Size(69, 23);
-            this.shapeDrawFillBtn.TabIndex = 12;
-            this.shapeDrawFillBtn.Text = "Border  Fill";
-            this.shapeDrawFillBtn.UseVisualStyleBackColor = true;
-            this.shapeDrawFillBtn.Click += new System.EventHandler(this.shapeDrawFillBtn_Click);
+            shapeDrawFillBtn.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 177);
+            shapeDrawFillBtn.Location = new Point(6, 48);
+            shapeDrawFillBtn.Name = "shapeDrawFillBtn";
+            shapeDrawFillBtn.Size = new Size(69, 23);
+            shapeDrawFillBtn.TabIndex = 12;
+            shapeDrawFillBtn.Text = "Border  Fill";
+            shapeDrawFillBtn.UseVisualStyleBackColor = true;
+            shapeDrawFillBtn.Click += shapeDrawFillBtn_Click;
             // 
             // shapeFillBtn
             // 
-            this.shapeFillBtn.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.shapeFillBtn.Location = new System.Drawing.Point(6, 77);
-            this.shapeFillBtn.Name = "shapeFillBtn";
-            this.shapeFillBtn.Size = new System.Drawing.Size(69, 23);
-            this.shapeFillBtn.TabIndex = 13;
-            this.shapeFillBtn.Text = "Fill";
-            this.shapeFillBtn.UseVisualStyleBackColor = true;
-            this.shapeFillBtn.Click += new System.EventHandler(this.shapeFillBtn_Click);
+            shapeFillBtn.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 177);
+            shapeFillBtn.Location = new Point(6, 77);
+            shapeFillBtn.Name = "shapeFillBtn";
+            shapeFillBtn.Size = new Size(69, 23);
+            shapeFillBtn.TabIndex = 13;
+            shapeFillBtn.Text = "Fill";
+            shapeFillBtn.UseVisualStyleBackColor = true;
+            shapeFillBtn.Click += shapeFillBtn_Click;
             // 
             // ellipseBtn
             // 
-            this.ellipseBtn.Location = new System.Drawing.Point(44, 77);
-            this.ellipseBtn.Name = "ellipseBtn";
-            this.ellipseBtn.Size = new System.Drawing.Size(26, 23);
-            this.ellipseBtn.TabIndex = 14;
-            this.ellipseBtn.Text = "◯";
-            this.ellipseBtn.UseVisualStyleBackColor = true;
-            this.ellipseBtn.Click += new System.EventHandler(this.ellipseBtn_Click);
+            ellipseBtn.Location = new Point(44, 77);
+            ellipseBtn.Name = "ellipseBtn";
+            ellipseBtn.Size = new Size(26, 23);
+            ellipseBtn.TabIndex = 14;
+            ellipseBtn.Text = "◯";
+            ellipseBtn.UseVisualStyleBackColor = true;
             // 
             // pickColBtn
             // 
-            this.pickColBtn.Location = new System.Drawing.Point(44, 19);
-            this.pickColBtn.Name = "pickColBtn";
-            this.pickColBtn.Size = new System.Drawing.Size(26, 23);
-            this.pickColBtn.TabIndex = 15;
-            this.pickColBtn.Text = "P";
-            this.pickColBtn.UseVisualStyleBackColor = true;
-            this.pickColBtn.Click += new System.EventHandler(this.pickColBtn_Click);
+            pickColBtn.Location = new Point(44, 19);
+            pickColBtn.Name = "pickColBtn";
+            pickColBtn.Size = new Size(26, 23);
+            pickColBtn.TabIndex = 15;
+            pickColBtn.Text = "P";
+            pickColBtn.UseVisualStyleBackColor = true;
             // 
             // drawFillGroupBox
             // 
-            this.drawFillGroupBox.Controls.Add(this.shapeDrawBtn);
-            this.drawFillGroupBox.Controls.Add(this.shapeDrawFillBtn);
-            this.drawFillGroupBox.Controls.Add(this.shapeFillBtn);
-            this.drawFillGroupBox.Location = new System.Drawing.Point(12, 237);
-            this.drawFillGroupBox.Name = "drawFillGroupBox";
-            this.drawFillGroupBox.Size = new System.Drawing.Size(116, 114);
-            this.drawFillGroupBox.TabIndex = 16;
-            this.drawFillGroupBox.TabStop = false;
-            this.drawFillGroupBox.Text = "Shape";
+            drawFillGroupBox.Controls.Add(shapeDrawBtn);
+            drawFillGroupBox.Controls.Add(shapeDrawFillBtn);
+            drawFillGroupBox.Controls.Add(shapeFillBtn);
+            drawFillGroupBox.Location = new Point(12, 237);
+            drawFillGroupBox.Name = "drawFillGroupBox";
+            drawFillGroupBox.Size = new Size(116, 114);
+            drawFillGroupBox.TabIndex = 16;
+            drawFillGroupBox.TabStop = false;
+            drawFillGroupBox.Text = "Shape";
             // 
             // widthGroupBox
             // 
-            this.widthGroupBox.Controls.Add(this.width6Btn);
-            this.widthGroupBox.Controls.Add(this.width5Btn);
-            this.widthGroupBox.Controls.Add(this.width4Btn);
-            this.widthGroupBox.Controls.Add(this.width3Btn);
-            this.widthGroupBox.Controls.Add(this.width2Btn);
-            this.widthGroupBox.Controls.Add(this.width1Btn);
-            this.widthGroupBox.Location = new System.Drawing.Point(12, 131);
-            this.widthGroupBox.Name = "widthGroupBox";
-            this.widthGroupBox.Size = new System.Drawing.Size(116, 100);
-            this.widthGroupBox.TabIndex = 17;
-            this.widthGroupBox.TabStop = false;
-            this.widthGroupBox.Text = "Width";
+            widthGroupBox.Controls.Add(width6Btn);
+            widthGroupBox.Controls.Add(width5Btn);
+            widthGroupBox.Controls.Add(width4Btn);
+            widthGroupBox.Controls.Add(width3Btn);
+            widthGroupBox.Controls.Add(width2Btn);
+            widthGroupBox.Controls.Add(width1Btn);
+            widthGroupBox.Location = new Point(12, 131);
+            widthGroupBox.Name = "widthGroupBox";
+            widthGroupBox.Size = new Size(116, 100);
+            widthGroupBox.TabIndex = 17;
+            widthGroupBox.TabStop = false;
+            widthGroupBox.Text = "Width";
             // 
             // width6Btn
             // 
-            this.width6Btn.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.width6Btn.Location = new System.Drawing.Point(76, 64);
-            this.width6Btn.Name = "width6Btn";
-            this.width6Btn.Size = new System.Drawing.Size(29, 30);
-            this.width6Btn.TabIndex = 5;
-            this.width6Btn.Text = "⬤";
-            this.width6Btn.UseVisualStyleBackColor = true;
-            this.width6Btn.Click += new System.EventHandler(this.width6Btn_Click);
+            width6Btn.Font = new Font("Microsoft Sans Serif", 15.75F, FontStyle.Regular, GraphicsUnit.Point, 177);
+            width6Btn.Location = new Point(76, 64);
+            width6Btn.Name = "width6Btn";
+            width6Btn.Size = new Size(29, 30);
+            width6Btn.TabIndex = 5;
+            width6Btn.Text = "⬤";
+            width6Btn.UseVisualStyleBackColor = true;
+            width6Btn.Click += width6Btn_Click;
             // 
             // width5Btn
             // 
-            this.width5Btn.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.width5Btn.Location = new System.Drawing.Point(41, 64);
-            this.width5Btn.Name = "width5Btn";
-            this.width5Btn.Size = new System.Drawing.Size(29, 30);
-            this.width5Btn.TabIndex = 4;
-            this.width5Btn.Text = "⬤";
-            this.width5Btn.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.width5Btn.UseVisualStyleBackColor = true;
-            this.width5Btn.Click += new System.EventHandler(this.width5Btn_Click);
+            width5Btn.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Regular, GraphicsUnit.Point, 177);
+            width5Btn.Location = new Point(41, 64);
+            width5Btn.Name = "width5Btn";
+            width5Btn.Size = new Size(29, 30);
+            width5Btn.TabIndex = 4;
+            width5Btn.Text = "⬤";
+            width5Btn.TextAlign = ContentAlignment.TopCenter;
+            width5Btn.UseVisualStyleBackColor = true;
+            width5Btn.Click += width5Btn_Click;
             // 
             // width4Btn
             // 
-            this.width4Btn.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.width4Btn.Location = new System.Drawing.Point(6, 64);
-            this.width4Btn.Name = "width4Btn";
-            this.width4Btn.Size = new System.Drawing.Size(29, 30);
-            this.width4Btn.TabIndex = 3;
-            this.width4Btn.Text = "⬤";
-            this.width4Btn.UseVisualStyleBackColor = true;
-            this.width4Btn.Click += new System.EventHandler(this.width4Btn_Click);
+            width4Btn.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 177);
+            width4Btn.Location = new Point(6, 64);
+            width4Btn.Name = "width4Btn";
+            width4Btn.Size = new Size(29, 30);
+            width4Btn.TabIndex = 3;
+            width4Btn.Text = "⬤";
+            width4Btn.UseVisualStyleBackColor = true;
+            width4Btn.Click += width4Btn_Click;
             // 
             // width3Btn
             // 
-            this.width3Btn.Location = new System.Drawing.Point(76, 19);
-            this.width3Btn.Name = "width3Btn";
-            this.width3Btn.Size = new System.Drawing.Size(29, 28);
-            this.width3Btn.TabIndex = 2;
-            this.width3Btn.Text = "⬤";
-            this.width3Btn.UseVisualStyleBackColor = true;
-            this.width3Btn.Click += new System.EventHandler(this.width3Btn_Click);
+            width3Btn.Location = new Point(76, 19);
+            width3Btn.Name = "width3Btn";
+            width3Btn.Size = new Size(29, 28);
+            width3Btn.TabIndex = 2;
+            width3Btn.Text = "⬤";
+            width3Btn.UseVisualStyleBackColor = true;
+            width3Btn.Click += width3Btn_Click;
             // 
             // width2Btn
             // 
-            this.width2Btn.Font = new System.Drawing.Font("Microsoft Sans Serif", 6F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.width2Btn.Location = new System.Drawing.Point(41, 19);
-            this.width2Btn.Name = "width2Btn";
-            this.width2Btn.Size = new System.Drawing.Size(29, 28);
-            this.width2Btn.TabIndex = 1;
-            this.width2Btn.Text = "⬤";
-            this.width2Btn.UseVisualStyleBackColor = true;
-            this.width2Btn.Click += new System.EventHandler(this.width2Btn_Click);
+            width2Btn.Font = new Font("Microsoft Sans Serif", 6F, FontStyle.Regular, GraphicsUnit.Point, 177);
+            width2Btn.Location = new Point(41, 19);
+            width2Btn.Name = "width2Btn";
+            width2Btn.Size = new Size(29, 28);
+            width2Btn.TabIndex = 1;
+            width2Btn.Text = "⬤";
+            width2Btn.UseVisualStyleBackColor = true;
+            width2Btn.Click += width2Btn_Click;
             // 
             // width1Btn
             // 
-            this.width1Btn.Font = new System.Drawing.Font("Microsoft Sans Serif", 3F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.width1Btn.Location = new System.Drawing.Point(6, 19);
-            this.width1Btn.Name = "width1Btn";
-            this.width1Btn.Size = new System.Drawing.Size(29, 28);
-            this.width1Btn.TabIndex = 0;
-            this.width1Btn.Text = "⬤";
-            this.width1Btn.UseVisualStyleBackColor = true;
-            this.width1Btn.Click += new System.EventHandler(this.width1Btn_Click);
+            width1Btn.Font = new Font("Microsoft Sans Serif", 3F, FontStyle.Regular, GraphicsUnit.Point, 177);
+            width1Btn.Location = new Point(6, 19);
+            width1Btn.Name = "width1Btn";
+            width1Btn.Size = new Size(29, 28);
+            width1Btn.TabIndex = 0;
+            width1Btn.Text = "⬤";
+            width1Btn.UseVisualStyleBackColor = true;
+            width1Btn.Click += width1Btn_Click;
             // 
             // toleranceBox
             // 
-            this.toleranceBox.Location = new System.Drawing.Point(6, 49);
-            this.toleranceBox.Maximum = 441;
-            this.toleranceBox.Name = "toleranceBox";
-            this.toleranceBox.Size = new System.Drawing.Size(104, 45);
-            this.toleranceBox.TabIndex = 18;
-            this.toleranceBox.Scroll += new System.EventHandler(this.toleranceBox_Scroll);
+            toleranceBox.Location = new Point(6, 49);
+            toleranceBox.Maximum = 441;
+            toleranceBox.Name = "toleranceBox";
+            toleranceBox.Size = new Size(104, 45);
+            toleranceBox.TabIndex = 18;
             // 
             // toleranceGroupBox
             // 
-            this.toleranceGroupBox.Controls.Add(this.toleranceNumericBox);
-            this.toleranceGroupBox.Controls.Add(this.toleranceBox);
-            this.toleranceGroupBox.Location = new System.Drawing.Point(12, 357);
-            this.toleranceGroupBox.Name = "toleranceGroupBox";
-            this.toleranceGroupBox.Size = new System.Drawing.Size(116, 100);
-            this.toleranceGroupBox.TabIndex = 19;
-            this.toleranceGroupBox.TabStop = false;
-            this.toleranceGroupBox.Text = "Tolerance";
-            this.toleranceGroupBox.Visible = false;
+            toleranceGroupBox.Controls.Add(toleranceNumericBox);
+            toleranceGroupBox.Controls.Add(toleranceBox);
+            toleranceGroupBox.Location = new Point(12, 357);
+            toleranceGroupBox.Name = "toleranceGroupBox";
+            toleranceGroupBox.Size = new Size(116, 100);
+            toleranceGroupBox.TabIndex = 19;
+            toleranceGroupBox.TabStop = false;
+            toleranceGroupBox.Text = "Tolerance";
+            toleranceGroupBox.Visible = false;
             // 
             // toleranceNumericBox
             // 
-            this.toleranceNumericBox.Location = new System.Drawing.Point(13, 23);
-            this.toleranceNumericBox.Maximum = new decimal(new int[] {
-            441,
-            0,
-            0,
-            0});
-            this.toleranceNumericBox.Name = "toleranceNumericBox";
-            this.toleranceNumericBox.Size = new System.Drawing.Size(97, 20);
-            this.toleranceNumericBox.TabIndex = 19;
-            this.toleranceNumericBox.ValueChanged += new System.EventHandler(this.toleranceNumericBox_ValueChanged);
+            toleranceNumericBox.Location = new Point(13, 23);
+            toleranceNumericBox.Maximum = new decimal(new int[] { 441, 0, 0, 0 });
+            toleranceNumericBox.Name = "toleranceNumericBox";
+            toleranceNumericBox.Size = new Size(97, 23);
+            toleranceNumericBox.TabIndex = 19;
             // 
             // toolBox
             // 
-            this.toolBox.Controls.Add(this.pickColBtn);
-            this.toolBox.Controls.Add(this.penBtn);
-            this.toolBox.Controls.Add(this.lineBtn);
-            this.toolBox.Controls.Add(this.fillBtn);
-            this.toolBox.Controls.Add(this.rectBtn);
-            this.toolBox.Controls.Add(this.ellipseBtn);
-            this.toolBox.Location = new System.Drawing.Point(15, 10);
-            this.toolBox.Name = "toolBox";
-            this.toolBox.Size = new System.Drawing.Size(113, 115);
-            this.toolBox.TabIndex = 20;
-            this.toolBox.TabStop = false;
-            this.toolBox.Text = "Tools";
+            toolBox.Controls.Add(pickColBtn);
+            toolBox.Controls.Add(penBtn);
+            toolBox.Controls.Add(lineBtn);
+            toolBox.Controls.Add(fillBtn);
+            toolBox.Controls.Add(rectBtn);
+            toolBox.Controls.Add(ellipseBtn);
+            toolBox.Location = new Point(15, 10);
+            toolBox.Name = "toolBox";
+            toolBox.Size = new Size(113, 115);
+            toolBox.TabIndex = 20;
+            toolBox.TabStop = false;
+            toolBox.Text = "Tools";
             // 
             // colorPicker
             // 
-            this.colorPicker.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.colorPicker.Color1 = System.Drawing.Color.Black;
-            this.colorPicker.Color2 = System.Drawing.Color.White;
-            this.colorPicker.Location = new System.Drawing.Point(585, 26);
-            this.colorPicker.Name = "colorPicker";
-            this.colorPicker.Size = new System.Drawing.Size(91, 363);
-            this.colorPicker.TabIndex = 9;
-            // 
-            // showGridBtn
-            // 
-            this.showGridBtn.Location = new System.Drawing.Point(273, 17);
-            this.showGridBtn.Name = "showGridBtn";
-            this.showGridBtn.Size = new System.Drawing.Size(26, 23);
-            this.showGridBtn.TabIndex = 21;
-            this.showGridBtn.Text = "#";
-            this.showGridBtn.UseVisualStyleBackColor = true;
-            this.showGridBtn.Click += new System.EventHandler(this.showGridBtn_Click);
-            // 
-            // poffsetBox
-            // 
-            this.poffsetBox.DecimalPlaces = 3;
-            this.poffsetBox.Location = new System.Drawing.Point(349, 20);
-            this.poffsetBox.Name = "poffsetBox";
-            this.poffsetBox.Size = new System.Drawing.Size(120, 20);
-            this.poffsetBox.TabIndex = 22;
-            this.poffsetBox.ValueChanged += new System.EventHandler(this.poffsetBox_ValueChanged);
+            colorPicker.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            colorPicker.Location = new Point(585, 26);
+            colorPicker.Margin = new Padding(4, 3, 4, 3);
+            colorPicker.Name = "colorPicker";
+            colorPicker.Size = new Size(91, 363);
+            colorPicker.TabIndex = 9;
             // 
             // SpriteDesigner
             // 
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(682, 496);
-            this.Controls.Add(this.poffsetBox);
-            this.Controls.Add(this.showGridBtn);
-            this.Controls.Add(this.toolBox);
-            this.Controls.Add(this.toleranceGroupBox);
-            this.Controls.Add(this.widthGroupBox);
-            this.Controls.Add(this.drawFillGroupBox);
-            this.Controls.Add(this.imagePanel);
-            this.Controls.Add(this.colorPicker);
-            this.Controls.Add(this.zoomInBtn);
-            this.Controls.Add(this.zoomOutBtn);
-            this.Controls.Add(this.okBtn);
-            this.Name = "SpriteDesigner";
-            this.Text = "Sprite Designer";
-            this.Load += new System.EventHandler(this.SpriteDesigner_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.imageBox)).EndInit();
-            this.imagePanel.ResumeLayout(false);
-            this.drawFillGroupBox.ResumeLayout(false);
-            this.widthGroupBox.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.toleranceBox)).EndInit();
-            this.toleranceGroupBox.ResumeLayout(false);
-            this.toleranceGroupBox.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.toleranceNumericBox)).EndInit();
-            this.toolBox.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.poffsetBox)).EndInit();
-            this.ResumeLayout(false);
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            AutoSize = true;
+            ClientSize = new Size(682, 496);
+            Controls.Add(toolBox);
+            Controls.Add(toleranceGroupBox);
+            Controls.Add(widthGroupBox);
+            Controls.Add(drawFillGroupBox);
+            Controls.Add(imagePanel);
+            Controls.Add(colorPicker);
+            Controls.Add(okBtn);
+            Name = "SpriteDesigner";
+            Text = "Sprite Designer";
+            ((System.ComponentModel.ISupportInitialize)imageBox).EndInit();
+            imagePanel.ResumeLayout(false);
+            imagePanel.PerformLayout();
+            toolStrip1.ResumeLayout(false);
+            toolStrip1.PerformLayout();
+            drawFillGroupBox.ResumeLayout(false);
+            widthGroupBox.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)toleranceBox).EndInit();
+            toleranceGroupBox.ResumeLayout(false);
+            toleranceGroupBox.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)toleranceNumericBox).EndInit();
+            toolBox.ResumeLayout(false);
+            ResumeLayout(false);
 
         }
 
@@ -428,8 +432,6 @@ namespace ArcadeMaker.IDE
 
         private System.Windows.Forms.PictureBox imageBox;
         private System.Windows.Forms.Button okBtn;
-        private System.Windows.Forms.Button zoomOutBtn;
-        private System.Windows.Forms.Button zoomInBtn;
         private System.Windows.Forms.Button penBtn;
         private System.Windows.Forms.Button lineBtn;
         private System.Windows.Forms.Button fillBtn;
@@ -453,7 +455,11 @@ namespace ArcadeMaker.IDE
         private System.Windows.Forms.GroupBox toleranceGroupBox;
         private System.Windows.Forms.NumericUpDown toleranceNumericBox;
         private System.Windows.Forms.GroupBox toolBox;
-        private System.Windows.Forms.Button showGridBtn;
-        private System.Windows.Forms.NumericUpDown poffsetBox;
+        private ToolStrip toolStrip1;
+        private ToolStripButton undoBtn;
+        private ToolStripButton redoBtn;
+        private ToolStripSeparator toolStripSeparator1;
+        private ToolStripButton zoomInBtn;
+        private ToolStripButton zoomOutBtn;
     }
 }

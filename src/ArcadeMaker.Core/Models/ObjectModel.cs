@@ -19,8 +19,10 @@ namespace ArcadeMaker.Core.Models
         public List<ObjectEvent> Events { get; }
         public (int Depth, bool Visible, bool Solid) InitValues { get; set; }
         public ObjectProperty[] ExtraProperties { get; }
+        public bool OverridesDrawEvent { get; private set; }
 
-        internal ObjectEvent? CreateEvent { get; set; } // setter is required for the properties initializer generator
+        internal InstanceScriptDocument? PropertiesInitializer { get; set; }
+        internal ObjectEvent? CreateEvent { get; private set; }
         internal ObjectEvent? StepEvent { get; private set; }
         internal ObjectEvent? DrawEvent { get; private set; }
         internal ObjectEvent? DestroyEvent { get; private set; }
@@ -116,6 +118,7 @@ namespace ArcadeMaker.Core.Models
             MouseReleaseEvents = [.. GetEvents<MouseButton>(ObjectEvent.EventType.MouseRelease)];
             CollisionEvents = [.. Events.OfType<CollisionEvent>()];
             AlarmEvents = [.. GetEvents<int>(ObjectEvent.EventType.Alarm)];
+            OverridesDrawEvent = DrawEvent != null;
         }
     }
 
@@ -159,7 +162,7 @@ namespace ArcadeMaker.Core.Models
         {
             for (int i = 0; i < Scripts.Count; i++)
             {
-                Docs.Add(ExpSrc.ExpSrc.CreateInstanceScriptDocument($"{def.Name}.Events.{Type}{(GetParam(out var param) ? $"<{param}>" : "")}.{i}", def, Scripts[i] ?? throw new NullReferenceException($"{nameof(Scripts)}[{i}]"), ScriptArgs));
+                Docs.Add(ExpSrc.ExpSrc.CreateInstanceScriptDocument($"{def.Name}.Events.{Type}{(GetParam(out var param) ? $"<{param}>" : "")}.{i + 1}", def, Scripts[i] ?? throw new NullReferenceException($"{nameof(Scripts)}[{i}]"), ScriptArgs));
             }
         }
 

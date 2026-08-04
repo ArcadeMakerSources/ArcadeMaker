@@ -86,6 +86,7 @@ namespace Exp
     /// </summary>
     public partial class Interpreter : IVarSystem
     {
+        public const string STD_NAMESPACE = "system";
         private bool neutral = false;
 
         private string source;

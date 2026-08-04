@@ -1552,7 +1552,8 @@ namespace ArcadeMaker.IDE
 
                 string oldText = this.Text;
                 Spans.Clear();
-                string newText = oldText.Insert(suggestionSpanEnd, sug.Text).Remove(suggestionSpanStart, suggestionSpanEnd - suggestionSpanStart);
+                // the Math.Min(..) in the following line was added on 30/07/26 due to an ArgumentOutOfRangeException thrown here
+                string newText = oldText.Insert(Math.Min(suggestionSpanEnd, oldText.Length), sug.Text).Remove(suggestionSpanStart, suggestionSpanEnd - suggestionSpanStart);
                 Spans.Add(new ScriptBoxSpan { text = newText });
                 SelectionStart += newText.Length - oldText.Length;
 

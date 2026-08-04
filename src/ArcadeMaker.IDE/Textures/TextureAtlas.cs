@@ -10,6 +10,7 @@ namespace ArcadeMaker.IDE.Textures;
 
 internal static class TextureAtlas
 {
+    public const int SPACING = 1;
     internal static Bitmap FromImages(ImageRect[] textures)
     {
         if (textures.Length == 0)
@@ -24,10 +25,10 @@ internal static class TextureAtlas
 
         // fill atlas image
         using var graphics = Graphics.FromImage(atlas);
-        int i = 0;
         foreach (var texture in textures)
         {
             texture.Rect = rects.First(r => r.Id == texture.RectID);
+            texture.Rect = texture.Rect with { X = texture.Rect.X + SPACING, Y = texture.Rect.Y + SPACING, Width = texture.Rect.Width - SPACING * 2, Height = texture.Rect.Height - SPACING * 2 };
             graphics.DrawImage(texture.Image, texture.Rect.X, texture.Rect.Y);
         }
 
@@ -65,8 +66,8 @@ internal class ImageRect
         RectID = idCounter++;
         Rect = new()
         {
-            Width = (uint)image.Width,
-            Height = (uint)image.Height,
+            Width = (uint)image.Width + TextureAtlas.SPACING * 2,
+            Height = (uint)image.Height + TextureAtlas.SPACING * 2,
             Id = RectID
         };
     }

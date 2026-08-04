@@ -5,6 +5,7 @@ using ArcadeMaker.IDE.Properties;
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -94,13 +95,13 @@ namespace ArcadeMaker.IDE
                 return;
             }
 
-            Type[] types = new Type[] { typeof(GameSprite), typeof(GameSound), typeof(GameBackground), typeof(GamePath), typeof(GameScript), typeof(GameFont), typeof(GameObject), typeof(GameRoom) };
+            Type[] types = [typeof(GameSprite), typeof(GameSound), typeof(GameBackground), typeof(GamePath), typeof(GameScript), typeof(GameFont), typeof(GameObject), typeof(GameRoom)];
             for (int nodeIndex = 0; nodeIndex < this.projectTree.Nodes.Count; nodeIndex++)
             {
                 var node = this.projectTree.Nodes[nodeIndex];
                 if (nodeIndex >= types.Length)
                 {
-                    // clear node icon by setting its ImageIndex property to a value higher that the number
+                    // clear node icon by setting its ImageIndex property to a value higher than the number
                     // of images in the ImageList
                     node.ImageIndex = Environment.project.items.Count + treeImages.Images.Count + 2;
                     node.SelectedImageIndex = node.ImageIndex;
@@ -549,9 +550,9 @@ namespace ArcadeMaker.IDE
                         try
                         {
                             Environment.project = new GameProject("escape_equal_names");
-                            GameProject gameProject = GameProject.Open(project);
+                            GameProject gameProject = GameProject.Open(project, out object[] pTree);
                             Global.PushRecentProject(project);
-                            OpenProject(gameProject);
+                            OpenProject(gameProject, pTree);
                         }
                         catch (FileNotFoundException)
                         {
@@ -592,9 +593,14 @@ namespace ArcadeMaker.IDE
 
         private async void saveExeBtn_Click(object sender, EventArgs e)
         {
-            ProgressForm frm = new ProgressForm();
+            ProgressForm frm = new();
             frm.Show();
-            await Task.Run(() => { Environment.GenerateExe(run: true); frm.Close(); });
+
+            await Task.Run(() =>
+            {
+                Environment.GenerateExe(run: true);
+                frm.Close();
+            });
         }
 
         private async void saveGameBtn_Click(object sender, EventArgs e)
@@ -687,7 +693,7 @@ namespace ArcadeMaker.IDE
             }
         }
 
-        private void OpenProject(GameProject project, object[] pTree = null)
+        private void OpenProject(GameProject project, object[]? pTree = null)
         {
             Environment.project = project;
 
@@ -869,9 +875,18 @@ namespace ArcadeMaker.IDE
             {
                 int targetIndex = 0;
 
-                if (targetNode.Tag is GameItem)
+                if (targetNode.Tag is GameItem targetItem)
                 {
                     targetIndex = targetNode.Index;
+
+                    // try moving the dragged item in the project collection as well
+                    if (draggedNode != null && draggedNode.Tag is GameItem draggedItem)
+                    {
+                        int projectOldIndex = Environment.project.items.IndexOf(draggedItem);
+                        int projectNewIndex = Environment.project.items.IndexOf(targetItem);
+                        if (projectOldIndex >= 0 && projectNewIndex >= 0)
+                            Environment.project.items.Move(projectOldIndex, projectNewIndex);
+                    }
                 }
 
                 // remove the node from its current location and add it to the node at the drop location
@@ -917,6 +932,8 @@ namespace ArcadeMaker.IDE
         {
             // retrieve the client coordinates of the drop location
             Point targetPoint = projectTree.PointToClient(new Point(e.X, e.Y));
+
+            //TreeNode? draggedNode = e.Data?.GetData(typeof(TreeNode)) as TreeNode;
 
             // retrieve the node at the drop location
             TreeNode targetNode = projectTree.GetNodeAt(targetPoint);

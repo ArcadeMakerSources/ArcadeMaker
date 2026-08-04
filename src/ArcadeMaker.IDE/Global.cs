@@ -248,16 +248,14 @@ namespace ArcadeMaker.IDE
 
         public static double GetDifference(this Color color1, Color color2)
         {
-            // Calculate the difference between the red, green, and blue values
+            // calculate the difference between the red, green, and blue values
             int diffR = Math.Abs(color1.R - color2.R);
             int diffG = Math.Abs(color1.G - color2.G);
             int diffB = Math.Abs(color1.B - color2.B);
+            int diffA = Math.Abs(color1.A - color2.A);
 
-            // Calculate the total difference as the average of the differences in each channel
-            double totalDiff = (diffR + diffG + diffB) / 3.0;
-
-            // Return the total difference
-            return totalDiff;
+            // calculate the total difference as the average of the differences in each channel
+            return (diffR + diffG + diffB + diffA) / 4.0;
         }
 
         public static int CountOf(this string src, char c, int startIndex = 0, int endIndex = -1, bool ignoreCase = false)
@@ -342,22 +340,13 @@ namespace ArcadeMaker.IDE
             return destImage;
         }
 
-
-        public static void DrawTransparentBackground(this PictureBox box)
+        public static Bitmap Copy(this Bitmap image)
         {
-            System.Drawing.Bitmap image = new System.Drawing.Bitmap(32, 32);
-            const int rectSize = 16;
-            using (Graphics g = Graphics.FromImage(image))
-            {
-                Pen pen = new Pen(Color.White);
-                g.FillRectangle(pen.Brush, 0, 0, rectSize, rectSize);
-                pen.Color = Color.Gray;
-                g.FillRectangle(pen.Brush, rectSize, 0, rectSize, rectSize);
-                g.FillRectangle(pen.Brush, 0, rectSize, rectSize, rectSize);
-                pen.Color = Color.White;
-                g.FillRectangle(pen.Brush, rectSize, rectSize, rectSize, rectSize);
-            }
-            box.BackgroundImage = image;
+            // Image.Clone() is problematic, so we'll manually create an empty new image and draw the original on top of it
+            Bitmap bmp = new(image.Width, image.Height);
+            using Graphics graphics = Graphics.FromImage(bmp);
+            graphics.DrawImage(image, 0, 0);
+            return bmp;
         }
 
         public static bool ImageFileIsSpriteStrip(string path, out int count)

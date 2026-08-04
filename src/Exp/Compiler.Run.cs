@@ -742,6 +742,20 @@ public partial class Interpreter
                         vars.ForEach(v => v.Def = enumcls);
                         enumcls.Vars.AddRange(vars);
                         def = enumcls;
+
+                        // add getValueName(val) function
+                        ExternFunc getValName = new(GetValName, [1], "getValueName");
+                        AddExternFunc(getValName, enumcls, true);
+
+                        Instance GetValName(Exp.Instance? _, IValue?[] args)
+                        {
+                            if (args == null || args.Length == 0 || args[0] == null)
+                                ThrowRuntime("Argument 'val' cannot be null.", RuntimeException.ARGUMENT_NULL);
+                            var result = enm.Values.FirstOrDefault(ev => ev.Value == args[0]!.Number);
+                            if (result == null)
+                                ThrowRuntime($"The given value ({args[0]!.Number}) is not defined in the enum ({enumcls.GetExpTypeName(false)}).", RuntimeException.INVALID_ARGUMENT);
+                            return result?.Name.ToExpString()!;
+                        }
                     }
 
                     definations.Add(def);
@@ -856,7 +870,10 @@ public partial class Interpreter
         // insert arguments
         int i = 0;
         foreach (var param in parameters)
-            func.ParamVariables[i++].Value = param;
+        {
+            if (i < func.ParamVariables.Length)
+                func.ParamVariables[i++].Value = param;
+        }
 
         // on non-static funcs, set parent VS to the instance we're calling on
         var prevParent = func.Parent;
