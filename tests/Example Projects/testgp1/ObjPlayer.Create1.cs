@@ -1,2 +1,0 @@
-/// init
-imageSpeed = 20
