@@ -20,11 +20,6 @@ public class Program
     /// <param name="args">Command-line arguments passed to the application.</param>
     public static void Main(string[] args)
     {
-        AppDomain.CurrentDomain.UnhandledException += (s, e) =>
-        {
-            File.WriteAllText(@"C:\Users\איתן\Desktop\windxlog.txt", e.ExceptionObject.ToString());
-        };
-
         // find game resources file
         string setupErr = null;
         Stream gameData = null;

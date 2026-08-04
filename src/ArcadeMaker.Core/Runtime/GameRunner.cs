@@ -482,6 +482,9 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
                 collisionEv.Resolve(Game);
         }
 
+        // init interpreter
+        Interpreter.Init();
+
         // make sure game has any rooms
         if (Game.Rooms.Count == 0)
             throw new Exception("A game must have at least 1 room.");

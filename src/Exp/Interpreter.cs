@@ -147,6 +147,7 @@ namespace Exp
         internal List<ExternClassDefSpan> externs = [];
 
         public readonly List<IDefination> definations = [];
+        private readonly Dictionary<ClassStaticVar, IReadingOperation> staticPropsToInit = [];
 
         /// <summary>
         /// The currently activated <see cref="Interpreter"/> instance.
@@ -213,7 +214,17 @@ namespace Exp
                 func.Operations = ReadOperations(func.InnerSource, func);
             }
             definations.OfType<FuncDefSpan>().ForEach(OperateFunc);
-            definations.OfType<ClassDefSpan>().ForEach(cls => cls.Funcs.ForEach(OperateFunc));
+
+            // operate class funcs (static & non-static) and ctors (same), and static properties initializers
+            foreach (var cls in definations.OfType<ClassDefSpan>())
+            {
+                cls.Funcs.ForEach(OperateFunc);
+                foreach (var staticProp in cls.Vars.OfType<ClassStaticVar>())
+                {
+                    if (staticProp.InitValueCode is { Length: > 0 })
+                        staticPropsToInit.Add(staticProp, ReadReadingOperation(staticProp.InitValueCode));
+                }
+            }
             operations = ReadOperations(null, this);
             AfterAllOperationsCreated?.Invoke(this, null);
 
@@ -223,6 +234,28 @@ namespace Exp
             {
                 if (Errors.Count > 0)
                     throw new BuildFailureException(Errors);
+            }
+        }
+
+        public void Init()
+        {
+            RunStaticCtors();
+        }
+
+        private void RunStaticCtors()
+        { 
+            // run all static properties initalizers
+            foreach (var init in staticPropsToInit)
+            {
+                init.Key.SetSkippingConstant(init.Value.Read());
+            }
+
+            // run all static ctors
+            foreach (var cls in definations.OfType<ClassDefSpan>())
+            {
+                var staticCtor = cls.Funcs.OfType<ConstructorDefSpan>().Where(ctor => ctor.Static).FirstOrDefault();
+                if (staticCtor != null)
+                    FuncCall(null, staticCtor, null, out bool _, []);
             }
         }
 
