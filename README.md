@@ -1,11 +1,17 @@
 # ArcadeMaker
+<img width="300" height="180" alt="rbr_ss4" src="https://github.com/user-attachments/assets/26066d82-c607-4b22-9d47-4abebf85d8a3" />
+<img width="300" height="180" alt="rbr_ss22" src="https://github.com/user-attachments/assets/47f31333-a110-4b13-900b-b54ffabc581c" />
+<img width="300" height="180" alt="rbr_ss3" src="https://github.com/user-attachments/assets/c6430cca-10ea-47fd-aa70-b18b0d80bd61" />
+<img width="300" height="180" alt="rbr_ss1" src="https://github.com/user-attachments/assets/849d9827-a560-4565-bfa7-a6636ba96314" />
+
+[![Video of an example game made with the engine](https://youtu.be/KRDHFFZZdIQ)](https://youtu.be/KRDHFFZZdIQ) 
 
 ArcadeMaker is a simple 2D cross‑platform game engine that includes its own programming language (its prototype is called Exp) and an integrated IDE.  
 The engine and IDE themselves are written in C#, but the language you use inside ArcadeMaker to program your games is my custom language, not C#.
 
 Currently, the graphics and audio backend is powered by MonoGame, which allows exporting to desktop, mobile, and consoles. I’m also planning to add a KNI-engine implementation to enable web support.
 
-This project is far from finished — not even close.  
+This project is not finished yet.  
 But since I have very little time to work on it, I decided to open‑source it in the hope that others will find it interesting and help turn it into something real.
 
 ArcadeMaker is based on GameMaker 8, so if you’ve ever used it, you’ll find it very easy to learn.
@@ -16,16 +22,15 @@ ArcadeMaker is based on GameMaker 8, so if you’ve ever used it, you’ll find 
 
 ArcadeMaker has been built in several stages over the span of a few years, and different parts of it were written at very different points in my programming journey.
 
-- The IDE was written about two years ago, when my programming skills were very different from what they are today.  
+- The IDE was written about three years ago, when my programming skills were very different from what they are today.  
 - The Exp language was created after the IDE, but still before the current core engine and before the MonoGame implementation existed.
 
 Originally, ArcadeMaker started as a C#‑based engine where users wrote their game logic directly in C#. After leaving the project for a while, I eventually created my own programming language and decided to return to ArcadeMaker — replacing the old C# scripting layer with my language and rewriting the core engine around it.
 
 Because of this long, staggered development history, the IDE currently includes many features that the new engine backend does not yet support. For example:
-
-- Object events — only Create, Step, and Draw events are currently functional.  
+  
 - Parent objects — supported in the IDE, not yet implemented in the engine.  
-- View following speed — views can follow an object, but the view’s movement speed always matches the object’s speed, even if you set a custom follow speed. This should be straightforward to fix.
+- Dll package manager - exists in the IDE, but currently has no any effect (it had when the engine used C# for scripting).
 
 The long‑term goal is to bring the new engine up to feature parity with the old C# version — and then expand far beyond it.
 
@@ -36,18 +41,9 @@ The long‑term goal is to bring the new engine up to feature parity with the ol
 - Full implementation of the missing IDE features in the engine  
 - KNI-engine backend for web export  
 - A more complete and stable version of the Exp language  
-- Auto‑completion for the code editor  
-- Implementing all the common, daily‑use game functions such as drawRect(), setFont(), deactivateInstancesInRegion(), setRoomWidth(), and many more  
+- Implementing all the common, daily‑use game functions such as drawRect(), deactivateInstancesInRegion(), setRoomWidth(), and many more  
 - Cross‑platform templates for mobile and console builds  
 - Documentation, tutorials, and example projects
-
----
-
-# About the GitHub Release
-
-The build available in the Releases section is not a real release. It’s extremely early, contains many bugs, and is missing major features. There is no “Create Standalone Executable” option for exporting finished games — and realistically, you won’t be able to finish a full game with the current state of the engine anyway.
-
-I uploaded this build only so you can see what the project currently looks like and get a sense of its potential. It’s a snapshot of the engine and IDE as they are right now, not a stable or complete version.
 
 ---
 
@@ -73,6 +69,7 @@ If you enjoy GameMaker‑style workflows or want to contribute to a lightweight,
 3. Restore NuGet packages.  
 4. Build the project.  
 5. Run the IDE project to start ArcadeMaker.
+6. (Optionally) - After the IDE is loaded, go to "File -> Open Project" to load an example project from "tests/Example Projects".
 
 ---
 
@@ -88,6 +85,7 @@ Contributions of all kinds are appreciated:
 - Language design ideas  
 
 Before submitting a pull request, please open an issue to discuss your idea.
+Currently I'm only one dev working on this project alone in my free time, so documentation is really, really missing. I'll try do my best to improve it, but please feel free to ask any question you have about anything related to the project, I'll answer to anything!
 
 ---
 
