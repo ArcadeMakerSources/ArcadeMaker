@@ -257,7 +257,7 @@ public partial class Interpreter
                             if (pointingOrFuncCall.Next == null && pointingOrFuncCall.KnownFunc?.ReadOnly == true)
                                 Error($"The value returned by {pointingOrFuncCall.KnownFunc?.GetExpTypeName(false)} must be used because it's marked as read-only.");
 
-                            operation = Operation.Custom(() => pointingOrFuncCall.Read());
+                            operation = new Invocation(pointingOrFuncCall); //Operation.Custom(() => pointingOrFuncCall.Read());
                         }
                     }
                 }

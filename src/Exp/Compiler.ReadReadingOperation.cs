@@ -668,6 +668,7 @@ public partial class Interpreter
 
     private void ReadErrorPointing(bool lastSpanWasWord)
     {
+        return;
         while (true)
         {
             var spoiler = Spoiler();

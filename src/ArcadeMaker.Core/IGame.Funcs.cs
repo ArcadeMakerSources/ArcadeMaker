@@ -264,10 +264,11 @@ public partial interface IGame
     /// <param name="args">Arguments where args[0] and args[1] are the target X and Y coordinates and args[2]
     /// is either an instance to check against or an object type to test for collisions.</param>
     /// <returns>True if the placement would result in a collision; otherwise false.</returns>
-    [ExpFunc(2, 3, IsNonStaticFuncOfGameObjects = true)]
+    [ExpFunc(2, 3, 4, IsNonStaticFuncOfGameObjects = true)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("type", ParamType.Type + " / " + ParamType.GameObject, "The object type to check for collision with, or a reference for a spesific instance.", Optional = true)]
+    [Param("angle", ParamType.Number, "The angle to test for collision at (default is current imageAngle value)", Optional = true)]
     BoolValue PlaceMeeting(Exp.Instance? expinst, IValue?[] args)
     {
         var inst = (Runtime.Instance)expinst!;
@@ -277,17 +278,18 @@ public partial interface IGame
 
         var x = args[0].ThrowIfNull().Number;
         var y = args[1].ThrowIfNull().Number;
+        int angle = (int)(args.Length >= 4 ? args[3].ThrowIfNull() : inst.ImageAngle.Value!).Number;
 
         // if 3rd argument is an instance, only check it
         if (args.Length >= 3 && args[2] is Runtime.Instance other)
-            return PlaceMeeting(x, y, other);
+            return PlaceMeeting(x, y, angle, other);
 
         // if 3rd argument is a type, check all instances of that type
-        else if (args[2]!.IsInst)
+        else if (args[2]!.IsInst) // IsInst means Exp.Instance, which is what system::Type is
         {
             foreach (var i in GetActivatedRoom().Instances)
             {
-                if (args.Length == 2 || (i.Sprite != null && i.def.ExpType == args[2] && ((IValue)PlaceMeeting(x, y, i)).Bool))
+                if ((args.Length == 2 || (i.Sprite != null && i.def.ExpType == args[2])) && ((IValue)PlaceMeeting(x, y, angle, i)).Bool)
                     return true;
             }
             return false;
@@ -295,19 +297,21 @@ public partial interface IGame
         else
             throw new ArgumentException("Invalid argument type for PlaceMeeting", paramName: nameof(args) + "[2]");
 
-        BoolValue PlaceMeeting(double x, double y, Runtime.Instance other)
+        BoolValue PlaceMeeting(double x, double y, int angle, Runtime.Instance other)
         {
             if (inst == other || inst.Mask is null || other.Mask is null)
                 return false;
 
-            double originalX = inst.Mask.X, originalY = inst.Mask.Y;
+            double originalX = inst.Mask.X, originalY = inst.Mask.Y, originalAngle = inst.Mask.Angle;
             inst.Mask.X = x; // note that this actually updates the value of inst.X
             inst.Mask.Y = y; // same
+            inst.Mask.Angle = angle; // same
 
             bool result = SeparatingAxisTheorem.AreRectanglesIntersecting(inst.Mask, other.Mask);
 
             inst.Mask.X = originalX;
             inst.Mask.Y = originalY;
+            inst.Mask.Angle = originalAngle;
 
             return result;
         }
@@ -319,15 +323,17 @@ public partial interface IGame
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Arguments where args[0] and args[1] are the target X and Y coordinates and args[2] is the type to search for.</param>
     /// <returns>The first instance found that collides at the specified position, or null if none found.</returns>
-    [ExpFunc(2, 3, IsNonStaticFuncOfGameObjects = true)]
+    [ExpFunc(2, 3, 4, IsNonStaticFuncOfGameObjects = true)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("type", ParamType.Type, "The object type to check for collision with.", Optional = true)]
+    [Param("angle", ParamType.Number, "The angle to test for collision at (default is current imageAngle value)", Optional = true)]
     Runtime.Instance? InstanceMeeting(Exp.Instance? expinst, IValue?[] args)
     {
         foreach (var other in GetActivatedRoom().Instances)
         {
-            if ((args.Length == 2 || other.Model.Class.ExpType == args[2]) && PlaceMeeting(expinst, [args[0], args[1], other]))
+            IValue?[] fArgs = args.Length >= 4 ? [args[0], args[1], other, args[3]] : [args[0], args[1], other];
+            if ((args.Length == 2 || other.Model.Class.ExpType == args[2]) && PlaceMeeting(expinst, fArgs))
                 return other;
         }
 
@@ -340,13 +346,18 @@ public partial interface IGame
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Arguments where args[0] and args[1] are the target X and Y coordinates to test.</param>
     /// <returns>True if the position is free; otherwise false.</returns>
-    [ExpFunc(2, IsNonStaticFuncOfGameObjects = true)]
+    [ExpFunc(2, 3, IsNonStaticFuncOfGameObjects = true)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
+    [Param("angle", ParamType.Number, "The angle to test at (default is current imageAngle value)", Optional = true)]
     BoolValue PlaceFree(Exp.Instance? expinst, IValue?[] args)
     {
-        foreach (var other in GetActivatedRoom().Instances.Where(i => i.Solid.Value!.Bool))
+        foreach (var other in GetActivatedRoom().Instances)
         {
+            if (!other.Solid.Value!.Bool)
+                continue;
+
+            args = args.Length >= 3 ? [args[0], args[1], other, args[2]] : [args[0], args[1], other];
             if (PlaceMeeting(expinst, [args[0], args[1], other]))
                 return false;
         }
@@ -582,6 +593,34 @@ public partial interface IGame
 
         return Exp.Void.Return;
     }
+
+    /// <summary>
+    /// Draws a rectangle.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(x1, y1, x2, y2, [outline]).</param>
+    [ExpFunc(4, 5, 6)]
+    [Param("x1", ParamType.Number, "Position 1 x.")]
+    [Param("y1", ParamType.Number, "Position 1 y.")]
+    [Param("x2", ParamType.Number, "Position 2 x.")]
+    [Param("y2", ParamType.Number, "Position 2 y.")]
+    [Param("outline", ParamType.Bool, "Whether to fill a rectangle or only draw the outline.", Optional = true)]
+    [Param("thickness", ParamType.Number, "Outline thickness.", Optional = true)]
+    Exp.Void DrawRect(Exp.Instance? _, IValue?[] args);
+
+    /// <summary>
+    /// Draws an ellipse.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(x1, y1, x2, y2, [outline]).</param>
+    [ExpFunc(4, 5)]
+    [Param("x1", ParamType.Number, "Position 1 x.")]
+    [Param("y1", ParamType.Number, "Position 1 y.")]
+    [Param("x2", ParamType.Number, "Position 2 x.")]
+    [Param("y2", ParamType.Number, "Position 2 y.")]
+    [Param("outline", ParamType.Bool, "Whether to fill an ellipse or only draw the outline.", Optional = true)]
+    [Param("thickness", ParamType.Number, "Outline thickness.", Optional = true)]
+    Exp.Void DrawEllipse(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
     /// Draws a path starting at the path's start position or an optional provided position.
