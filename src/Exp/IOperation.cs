@@ -23,6 +23,14 @@ class Operation(Action action) : IOperation
     internal static IOperation Error => new Operation(() => Interpreter.Activated.ThrowRuntime("Execution reached a build error.", "EXE_REACHED_BUILD_ERR"));
 }
 
+class Invocation(PointingOrFuncCall call) : IOperation
+{
+    public void Make()
+    {
+        call.Read();
+    }
+}
+
 class OperatorResultOperation(OperatorSpan opertor, IReadingOperation left, IReadingOperation right) : IReadingOperation
 {
     public IValue Read()
@@ -422,7 +430,7 @@ class ReadingOperation(IValue value) : IReadingOperation
 
     public IValue Read()
     {
-        return Value;
+        return value;
     }
 }
 

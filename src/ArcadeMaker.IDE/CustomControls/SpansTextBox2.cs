@@ -1395,7 +1395,7 @@ namespace ArcadeMaker.IDE
 
         private void SpansTextBox2_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
+            if (e.Button == MouseButtons.Left && Text is { Length: >= 1 })
             {
                 // select the span the user clicked on
 

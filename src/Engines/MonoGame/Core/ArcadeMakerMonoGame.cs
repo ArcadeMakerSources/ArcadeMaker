@@ -689,6 +689,46 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             SpriteBatch.DrawLine(new Vector2((float)x1, (float)y1), new Vector2((float)x2, (float)y2), drawColor, (float)thickness);
         }
 
+        public Exp.Void DrawRect(Exp.Instance? _, IValue?[] args)
+        {
+            var x1 = (float)args[0].ThrowIfNull().Number;
+            var y1 = (float)args[1].ThrowIfNull().Number;
+            var x2 = (float)args[2].ThrowIfNull().Number;
+            var y2 = (float)args[3].ThrowIfNull().Number;
+            bool outline = args.Length < 5 || args[4].ThrowIfNull().Bool;
+            var thickness = args.Length >= 6 ? (float)args[5].ThrowIfNull().Number : 1f;
+
+            RectangleF rect = new(x1, y1, Math.Abs(x2 - x1), Math.Abs(y2 - y1));
+
+            if (outline)
+                SpriteBatch.DrawRectangle(rect, drawColor, thickness);
+            else
+                SpriteBatch.FillRectangle(rect, drawColor);
+
+            return Exp.Void.Return;
+        }
+
+        public Exp.Void DrawEllipse(Exp.Instance? _, IValue?[] args)
+        {
+            var x1 = (float)args[0].ThrowIfNull().Number;
+            var y1 = (float)args[1].ThrowIfNull().Number;
+            var x2 = (float)args[2].ThrowIfNull().Number;
+            var y2 = (float)args[3].ThrowIfNull().Number;
+            bool outline = args.Length < 5 || args[4].ThrowIfNull().Bool;
+            var thickness = args.Length >= 6 ? (float)args[5].ThrowIfNull().Number : 1f;
+
+            // TODO: what if x1 > x2?
+            Vector2 radius = new(Math.Abs(x2 - x1) / 2, Math.Abs(y2 - y1) / 2);
+            Vector2 center = new(x2 - radius.X, y2 - radius.Y);
+
+            if (outline)
+                SpriteBatch.DrawEllipse(center, radius, 4, drawColor, thickness);
+            else
+                throw new NotImplementedException("Drawing a filled ellipse is currently not supported."); // TODO: impl
+
+            return Exp.Void.Return;
+        }
+
         public (int x, int y) MousePositionInWindow
         {
             get

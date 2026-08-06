@@ -551,6 +551,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     /// <returns>void.</returns>
     /// <exception cref="ArgumentException"></exception>
     [ExpFunc(1)]
+    [Param("roomID", ParamType.Number, "The ID of the room to go to. You can use 'Rooms.my_room' for this.")]
     public Exp.Void GoToRoom(Exp.Instance? _, IValue?[] args)
     {
         // find the room by the ID
