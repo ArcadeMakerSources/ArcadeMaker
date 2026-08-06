@@ -323,7 +323,7 @@ public partial interface IGame
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Arguments where args[0] and args[1] are the target X and Y coordinates and args[2] is the type to search for.</param>
     /// <returns>The first instance found that collides at the specified position, or null if none found.</returns>
-    [ExpFunc(2, 3, IsNonStaticFuncOfGameObjects = true)]
+    [ExpFunc(2, 3, 4, IsNonStaticFuncOfGameObjects = true)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("type", ParamType.Type, "The object type to check for collision with.", Optional = true)]
@@ -346,7 +346,7 @@ public partial interface IGame
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Arguments where args[0] and args[1] are the target X and Y coordinates to test.</param>
     /// <returns>True if the position is free; otherwise false.</returns>
-    [ExpFunc(2, IsNonStaticFuncOfGameObjects = true)]
+    [ExpFunc(2, 3, IsNonStaticFuncOfGameObjects = true)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("angle", ParamType.Number, "The angle to test at (default is current imageAngle value)", Optional = true)]
