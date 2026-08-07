@@ -131,7 +131,7 @@ For now, it only needs a single **Create** event that sets its movement speed.
 Click **Add Event → Create**, then add the following script:
 ```
 /// set speed
-Speed = 9
+speed = 9
 ```
 That's all we need for the bullet object for now.
 Click **OK**, then double-click **obj_tank** in the Project Tree to reopen its editor.
