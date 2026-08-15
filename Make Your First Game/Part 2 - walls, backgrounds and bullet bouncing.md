@@ -2,10 +2,10 @@
 
 <img width="638" height="508" alt="amtut p2 result" src="https://github.com/user-attachments/assets/046c4da1-09da-41b3-99f8-75f1629c104e" />
 
-
 Let's add some soul to our game: we'll start with the walls.
 
 **Adding the Walls**
+
 Create a new **spr_wall** sprite and load the **createMetal** sprite from our sprite asset.
 Create an **obj_wall** object, set its sprite to the one you just created, and check the **Solid** checkbox.
 
@@ -18,7 +18,9 @@ Run the game. The tank should now stop when trying to collide with the walls.
 
 <img width="877" height="596" alt="amtut room preview" src="https://github.com/user-attachments/assets/59c47473-7c16-4353-99fe-6b95d56fc23c" />
 
+
 **Backgrounds**
+
 I used this texture for the background:
 
 <img width="32" height="32" alt="sand" src="https://github.com/user-attachments/assets/57f65cbd-d51f-44de-88c6-b2b651bc7719" />
@@ -30,6 +32,7 @@ Next, click the box that shows **&lt;No Background&gt;** and select **bg_sand**.
 <img width="197" height="508" alt="amtut select background" src="https://github.com/user-attachments/assets/d59c2c07-6cd3-4385-a2db-860290e36da1" />
 
 **Bullet Bouncing**
+
 We want the bullet to bounce when it hits a solid object like a wall. We've already talked about the `hspeed` and `vspeed` properties of game objects; multiplying them by -1 when hitting a wall in their direction would do the job.
 
 Double-click **obj_bullet**, add a **Step** event, and insert this script into it:
@@ -37,28 +40,35 @@ Double-click **obj_bullet**, add a **Step** event, and insert this script into i
 /// bounce on collision with solid objects
 if !placeFree(x + hspeed, y)
 {
-    hspeed = hspeed \* -1
+    hspeed = hspeed * -1
 }
 
 if !placeFree(x, y + vspeed)
 {
-    vspeed = vspeed \* -1
+    vspeed = vspeed * -1
 }
 ```
-We also want to make sure the bullets cannot keep bouncing for too long. We would want to set a timer to destroy them. Add this script to the **Create** event:
+Currently, nothing happens when the bullet is moving out of the room. they would just keep moving and using memory, and their **Step** event would keep firing. That's not good. We should always destroy objects that are no more in use. Click **Add Event**, select **Other -> Outside Room** and add a script to destroy them:
 ```
-/// init self-destruction alarm
-setAlarm(0, 500)
-```
-This sets Alarm 0 to 500 frames. After 500 frames, the Alarm 0 event will fire. Add this event to the events list and add this script to it to destroy the bullet:
-```
-/// destroy self 
+/// destroy self
 destroy()
 ```
 
 <img width="669" height="164" alt="amtut obj_bullet destroy self" src="https://github.com/user-attachments/assets/f453facf-5fe6-4a05-873e-a19137aaca54" />
 
+We also want to make sure the bullets cannot keep bouncing for too long. We would want to set a timer to destroy them. Add this script to the **Create** event:
+```
+/// init self-destruction alarm
+setAlarm(0, 500)
+```
+This sets Alarm 0 to 500 frames. After 500 frames, the Alarm 0 event will fire. Add **Alarm 0** event to the events list and add this script to it to destroy the bullet:
+```
+/// destroy self 
+destroy()
+```
+
 **Shot Sound**
+
 We want to have a sound effect played when a bullet is shot. Create a sound and name it **snd_shot**, and load the shot sound from the sounds directory.
 Notice: As of writing this tutorial, the **Play** button in the sound editor doesn't work. Anyway, make sure to select **Sound Effect** in the **Kind** selection.
 Sound effects should be short and can be played simultaneously, like bonus collection, jumping, and, of course, shooting. Use **.wav** files for them.
