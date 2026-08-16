@@ -238,7 +238,7 @@ public partial interface IGame
                             // set following object after all objects are loaded, bc it's specified by name
                             OnProjectLoadingComplete += (s, _) =>
                             {
-                                if (s == this)
+                                if (s == this && !string.IsNullOrWhiteSpace(sview.objFollow))
                                     view.Following = Objects.FirstOrDefault(o => o.Name == sview.objFollow);
                             };
 

@@ -318,10 +318,10 @@ public partial class Interpreter
             val = new CustomReadingOperation<IValue>(() =>
             {
                 var obj = booleanReading.Read();
-                if (obj.IsBool)
+                if (obj is { IsBool: true })
                     return obj.Bool ? tval.Read() : fval.Read();
 
-                ThrowRuntime($"A bool was expected, but {Extensions.GetExpTypeName(obj, true)} was read.", RuntimeException.INVALID_ARGUMENT);
+                ThrowRuntime($"A {ValueHelper.tbool} was expected, but {Extensions.GetExpTypeName(obj, true)} was read.", RuntimeException.INVALID_ARGUMENT);
                 throw null;
             });
         }

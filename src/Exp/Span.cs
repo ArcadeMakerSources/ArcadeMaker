@@ -657,12 +657,16 @@ class NullCoalescingOperatorSpan : OperatorSpan, ISymbol
     internal override bool TwoSides { get; } = true;
     internal NullCoalescingOperatorSpan() : base(Symbol) { }
     internal Instance NullCoalsingEx { get; set; }
-    internal override IValue Result(IValue left, IValue right)
+    internal override IValue Result(IReadingOperation left, IReadingOperation right)
     {
-        IValue value = left ?? right;
+        IValue value = left.Read() ?? right.Read();
         if (value is ThrowWordSpan)
             Interpreter.Activated.ThrowRuntime(NullCoalsingEx.Vars[0].Value.ToString(), NullCoalsingEx.Vars[1].Value.ToString(), this);
         return value;
+    }
+    internal override IValue Result(IValue left, IValue right)
+    {
+        throw new Exception("This method should not be invoked beacuase this operator overrides Result(IReadingOperation, IReadingOperation).");
     }
 }
 
