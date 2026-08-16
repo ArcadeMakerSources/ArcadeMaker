@@ -57,50 +57,52 @@ Now we're ready to write the movement logic.
 /// movements
 
 // backward / forward
-if keyDown(Keys.up)
+if keyPress(Keys.up)
 {
-  speed = moveSpeed
+    speed = moveSpeed
 }
-else
+else 
 {
-  if keyDown(Keys.down)
-  {
-    speed = 0 - moveSpeed
-  }
+    if keyPress(Keys.down)
+    {
+        speed = 0 - moveSpeed
+    }
+    else
+    {
+        if keyRelease(Keys.up) | keyRelease(Keys.down)
+        {
+            speed = 0
+        }
+    }
 }
 
 // rotating
 var rotation = 0
 if keyDown(Keys.right)
 {
-  rotation = rotationSpeed
+    rotation = rotationSpeed
 }
 else
 {
-  if keyDown(Keys.left)
-  {
-    rotation = 0 - rotationSpeed
-  }
+    if keyDown(Keys.left)
+    {
+        rotation = 0 - rotationSpeed
+    }
 }
 
-// if one or morre of the keys we've just checked was pressed, make the move
+// if one or more of the keys we've just checked was pressed, make the move
 if (rotation != 0 | speed != 0)
 {
-  imageAngle += rotation
-  direction = imageAngle // updates hspeed & vspeed
-  x += hspeed
-  y += vspeed
-  speed = 0 // otherwise the engine core would also make the move
-  
-  // if we're colliding with something solid, cancel the move
-  if !placeFree(x, y)
-  {
-    x -= hspeed
-    y -= vspeed
-    // then (not before, bc setting "direction" would update hspeed and vspeed to their previous values)
-    imageAngle -= rotation
-    direction = imageAngle
-  }
+    direction = imageAngle + rotation
+    if !placeFree(x + hspeed, y + vspeed, direction)
+    {
+        speed = 0
+        direction -= rotation
+    }
+    else
+    {
+        imageAngle += rotation
+    }
 }
 ```
 
@@ -131,7 +133,7 @@ For now, it only needs a single **Create** event that sets its movement speed.
 Click **Add Event → Create**, then add the following script:
 ```
 /// set speed
-Speed = 9
+speed = 9
 ```
 That's all we need for the bullet object for now.
 Click **OK**, then double-click **obj_tank** in the Project Tree to reopen its editor.
