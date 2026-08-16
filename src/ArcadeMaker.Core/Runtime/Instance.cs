@@ -19,58 +19,59 @@ public class Instance : Exp.Instance
 
     public ObjectModel Model { get; }
     public IGame Game { get; }
+    public bool WasDestroyed { get; private set; }
     public int FramesSinceLastImageIndex { get; set; }
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public TypeVariable X { get; }
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public TypeVariable Y { get; }
 
     internal NumberValue? speed = 0, hspeed = 0, vspeed = 0, direction = 0;
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public CustomVariable Speed { get; }
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public CustomVariable Hspeed { get; }
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public CustomVariable Vspeed { get; }
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public CustomVariable Direction { get; }
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public TypeVariable ImageIndex { get; }
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public TypeVariable ImageSpeed { get; }
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public TypeVariable ImageAngle { get; }
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public TypeVariable ImageXScale { get; }
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public TypeVariable ImageYScale { get; }
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public TypeVariable ImageAlpha { get; }
     private static readonly IValue expWhiteColor = ((double)Color.White).ToExp();
 
-    [ExpProperty]
+    [ExpProperty<FuncPntr>]
     public TypeVariable OnPathStepFinished { get; }
 
     public MirrorRect? Mask { get; private set; }
 
     private double depth;
     public event EventHandler<double>? DepthChanged;
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public CustomVariable Depth { get; }
 
-    [ExpProperty]
+    [ExpProperty<BoolValue>]
     public TypeVariable Solid { get; }
 
     public Sprite? Sprite
@@ -84,7 +85,7 @@ public class Instance : Exp.Instance
         }
     }
 
-    [ExpProperty]
+    [ExpProperty<NumberValue>]
     public CustomVariable SpriteID { get; }
 
     public (int number, ObjectEvent? ev)[] Alarm { get; } = new (int, ObjectEvent)[NUMBER_OF_ALARMS];
@@ -288,6 +289,27 @@ public class Instance : Exp.Instance
                 Alarm[i].number--;
             }
         }
+    }
+
+
+    internal void Destroy(Interpreter interpreter)
+    {
+        if (WasDestroyed)
+            return;
+
+        // remove from room
+        Game.GetActivatedRoom().RemoveInstance(this);
+
+        // run Destroy event
+        if (Model.DestroyEvent != null)
+        {
+            foreach (var script in Model.DestroyEvent.Docs)
+            {
+                script.Run(interpreter, this);
+            }
+        }
+
+        WasDestroyed = true;
     }
 
     public sealed class MirrorRect(Instance src) : Rect

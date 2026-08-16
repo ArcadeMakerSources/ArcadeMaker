@@ -1,5 +1,6 @@
 ﻿using ArcadeMaker.Core.Math.Shapes;
 using ArcadeMaker.Core.Resources;
+using Exp;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -43,6 +44,7 @@ public class RoomView(double x, double y)
     public int PortWidth { get; set; }
     public int PortHeight { get; set; }
     public ObjectModel? Following { get; set; }
+    public Runtime.Instance? SpecificInstanceToFollow { get; set; }
     public double Follow_HBorder { get; set; }
     public double Follow_VBorder { get; set; }
     public double Follow_HSpeed { get; set; }

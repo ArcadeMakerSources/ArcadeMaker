@@ -63,7 +63,32 @@ class Array (const csType private)
                 return item
             }
         }
+        throw new Exception("No element in the array has matched the given condition.")
+    }
+
+    func firstOrNull(cond)
+    {
+        if cond is not function
+        {
+            throw new Exception("This function takes a function as parameter.") 
+        }
+        foreach item in this
+        {
+            if cond(item) == true // check if it's true for case the function did not return a boolean
+            {
+                return item
+            }
+        }
         return null
+    }
+
+    func firstOrNull()
+    {
+        if length() == 0
+        {
+            return null
+        }
+        return this[0]
     }
     
     func findAll(cond) 

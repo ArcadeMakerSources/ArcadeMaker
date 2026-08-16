@@ -854,6 +854,39 @@ public partial interface IGame
     IValue GetViewPortX(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortX.ToExp();
 
     /// <summary>
+    /// Sets the specific instance that the given view should follow.
+    /// </summary>
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">(index, instance?)</param>
+    /// <returns>Void.</returns>
+    /// <exception cref="Exceptions.EngineException"></exception>
+    [ExpFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its following target.")]
+    [Param("instance?", ParamType.GameObject, "The target instance to follow.")]
+    IValue SetViewFollowingTarget(Exp.Instance? _, IValue?[] args)
+    {
+        // get target argument
+        Runtime.Instance? target;
+        if (args[1] == null)
+            target = null;
+        else
+        {
+            if (args[1] is not { Inst: Runtime.Instance runtimeInst })
+                throw new Exceptions.EngineException("An instance of a game object was expected.");
+            else
+                target = runtimeInst;
+        }
+
+        // get view
+        RoomView view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+
+        // set view's target
+        view.SpecificInstanceToFollow = target;
+
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
     /// Gets the port Y position of the specified view in the active room.
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>

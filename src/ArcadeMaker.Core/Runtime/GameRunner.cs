@@ -348,7 +348,9 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
             if (!view.Visible || view.Following == null)
                 continue;
 
-            Instance? inst = roominsts.FirstOrDefault(i => i.Model == view.Following);
+            Instance? inst = view.SpecificInstanceToFollow;
+            if (inst is not { WasDestroyed: false })
+                inst = view.SpecificInstanceToFollow = roominsts.FirstOrDefault(i => i.Model == view.Following);
             if (inst != null)
             {
                 double targetX = inst.X.Value!.Number - view.Follow_HBorder, targetY = inst.Y.Value!.Number - view.Follow_VBorder;
@@ -423,17 +425,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     {
         var inst = (Runtime.Instance)expinst!;
 
-        // remove from room
-        Game.GetActivatedRoom().RemoveInstance(inst);
-
-        // run Destroy event
-        if (inst.Model.DestroyEvent != null)
-        {
-            foreach (var script in inst.Model.DestroyEvent.Docs)
-            {
-                script.Run(Interpreter, inst);
-            }
-        }
+        inst.Destroy(Interpreter);
 
         return Exp.Void.Return;
     }
