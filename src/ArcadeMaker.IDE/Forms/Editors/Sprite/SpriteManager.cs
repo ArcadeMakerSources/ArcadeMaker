@@ -160,7 +160,7 @@ namespace ArcadeMaker.IDE
 
         private void imageListView_KeyUp(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Delete && imageListView.SelectedIndices.Count > 0 && images.Images.Count > 0)
+            if (e.KeyCode == Keys.Delete && imageListView.SelectedIndices.Count > 0 && images.Images.Count > imageListView.SelectedIndices[0])
             {
                 images.Images.RemoveAt(imageListView.SelectedIndices[0]);
             }
