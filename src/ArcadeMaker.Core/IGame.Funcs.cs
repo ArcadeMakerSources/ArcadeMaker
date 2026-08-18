@@ -345,7 +345,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Arguments where args[0] and args[1] are the target X and Y coordinates to test.</param>
-    /// <returns>True if the position is free; otherwise false.</returns>
+    /// <returns>true if the position is free; otherwise, false.</returns>
     [ExpFunc(2, 3, IsNonStaticFuncOfGameObjects = true)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
@@ -359,6 +359,28 @@ public partial interface IGame
 
             args = args.Length >= 3 ? [args[0], args[1], other, args[2]] : [args[0], args[1], other];
             if (PlaceMeeting(expinst, [args[0], args[1], other]))
+                return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Determines whether the specified position is free of solid instances.
+    /// </summary>
+    /// <param name="expinst">(Unused).</param>
+    /// <param name="args">(x, y).</param>
+    /// <returns>true if the position is free; otherwise, false.</returns>
+    [ExpFunc(2)]
+    [Param("x", ParamType.Number, "Position x.")]
+    [Param("y", ParamType.Number, "Position y.")]
+    BoolValue PointFree(Exp.Instance? expinst, IValue?[] args)
+    {
+        foreach (var other in GetActivatedRoom().Instances)
+        {
+            if (!other.Solid.Value!.Bool)
+                continue;
+
+            if (PointMeeting(other, [args[0], args[1]]).Bool)
                 return false;
         }
         return true;
@@ -857,11 +879,11 @@ public partial interface IGame
     /// Sets the specific instance that the given view should follow.
     /// </summary>
     /// <param name="_">(Unused).</param>
-    /// <param name="args">(index, instance?)</param>
+    /// <param name="args">(viewIndex, instance?)</param>
     /// <returns>Void.</returns>
     /// <exception cref="Exceptions.EngineException"></exception>
     [ExpFunc(2)]
-    [Param("index", ParamType.Number, "The index of view to set its following target.")]
+    [Param("viewIndex", ParamType.Number, "The index of view to set its following target.")]
     [Param("instance?", ParamType.GameObject, "The target instance to follow.")]
     IValue SetViewFollowingTarget(Exp.Instance? _, IValue?[] args)
     {

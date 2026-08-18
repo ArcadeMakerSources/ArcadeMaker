@@ -8,6 +8,7 @@ using Exp;
 using Exp.Spans;
 using System.Reflection;
 using ArcadeMaker.Core.ExpSrc;
+using ArcadeMaker.Core.Math;
 
 namespace ArcadeMaker.Core.Runtime;
 
@@ -144,9 +145,9 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         Interpreter.definations.AddRange([spritesStaticClass, instanceStaticClass, soundsStaticClass, pathsStaticClass, roomsStaticClass, fontsStaticClass, SoundPlaybackInstance.Class]);
 
         // add all methods with [ExpFunc] attribute
-        void AddMarkedFuncs(object instance, Type? type = null)
+        void AddMarkedFuncs(object? instance, Type? type = null)
         {
-            foreach (var methodInfo in (type ?? instance.GetType()).GetMethods())
+            foreach (var methodInfo in (type ?? instance?.GetType() ?? throw new ArgumentNullException()).GetMethods())
             {
                 var attr = methodInfo.GetCustomAttribute<ExpFuncAttribute>();
                 if (attr != null)
@@ -165,6 +166,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         }
         AddMarkedFuncs(Game, typeof(IGame));
         AddMarkedFuncs(this);
+        AddMarkedFuncs(null, typeof(Formulas));
 
         // manually add non-static functions that cannot be marked with [ExpFunc]
         Interpreter.AddExternFunc(new(Game.PauseSound, 0, "pause"), SoundPlaybackInstance.Class);

@@ -233,7 +233,7 @@ namespace ArcadeMaker.IDE
             // 
             // PropertiesModifier
             // 
-            PropertiesModifier.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            PropertiesModifier.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             PropertiesModifier.Location = new Point(664, 7);
             PropertiesModifier.Name = "PropertiesModifier";
             PropertiesModifier.Size = new Size(384, 380);
