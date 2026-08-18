@@ -479,6 +479,19 @@ public partial interface IGame
     Exp.Void ShowMessage(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
+    /// Gets the text currently stored in the system clipboard, or null if the clipboard holds no text.
+    /// </summary>
+    [ExpFunc]
+    IValue? GetClipboardText(Exp.Instance? _, IValue?[] args);
+
+    /// <summary>
+    /// Copies the given text to the system clipboard.
+    /// </summary>
+    [ExpFunc(1)]
+    [Param("text?", ParamType.String, "The text to copy to the clipboard.")]
+    Exp.Void SetClipboardText(Exp.Instance? _, IValue?[] args);
+
+    /// <summary>
     /// Sets the calling instance's direction and speed so it moves towards the specified point.
     /// </summary>
     /// <param name="expinst">The calling runtime instance.</param>
