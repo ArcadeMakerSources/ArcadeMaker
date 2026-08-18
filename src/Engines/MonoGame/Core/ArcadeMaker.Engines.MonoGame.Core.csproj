@@ -17,6 +17,7 @@
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="SpriteFontPlus" Version="0.9.2" />
+    <PackageReference Include="TextCopy" Version="6.2.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\ArcadeMaker.Core\ArcadeMaker.Core.csproj" />

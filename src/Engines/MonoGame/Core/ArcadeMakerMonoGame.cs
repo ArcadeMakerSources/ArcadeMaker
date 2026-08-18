@@ -25,6 +25,7 @@ using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using TextCopy;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace ArcadeMaker.Engines.MonoGame.Core
@@ -534,6 +535,19 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         public Exp.Void ShowMessage(Exp.Instance? _, IValue?[] args)
         {
             MessageBox.Show("Message", ("".ToExpString() + args[0]?.Object?.ToString()).ToString(), ["OK"]);
+            return Exp.Void.Return;
+        }
+
+        public IValue? GetClipboardText(Exp.Instance? _, IValue?[] args)
+        {
+            string? text = ClipboardService.GetText();
+            return text?.ToExpString();
+        }
+
+        public Exp.Void SetClipboardText(Exp.Instance? _, IValue?[] args)
+        {
+            string text = args[0]?.ToString() ?? "";
+            ClipboardService.SetText(text);
             return Exp.Void.Return;
         }
 
