@@ -605,6 +605,41 @@ public partial interface IGame
     [Param("color", ParamType.Number, $"The color to set to, in ABGR format. You can use {nameof(ExpSrc.Drawing.Color)} enum for that.")]
     Exp.Void SetColor(Exp.Instance? _, IValue?[] args);
 
+
+    /// <summary>
+    /// Returns the numeric value of the given color in ABGR format.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">[r, g, b, a?]. Each channel is 0–255. Alpha defaults to 255 (fully opaque) if omitted.</param>
+    [ExpFunc(3, 4)]
+    [Param("r", ParamType.Number, "The red value.")]
+    [Param("g", ParamType.Number, "The green value.")]
+    [Param("b", ParamType.Number, "The blue value.")]
+    [Param("a", ParamType.Number, "The alpha value.", Optional = true)]
+    public IValue ColorFromRGB(Exp.Instance? _, IValue?[] args)
+    {
+        byte r = (byte)args[0].ThrowIfNull().Number;
+        byte g = (byte)args[1].ThrowIfNull().Number;
+        byte b = (byte)args[2].ThrowIfNull().Number;
+        byte a = args.Length >= 4
+            ? (byte)args[3].ThrowIfNull().Number
+            : (byte)255;
+
+        // Premultiply RGB by alpha
+        var alphaFactor = a / 255.0;
+        byte pr = (byte)System.Math.Round(r * alphaFactor);
+        byte pg = (byte)System.Math.Round(g * alphaFactor);
+        byte pb = (byte)System.Math.Round(b * alphaFactor);
+
+        uint abgrValue =
+            ((uint)a << 24) |
+            ((uint)pb << 16) |
+            ((uint)pg << 8) |
+            pr;
+
+        return ((double)abgrValue).ToExp();
+    }
+
     /// <summary>
     /// Draws a line between two points.
     /// </summary>
