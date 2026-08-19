@@ -611,7 +611,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">[r, g, b, a?]. Each channel is 0–255. Alpha defaults to 255 (fully opaque) if omitted.</param>
-    [ExpFunc(3, 4)]
+    [EngineFunc(3, 4)]
     [Param("r", ParamType.Number, "The red value.")]
     [Param("g", ParamType.Number, "The green value.")]
     [Param("b", ParamType.Number, "The blue value.")]
