@@ -1178,6 +1178,7 @@ public class ConstructorDefSpan : FuncDefSpan, IKeyword, IExpItem
 {
     public static string Keyword { get; } = "constructor";
     public static string ItemName { get; } = "constructor";
+    public bool OverridesInit { get; init; }
     public ConstructorDefSpan(ArgumentSpan[] args, Span[] innerSource, ClassDefSpan definedAt, Interpreter toThrowWith) : base(definedAt == null ? null : $"{definedAt.Name}.ctor", args, innerSource, definedAt, Keyword)
     {
         if (definedAt == null)

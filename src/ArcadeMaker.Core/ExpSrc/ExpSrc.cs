@@ -52,7 +52,7 @@ namespace ArcadeMaker.Core.ExpSrc
                 // methods
                 foreach (var methodInfo in finalType.GetMethods())
                 {
-                    var attr = methodInfo.GetCustomAttribute<ExpFuncAttribute>();
+                    var attr = methodInfo.GetCustomAttribute<EngineFuncAttribute>();
                     if (attr != null)
                         all.Add(new ExternEngineFunc(attr.CustomName ?? methodInfo.Name.StartWithLowerCase(), XmlDocReader.GetMethodSummary(methodInfo), methodInfo));
                 }

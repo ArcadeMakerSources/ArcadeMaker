@@ -59,7 +59,7 @@ namespace Exp
     /// </summary>
     public class ExternFunc
     {
-        public ExternFunc(Func<Instance, IValue?[], IValue?> func, int[] paramsCountOptions, string? name = null, string? @namespace = null)
+        public ExternFunc(Func<Instance?, IValue?[], IValue?> func, int[] paramsCountOptions, string? name = null, string? @namespace = null)
         {
             ArgumentNullException.ThrowIfNull(func);
 
@@ -68,8 +68,8 @@ namespace Exp
             Namespace = @namespace;
             Func = func;
         }
-
-        public ExternFunc(Func<Instance, IValue?[], IValue?> func, int paramsCount, string? name = null, string? @namespace = null) : this(func, [paramsCount], name, @namespace)
+        
+        public ExternFunc(Func<Instance?, IValue?[], IValue?> func, int paramsCount, string? name = null, string? @namespace = null) : this(func, [paramsCount], name, @namespace)
         {
             
         }
@@ -77,7 +77,7 @@ namespace Exp
         public string Name { get; }
         public int[] ParamsCountOptions { get; }
         public string? Namespace { get; }
-        public Func<Instance, IValue?[], IValue?> Func { get; }
+        public Func<Instance?, IValue?[], IValue?> Func { get; }
     }
 
 
@@ -211,7 +211,7 @@ namespace Exp
 
             void OperateFunc(FuncDefSpan func)
             {
-                func.Operations = ReadOperations(func.InnerSource, func);
+                func.Operations ??= ReadOperations(func.InnerSource, func);
             }
             definations.OfType<FuncDefSpan>().ForEach(OperateFunc);
 

@@ -20,7 +20,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (may be null for global calls).</param>
     /// <param name="args">An array of arguments; the first element is converted to string and written to the debug output.</param>
-    [ExpFunc(1, CustomName = "debug")]
+    [EngineFunc(1, CustomName = "debug")]
     [Param("output", ParamType.Any, "The output to print to the debug console.")]
     public Exp.Void DebugLog(Exp.Instance? _, IValue?[] args)
     {
@@ -34,7 +34,7 @@ public partial interface IGame
     /// <param name="_">(Unused).</param>
     /// <param name="args">(Unused).</param>
     /// <returns>The received input.</returns>
-    [ExpFunc(0, 1)]
+    [EngineFunc(0, 1)]
     [Param("message", ParamType.Any, "A message to print to the debug console before picking the value.", Optional = true)]
     public IValue DebugReadLine(Exp.Instance? _, IValue?[] args)
     {
@@ -50,7 +50,7 @@ public partial interface IGame
     /// <param name="_">(Unused).</param>
     /// <param name="args">(Unused).</param>
     /// <returns>The received input number.</returns>
-    [ExpFunc(0, 1)]
+    [EngineFunc(0, 1)]
     [Param("message", ParamType.Any, "A message to print to the debug console before picking the value.", Optional = true)]
     IValue DebugReadNumber(Exp.Instance? _, IValue?[] args)
     {
@@ -67,7 +67,7 @@ public partial interface IGame
     /// <param name="_">(Unused).</param>
     /// <param name="args">(Unused).</param>
     /// <returns>An <see cref="Exp.Instance"/> which its <see cref="Exp.Instance.ArrayValues"/> property contains all of the currently pressed keys.</returns>
-    [ExpFunc]
+    [EngineFunc]
     Exp.Instance GetPressedKeys(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
@@ -76,7 +76,7 @@ public partial interface IGame
     /// <param name="_">(Unused).</param>
     /// <param name="args">(Unused).</param>
     /// <returns>An <see cref="Exp.Instance"/> which its <see cref="Exp.Instance.ArrayValues"/> property contains all of the currently pressed keys.</returns>
-    [ExpFunc]
+    [EngineFunc]
     IValue? GetPressedKey(Exp.Instance? _, IValue?[] args)
     {
         var keys = GetPressedKeys(_, args);
@@ -91,7 +91,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the key code to check (You can use the <see cref="ExpSrc.Controls.Keys"/> enum for this.</param>
     /// <returns>True if the key is currently down; otherwise false.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("key", ParamType.Key, "The key to test its state.")]
     BoolValue KeyDown(Exp.Instance? _, IValue?[] args);
 
@@ -101,7 +101,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the key code to check (You can use the <see cref="ExpSrc.Controls.Keys"/> enum for this.</param>
     /// <returns>True if the key was pressed this frame; otherwise false.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("key", ParamType.Key, "The key to test its state.")]
     BoolValue KeyPress(Exp.Instance? _, IValue?[] args);
 
@@ -111,7 +111,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the key code to check (You can use the <see cref="ExpSrc.Controls.Keys"/> enum for this.</param>
     /// <returns>True if the key was released this frame; otherwise false.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("key", ParamType.Key, "The key to test its state.")]
     BoolValue KeyRelease(Exp.Instance? _, IValue?[] args);
 
@@ -121,7 +121,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the mouse button index to check (You can use the <see cref="ExpSrc.Controls.MouseButton"/> enum for this.</param>
     /// <returns>True if the mouse button is currently down; otherwise false.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("button", ParamType.MouseButton, "The button to test its state.")]
     BoolValue MouseButtonDown(Exp.Instance? _, IValue?[] args);
 
@@ -131,7 +131,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the mouse button index to check (You can use the <see cref="ExpSrc.Controls.MouseButton"/> enum for this.</param>
     /// <returns>True if the mouse button was pressed this frame; otherwise false.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("button", ParamType.MouseButton, "The button to test its state.")]
     BoolValue MouseButtonPress(Exp.Instance? _, IValue?[] args);
 
@@ -141,7 +141,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the mouse button index to check (You can use the <see cref="ExpSrc.Controls.MouseButton"/> enum for this.</param>
     /// <returns>True if the mouse button was released this frame; otherwise false.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("button", ParamType.MouseButton, "The button to test its state.")]
     BoolValue MouseButtonRelease(Exp.Instance? _, IValue?[] args);
 
@@ -151,7 +151,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Unused.</param>
     /// <returns>The mouse X position as a <see cref="Exp.NumberValue"/>.</returns>
-    [ExpFunc]
+    [EngineFunc]
     IValue GetMouseX(Exp.Instance? _, IValue?[] args)
     {
         var room = GetActivatedRoom();
@@ -181,7 +181,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Unused.</param>
     /// <returns>The mouse Y position as a <see cref="Exp.NumberValue"/>.</returns>
-    [ExpFunc]
+    [EngineFunc]
     IValue GetMouseY(Exp.Instance? _, IValue?[] args)
     {
         var room = GetActivatedRoom();
@@ -211,7 +211,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Unused.</param>
     /// <returns>The window-relative mouse X position as a <see cref="Exp.NumberValue"/>.</returns>
-    [ExpFunc]
+    [EngineFunc]
     IValue WindowGetMouseX(Exp.Instance? _, IValue?[] args) => MousePositionInWindow.x.ToExp();
 
     /// <summary>
@@ -220,7 +220,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Unused.</param>
     /// <returns>The window-relative mouse Y position as a <see cref="Exp.NumberValue"/>.</returns>
-    [ExpFunc]
+    [EngineFunc]
     IValue WindowGetMouseY(Exp.Instance? _, IValue?[] args) => MousePositionInWindow.y.ToExp();
 
     /// <summary>
@@ -229,7 +229,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the gamepad number and args[1] is the button index to check (You can use the <see cref="ExpSrc.Controls.GamepadButton"/> enum for this.</param>
     /// <returns>True if the specified gamepad button is down; otherwise false.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("gamepad", ParamType.Number, "The gamepad number to check.")]
     [Param("button", ParamType.GamepadButton, "The button to test its state.")]
     BoolValue GamepadButtonDown(Exp.Instance? _, IValue?[] args);
@@ -240,7 +240,7 @@ public partial interface IGame
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Arguments where args[0] and args[1] are the point X and Y coordinates.</param>
     /// <returns>True if the point lies inside the instance's mask rectangle; otherwise false.</returns>
-    [ExpFunc(2, IsNonStaticFuncOfGameObjects = true)]
+    [EngineFunc(2, IsNonStaticFuncOfGameObjects = true)]
     [Param("x", ParamType.Number, "Point x.")]
     [Param("y", ParamType.Number, "Point y.")]
     IValue PointMeeting(Exp.Instance? expinst, IValue?[] args)
@@ -264,7 +264,7 @@ public partial interface IGame
     /// <param name="args">Arguments where args[0] and args[1] are the target X and Y coordinates and args[2]
     /// is either an instance to check against or an object type to test for collisions.</param>
     /// <returns>True if the placement would result in a collision; otherwise false.</returns>
-    [ExpFunc(2, 3, 4, IsNonStaticFuncOfGameObjects = true)]
+    [EngineFunc(2, 3, 4, IsNonStaticFuncOfGameObjects = true)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("type", ParamType.Type + " / " + ParamType.GameObject, "The object type to check for collision with, or a reference for a spesific instance.", Optional = true)]
@@ -323,7 +323,7 @@ public partial interface IGame
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Arguments where args[0] and args[1] are the target X and Y coordinates and args[2] is the type to search for.</param>
     /// <returns>The first instance found that collides at the specified position, or null if none found.</returns>
-    [ExpFunc(2, 3, 4, IsNonStaticFuncOfGameObjects = true)]
+    [EngineFunc(2, 3, 4, IsNonStaticFuncOfGameObjects = true)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("type", ParamType.Type, "The object type to check for collision with.", Optional = true)]
@@ -346,7 +346,7 @@ public partial interface IGame
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Arguments where args[0] and args[1] are the target X and Y coordinates to test.</param>
     /// <returns>true if the position is free; otherwise, false.</returns>
-    [ExpFunc(2, 3, IsNonStaticFuncOfGameObjects = true)]
+    [EngineFunc(2, 3, IsNonStaticFuncOfGameObjects = true)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("angle", ParamType.Number, "The angle to test at (default is current imageAngle value)", Optional = true)]
@@ -370,7 +370,7 @@ public partial interface IGame
     /// <param name="expinst">(Unused).</param>
     /// <param name="args">(x, y).</param>
     /// <returns>true if the position is free; otherwise, false.</returns>
-    [ExpFunc(2)]
+    [EngineFunc(2)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     BoolValue PointFree(Exp.Instance? expinst, IValue?[] args)
@@ -392,7 +392,7 @@ public partial interface IGame
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Unused.</param>
     /// <returns>True if the instance is outside the room; otherwise false.</returns>
-    [ExpFunc(IsNonStaticFuncOfGameObjects = true)]
+    [EngineFunc(IsNonStaticFuncOfGameObjects = true)]
     BoolValue OutsideRoom(Exp.Instance? expinst, IValue?[] args)
     {
         var inst = (Runtime.Instance)expinst!;
@@ -412,7 +412,7 @@ public partial interface IGame
     /// <param name="_"></param>
     /// <param name="args">(pointX, pointY, type (null for any)).</param>
     /// <returns>The nearest instance, or <c>null</c> if there is no any instance in the room.</returns>
-    [ExpFunc(2, 3, 4)]
+    [EngineFunc(2, 3, 4)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("type", ParamType.Number, "The type to get its nearest instance.", Optional = true)]
@@ -446,7 +446,7 @@ public partial interface IGame
     /// <param name="_"></param>
     /// <param name="args">(pointX, pointY, type (null for any)).</param>
     /// <returns>The furthest instance, or <c>null</c> if there is no any instance in the room.</returns>
-    [ExpFunc(2, 3, 4)]
+    [EngineFunc(2, 3, 4)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("type", ParamType.Number, "The type to get its furthest instance.", Optional = true)]
@@ -477,7 +477,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the object type to count, or null to count all instances.</param>
     /// <returns>The number of matching instances as an <see cref="Exp.NumberValue"/>.</returns>
-    [ExpFunc(0, 1)]
+    [EngineFunc(0, 1)]
     [Param("type", ParamType.Type, "The type to count.", Optional = true)]
     IValue InstanceCount(Exp.Instance? _, IValue?[] args)
     {
@@ -496,20 +496,20 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the message to show.</param>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("message?", ParamType.Any, "The message to show to the user.")]
     Exp.Void ShowMessage(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
     /// Gets the text currently stored in the system clipboard, or null if the clipboard holds no text.
     /// </summary>
-    [ExpFunc]
+    [EngineFunc]
     IValue? GetClipboardText(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
     /// Copies the given text to the system clipboard.
     /// </summary>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("text?", ParamType.String, "The text to copy to the clipboard.")]
     Exp.Void SetClipboardText(Exp.Instance? _, IValue?[] args);
 
@@ -519,7 +519,7 @@ public partial interface IGame
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Arguments where args[0] and args[1] are the target X and Y coordinates and args[2] is the desired speed.</param>
     /// <returns>Void.</returns>
-    [ExpFunc(3, IsNonStaticFuncOfGameObjects = true)]
+    [EngineFunc(3, IsNonStaticFuncOfGameObjects = true)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("speed", ParamType.Number, "Movement speed.")]
@@ -543,7 +543,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">[x, y, spriteId, imageIndex, [angle, alphaColor]].</param>
-    [ExpFunc(4, 5, 6)]
+    [EngineFunc(4, 5, 6)]
     [Param("x", ParamType.Number, "Drawing position's x.")]
     [Param("y", ParamType.Number, "Drawing position's y.")]
     [Param("spriteID", ParamType.Number, "The ID of the sprite which contains the image to draw. Use 'Sprites' enum for that, e.g. Sprites.SprEnemy")]
@@ -557,7 +557,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">[x, y, text?].</param>
-    [ExpFunc(3)]
+    [EngineFunc(3)]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position y.")]
     [Param("text?", ParamType.Any, "The text to draw.")]
@@ -569,7 +569,7 @@ public partial interface IGame
     /// <returns>The width of the specified text when drawing with the current / specified font.</returns>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">(text?, [fontID]).</param>
-    [ExpFunc(1, 2)]
+    [EngineFunc(1, 2)]
     [Param("text?", ParamType.Any, "The text to measure its width.")]
     [Param("fontID", ParamType.Number, "The ID of the font to calculate on.", Optional = true)]
     IValue GetTextWidth(Exp.Instance? _, IValue?[] args) => ((double)GetTextSize(args[0]?.ToString(), args.Length >= 2 ? ((int?)args[1]?.Number) : null).width).ToExp();
@@ -580,7 +580,7 @@ public partial interface IGame
     /// <returns>The height of the specified text when drawing with the current / specified font.</returns>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">(text?, [fontID]).</param>
-    [ExpFunc(1, 2)]
+    [EngineFunc(1, 2)]
     [Param("text?", ParamType.Any, "The text to measure its height.")]
     [Param("fontID", ParamType.Number, "The ID of the font to calculate on.", Optional = true)]
     IValue GetTextHeight(Exp.Instance? _, IValue?[] args) => ((double)GetTextSize(args[0]?.ToString(), args.Length >= 2 ? ((int?)args[1]?.Number) : null).height).ToExp();
@@ -592,7 +592,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">[fontId].</param>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("fontID", ParamType.Number, "The ID of the font to set to. Use 'Fonts' enum for that, e.g. Fonts.FntTitle.")]
     Exp.Void SetFont(Exp.Instance? _, IValue?[] args);
 
@@ -601,7 +601,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">[abgrColor]. You can use the <see cref="ExpSrc.Drawing.Color"/> enum for this.</param>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("color", ParamType.Number, $"The color to set to, in ABGR format. You can use {nameof(ExpSrc.Drawing.Color)} enum for that.")]
     Exp.Void SetColor(Exp.Instance? _, IValue?[] args);
 
@@ -610,7 +610,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">(x1, y1, x2, y2, [lineThickness]).</param>
-    [ExpFunc(4, 5)]
+    [EngineFunc(4, 5)]
     [Param("x1", ParamType.Number, "Position 1 x.")]
     [Param("y1", ParamType.Number, "Position 1 y.")]
     [Param("x2", ParamType.Number, "Position 2 x.")]
@@ -634,7 +634,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">(x1, y1, x2, y2, [outline]).</param>
-    [ExpFunc(4, 5, 6)]
+    [EngineFunc(4, 5, 6)]
     [Param("x1", ParamType.Number, "Position 1 x.")]
     [Param("y1", ParamType.Number, "Position 1 y.")]
     [Param("x2", ParamType.Number, "Position 2 x.")]
@@ -648,7 +648,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">(x1, y1, x2, y2, [outline]).</param>
-    [ExpFunc(4, 5)]
+    [EngineFunc(4, 5)]
     [Param("x1", ParamType.Number, "Position 1 x.")]
     [Param("y1", ParamType.Number, "Position 1 y.")]
     [Param("x2", ParamType.Number, "Position 2 x.")]
@@ -662,7 +662,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">[pathId, [x, y], lineThickness].</param>
-    [ExpFunc(2, 4)]
+    [EngineFunc(2, 4)]
     [Param("pathID", ParamType.Number, "The ID of the path to draw. Use 'Paths' enum for that.")]
     [Param("x", ParamType.Number, "Position x.")]
     [Param("y", ParamType.Number, "Position x.")]
@@ -698,7 +698,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">[soundId, [looping], [volume], [pan], [pitch]].</param>
     /// <returns>A <see cref="Runtime.SoundPlaybackInstance{T}"/> instance can be used to control the playback.</returns>
-    [ExpFunc(1, 2, 3, 4, 5)]
+    [EngineFunc(1, 2, 3, 4, 5)]
     [Param("soundID", ParamType.Number, "The ID of the sound to play. Use 'Sounds' enum for that, e.g. Sounds.SndShooting.")]
     [Param("looping", ParamType.Number, "Indicates whether the playback should automatically restart after it's finished.", Optional = true)]
     [Param("volume", ParamType.Number, "The volume to play in.", Optional = true)]
@@ -711,7 +711,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">[soundId].</param>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("soundID", ParamType.Number, "The ID of the sound to pause. Use 'Sounds' enum for that, e.g. Sounds.SndShooting.")]
     Exp.Void PauseSound(Exp.Instance? _, IValue?[] args);
 
@@ -720,7 +720,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Unused.</param>
-    [ExpFunc]
+    [EngineFunc]
     Exp.Void PauseAllSounds(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
@@ -728,7 +728,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">[soundId].</param>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("soundID", ParamType.Number, "The ID of the sound to resume. Use 'Sounds' enum for that, e.g. Sounds.SndShooting.")]
     Exp.Void ResumeSound(Exp.Instance? _, IValue?[] args);
 
@@ -737,7 +737,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Unused.</param>
-    [ExpFunc]
+    [EngineFunc]
     Exp.Void ResumeAllSounds(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
@@ -745,7 +745,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Arguments where args[0] is the path ID, args[1] is the movement speed, args[2] is the PathEndAction and args[3] is a boolean indicating if the instance should be moved to the path start before.</param>
-    [ExpFunc(4, IsNonStaticFuncOfGameObjects = true)]
+    [EngineFunc(4, IsNonStaticFuncOfGameObjects = true)]
     [Param("pathID", ParamType.Number, "The ID of the path to follow. Use 'Paths' enum for that, e.g. Paths.PthRoad.")]
     [Param("speed", ParamType.Number, "Movement speed.")]
     [Param("endAction", ParamType.PathEndAction, "What should happen when the path is completed.")]
@@ -782,7 +782,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Unused.</param>
-    [ExpFunc(IsNonStaticFuncOfGameObjects = true)]
+    [EngineFunc(IsNonStaticFuncOfGameObjects = true)]
     Exp.Void StopPath(Exp.Instance? expinst, IValue?[] args)
     {
         Runtime.Instance inst = (Runtime.Instance)expinst!;
@@ -799,7 +799,7 @@ public partial interface IGame
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Arguments where args[0] is the alarm index to retrieve.</param>
     /// <returns>The alarm value as a <see cref="NumberValue"/>.</returns>
-    [ExpFunc(1, IsNonStaticFuncOfGameObjects = true)]
+    [EngineFunc(1, IsNonStaticFuncOfGameObjects = true)]
     [Param("index", ParamType.Number, "The alarm index to retrieve.")]
     IValue GetAlarm(Exp.Instance? expinst, IValue?[] args)
     {
@@ -811,7 +811,7 @@ public partial interface IGame
     /// </summary>
     /// <param name="expinst">The calling runtime instance.</param>
     /// <param name="args">Arguments where args[0] is the alarm index and args[1] is the value to set.</param>
-    [ExpFunc(2, IsNonStaticFuncOfGameObjects = true)]
+    [EngineFunc(2, IsNonStaticFuncOfGameObjects = true)]
     [Param("index", ParamType.Number, "The alarm index to set.")]
     [Param("value", ParamType.Number, "The value to set to.")]
     Exp.Void SetAlarm(Exp.Instance? expinst, IValue?[] args)
@@ -826,7 +826,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Unused.</param>
     /// <returns>The width of the active room as a <see cref="NumberValue"/>.</returns>
-    [ExpFunc]
+    [EngineFunc]
     IValue GetRoomWidth(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Width.ToExp();
 
     /// <summary>
@@ -835,7 +835,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Unused.</param>
     /// <returns>The height of the active room as a <see cref="NumberValue"/>.</returns>
-    [ExpFunc]
+    [EngineFunc]
     IValue GetRoomHeight(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Height.ToExp();
 
     /// <summary>
@@ -845,7 +845,7 @@ public partial interface IGame
     /// <param name="args">Arguments where args[0] is the view index.</param>
     /// <returns>The view X position as a <see cref="NumberValue"/>.</returns>
     [Param("index", ParamType.Number, "The index of view to get its x.")]
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     IValue GetViewX(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].X.ToExp();
 
     /// <summary>
@@ -854,7 +854,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the view index.</param>
     /// <returns>The view Y position as a <see cref="NumberValue"/>.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its y.")]
     IValue GetViewY(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].Y.ToExp();
 
@@ -864,7 +864,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the view index.</param>
     /// <returns>The view width as a <see cref="NumberValue"/>.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its width.")]
     IValue GetViewWidth(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].Width.ToExp();
 
@@ -874,7 +874,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the view index.</param>
     /// <returns>The view height a <see cref="NumberValue"/>.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its height.")]
     IValue GetViewHeight(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].Height.ToExp();
 
@@ -884,7 +884,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the view index.</param>
     /// <returns>The view port X position as a <see cref="NumberValue"/>.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its port x.")]
     IValue GetViewPortX(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortX.ToExp();
 
@@ -895,7 +895,7 @@ public partial interface IGame
     /// <param name="args">(viewIndex, instance?)</param>
     /// <returns>Void.</returns>
     /// <exception cref="Exceptions.EngineException"></exception>
-    [ExpFunc(2)]
+    [EngineFunc(2)]
     [Param("viewIndex", ParamType.Number, "The index of view to set its following target.")]
     [Param("instance?", ParamType.GameObject, "The target instance to follow.")]
     IValue SetViewFollowingTarget(Exp.Instance? _, IValue?[] args)
@@ -927,7 +927,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the view index.</param>
     /// <returns>The view port Y position as a <see cref="NumberValue"/>.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its port y.")]
     IValue GetViewPortY(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortY.ToExp();
 
@@ -937,7 +937,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the view index.</param>
     /// <returns>The view port width as a <see cref="NumberValue"/>.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its port width.")]
     IValue GetViewPortWidth(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortWidth.ToExp();
 
@@ -947,7 +947,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the view index.</param>
     /// <returns>The view port height as a <see cref="NumberValue"/>.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its port height.")]
     IValue GetViewPortHeight(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortHeight.ToExp();
 
@@ -957,7 +957,7 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] is the resource name.</param>
     /// <returns>The ID of the resource with the given name, or null if there's no resource with this name.</returns>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("name", ParamType.String, "The name of the resource to find its ID.")]
     IValue? GetResByName(Exp.Instance? _, IValue?[] args)
     {
@@ -979,6 +979,6 @@ public partial interface IGame
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">(unused).</param>
     /// <returns>The index of the currently activated room as a <see cref="NumberValue"/>.</returns>
-    [ExpFunc]
+    [EngineFunc]
     IValue GetRoomIndex(Exp.Instance? _, IValue?[] args) => Rooms.IndexOf(GetActivatedRoom().Model).ToExp();
 }
