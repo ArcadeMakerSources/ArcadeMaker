@@ -9,6 +9,7 @@ using Exp.Spans;
 using System.Reflection;
 using ArcadeMaker.Core.ExpSrc;
 using ArcadeMaker.Core.Math;
+using Exp.Converting;
 
 namespace ArcadeMaker.Core.Runtime;
 
@@ -26,6 +27,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         Interpreter = new();
 
         AddFuncsToInterpreter();
+        AddClassesToInterpreter();
 
         // build
         ExpError[]? eventsErrors = null;
@@ -119,6 +121,39 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         }
     }
 
+    internal void AddClassesToInterpreter()
+    {
+        // not finished yet
+        return;
+        // iterate on all classes in this assembly
+        foreach (var cls in typeof(IGame).Assembly.GetTypes())
+        {
+            // if it isn't marked with [ExpClass], continue
+            if (cls.GetCustomAttribute<ExpClassAttribute>() is not { } attr)
+                continue;
+
+            // make sure it implements IConvertable
+            if (!cls.GetInterfaces().Contains(typeof(IConvertable)))
+                throw new LoadingException($"The class '{cls.Name}' is marked as [ExpClass] but does not implement {nameof(IConvertable)}.");
+
+            // get MethodInfo for Convert.ToClass<cls>(...)
+            MethodInfo converter = typeof(Exp.Converting.Convert).GetMethod(nameof(Exp.Converting.Convert.ToClass), genericParameterCount: 1, [typeof(string), typeof(Interpreter)])!;
+            MethodInfo constructedConverter = converter.MakeGenericMethod(cls);
+
+            // get the class
+            ClassDefSpan classDef;
+            try
+            {
+                classDef = (ClassDefSpan)constructedConverter.Invoke(null, [attr.Namespace, Interpreter])!;
+            }
+            catch (Exception ex)
+            {
+                throw new LoadingException($"Could not convert class '{cls.Name}' to Exp class. An inner exception is attached.", ex);
+            }
+            Interpreter.definations.Add(classDef);
+        }
+    }
+
     public void AddFuncsToInterpreter()
     {
         List<ExternFunc> funcs = [];
@@ -144,12 +179,12 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         fontsStaticClass.Vars.AddRange(Game.FontsData.Map(f => new Variable(f.Name, f.ID.ToExp(), cons: true)));
         Interpreter.definations.AddRange([spritesStaticClass, instanceStaticClass, soundsStaticClass, pathsStaticClass, roomsStaticClass, fontsStaticClass, SoundPlaybackInstance.Class]);
 
-        // add all methods with [ExpFunc] attribute
+        // add all methods with [EngineFunc] attribute
         void AddMarkedFuncs(object? instance, Type? type = null)
         {
             foreach (var methodInfo in (type ?? instance?.GetType() ?? throw new ArgumentNullException()).GetMethods())
             {
-                var attr = methodInfo.GetCustomAttribute<ExpFuncAttribute>();
+                var attr = methodInfo.GetCustomAttribute<EngineFuncAttribute>();
                 if (attr != null)
                 {
                     // create Func<...> from methodInfo
@@ -168,7 +203,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         AddMarkedFuncs(this);
         AddMarkedFuncs(null, typeof(Formulas));
 
-        // manually add non-static functions that cannot be marked with [ExpFunc]
+        // manually add non-static functions that cannot be marked with [EngineFunc]
         Interpreter.AddExternFunc(new(Game.PauseSound, 0, "pause"), SoundPlaybackInstance.Class);
         Interpreter.AddExternFunc(new(Game.ResumeSound, 0, "resume"), SoundPlaybackInstance.Class);
 
@@ -409,7 +444,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     /// <param name="inst">The instance to draw.</param>
     /// <param name="args">[].</param>
     /// <returns>void.</returns>
-    [ExpFunc(CustomName = "drawSelf", IsNonStaticFuncOfGameObjects = true)]
+    [EngineFunc(CustomName = "drawSelf", IsNonStaticFuncOfGameObjects = true)]
     public Exp.Void DrawInstance(Exp.Instance? inst, IValue?[] args)
     {
         Game.DrawInstance((Runtime.Instance)inst!);
@@ -422,7 +457,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     /// <param name="expinst">The instance to destroy.</param>
     /// <param name="args">[].</param>
     /// <returns>void.</returns>
-    [ExpFunc(IsNonStaticFuncOfGameObjects = true)]
+    [EngineFunc(IsNonStaticFuncOfGameObjects = true)]
     public Exp.Void Destroy(Exp.Instance? expinst, IValue?[] args)
     {
         var inst = (Runtime.Instance)expinst!;
@@ -438,7 +473,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     /// <param name="_">The calling EXP instance (unused).</param>
     /// <param name="args">Arguments where args[0] and args[1] are the spawn X and Y coordinates and args[2] is the object type to instantiate.</param>
     /// <returns>The newly created runtime instance.</returns>
-    [ExpFunc(3)]
+    [EngineFunc(3)]
     [Param("x", ParamType.Number, "The x position to create the new instance at.")]
     [Param("y", ParamType.Number, "The y position to create the new instance at.")]
     [Param("type", ParamType.Type, "The type of object to create.")]
@@ -544,7 +579,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     /// <param name="args">[roomId].</param>
     /// <returns>void.</returns>
     /// <exception cref="ArgumentException"></exception>
-    [ExpFunc(1)]
+    [EngineFunc(1)]
     [Param("roomID", ParamType.Number, "The ID of the room to go to. You can use 'Rooms.my_room' for this.")]
     public Exp.Void GoToRoom(Exp.Instance? _, IValue?[] args)
     {
@@ -565,7 +600,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     /// <param name="args">(Unused).</param>
     /// <returns></returns>
     /// <exception cref="NoActivatedRoomException"></exception>
-    [ExpFunc]
+    [EngineFunc]
     public Exp.Void GoToNextRoom(Exp.Instance? _, IValue?[] args)
     {
         if (Game.CurrentRoom == null)
@@ -587,7 +622,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     /// <param name="_">(Unused).</param>
     /// <param name="args">(Unused).</param>
     /// <returns></returns>
-    [ExpFunc]
+    [EngineFunc]
     public Exp.Void RestartRoom(Exp.Instance? _, IValue?[] args)
     {
         GoToRoom(Game.GetActivatedRoom().Model);

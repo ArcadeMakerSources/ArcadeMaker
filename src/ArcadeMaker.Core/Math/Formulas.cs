@@ -9,7 +9,7 @@ namespace ArcadeMaker.Core.Math;
 
 public static class Formulas
 {
-    [ExpFunc(4)]
+    [EngineFunc(4)]
     [Param("x1", ParamType.Number, "The x of point 1.")]
     [Param("y1", ParamType.Number, "The y of point 1.")]
     [Param("x2", ParamType.Number, "The x of point 2.")]
@@ -27,7 +27,7 @@ public static class Formulas
     /// <param name="_">(Unused).</param>
     /// <param name="args">(len, dir).</param>
     /// <returns>The x of a position "len" pixels from the starting point and in direction "dir".</returns>
-    [ExpFunc(2)]
+    [EngineFunc(2)]
     [Param("len", ParamType.Number, "The length away of the point to return.")]
     [Param("dir", ParamType.Number, "The direction of the point to return.")]
     public static IValue LengthDirX(Exp.Instance? _, IValue?[] args) => LengthDirX(args[0].ThrowIfNull().Number, args[1].ThrowIfNull().Number).ToExp();
@@ -39,7 +39,7 @@ public static class Formulas
     /// <param name="_">(Unused).</param>
     /// <param name="args">(len, dir).</param>
     /// <returns>The y of a position "len" pixels from the starting point and in direction "dir".</returns>
-    [ExpFunc(2)]
+    [EngineFunc(2)]
     [Param("len", ParamType.Number, "The length away of the point to return.")]
     [Param("dir", ParamType.Number, "The direction of the point to return.")]
     public static IValue LengthDirY(Exp.Instance? _, IValue?[] args) => LengthDirY(args[0].ThrowIfNull().Number, args[1].ThrowIfNull().Number).ToExp();

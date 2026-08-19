@@ -506,18 +506,30 @@ class InitOperation : IReadingOperation
     public IValue Read()
     {
         Instance inst;
-        if (Constructor?.DefinedAt == ClassDefSpan.ExpArrayDef && Constructor.Args.Length == 1) // new Array(len)
+        if (Constructor?.OverridesInit == true)
         {
-            int len = (int)(Args[0].Read()?.Number ?? Interpreter.Activated.ThrowRuntime<int>("Argument value was null.", RuntimeException.INVALID_ARGUMENT)); // null check is critical because the arguments null check wasn't happening yet!
-            if (len < 0)
-                Interpreter.Activated.ThrowRuntime("Array length cannot have a negative size.", RuntimeException.INVALID_ARGUMENT);
-            inst = new Instance(Def, new IValue[len]);
+            if (Interpreter.Activated.FuncCall(null, Constructor, null, out bool _, Args.Select(a => a.Read())) is not Instance init || init.def != Def)
+            {
+                Interpreter.Activated.ThrowRuntime($"Constructor did not return an instance of its class ({Def.GetExpTypeName(false)}).", RuntimeException.EXTERN_OPERATION_FAILED);
+                throw null;
+            }
+            inst = init;
         }
         else
-            inst = new Instance(Def);
+        {
+            if (Constructor?.DefinedAt == ClassDefSpan.ExpArrayDef && Constructor.Args.Length == 1) // new Array(len)
+            {
+                int len = (int)(Args[0].Read()?.Number ?? Interpreter.Activated.ThrowRuntime<int>("Argument value was null.", RuntimeException.INVALID_ARGUMENT)); // null check is critical because the arguments null check wasn't happening yet!
+                if (len < 0)
+                    Interpreter.Activated.ThrowRuntime("Array length cannot have a negative size.", RuntimeException.INVALID_ARGUMENT);
+                inst = new Instance(Def, new IValue[len]);
+            }
+            else
+                inst = new Instance(Def);
 
-        if (Constructor != null)
-            Interpreter.Activated.FuncCall(inst, Constructor, null, out bool _, Args.Select(a => a.Read()));
+            if (Constructor != null)
+                Interpreter.Activated.FuncCall(inst, Constructor, null, out bool _, Args.Select(a => a.Read()));
+        }
 
         return inst;
     }
@@ -558,8 +570,9 @@ class ExternInvocationOperation(ExternClassDefSpan extrn, object inst, string me
     }
 }
 
-class ExternFuncInvocationOperation(FuncDefSpan invoker, ExternFunc externFunc) : IReadingOperation
+class ExternFuncInvocationOperation(FuncDefSpan invoker, ExternFunc externFunc) : IReadingOperation, IOperation
 {
+    public void Make() => Read();
     public IValue Read() => externFunc.Func.Invoke(invoker.Parent as Instance, invoker.ParamVariables.Map(v => v.Value).ToArray());
 }
 

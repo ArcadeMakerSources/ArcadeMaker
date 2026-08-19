@@ -149,7 +149,25 @@ public class TypeVariable(string varName, IValue? initVal, Func<IValue?, bool> c
 
 public class CustomVariable : Variable
 {
-    public override IValue? Value { get => Getter?.Invoke(); set => Setter?.Invoke(value); }
+    public override IValue? Value
+    {
+        get => Getter?.Invoke();
+        set
+        {
+            if (Setter == null)
+            {
+                if (!firstSet)
+                {
+                    Interpreter.Activated.ThrowRuntime($"This variable ({Name}) is marked as constant and cannot be reset.", RuntimeException.INVALID_OPERATION);
+                    throw null;
+                }
+            }
+            else
+                Setter(value);
+            firstSet = false;
+        }
+    }
+        
     public Func<IValue?>? Getter { get; set; }
     public Action<IValue?>? Setter { get; set; }
 
