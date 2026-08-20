@@ -7,6 +7,9 @@ Let's add some soul to our game: we'll start with the walls.
 **Adding the Walls**
 
 Create a new **spr_wall** sprite and load the **createMetal** sprite from our sprite asset.
+
+<img width="364" height="325" alt="amtut crateMetal" src="https://github.com/user-attachments/assets/9c888425-9b69-41aa-ba02-2b6d1c73e575" />
+
 Create an **obj_wall** object, set its sprite to the one you just created, and check the **Solid** checkbox.
 
 <img width="269" height="223" alt="amtut solid checkbox" src="https://github.com/user-attachments/assets/1ccee1fe-cf1e-455a-b61e-f634de820c2b" />

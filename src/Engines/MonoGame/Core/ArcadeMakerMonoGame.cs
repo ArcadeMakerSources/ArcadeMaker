@@ -399,7 +399,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
                         Matrix transformMatrix = Cameras[CurrentViewIndex].camera.GetViewMatrix();
 
-                        DrawBackgrounds(view.PortWidth, view.PortHeight, transformMatrix);
+                        DrawBackgrounds((int)roomBounds.Width, (int)roomBounds.Height, transformMatrix);
 
                         SpriteBatch.Begin(transformMatrix: transformMatrix);
 
@@ -474,6 +474,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
                         texture,
                         destinationRectangle: new Rectangle(0, 0, background.TileHor || background.Stretch ? room.Model.Width : texture.Width, background.TileVer || background.Stretch ? room.Model.Height : texture.Height),
                         sourceRectangle:      new Rectangle((int)background.X, (int)background.Y, background.TileHor && !background.Stretch ? w : texture.Width, background.TileVer && !background.Stretch ? h : texture.Height),
+                        
                         Color.White
                     ); 
                     SpriteBatch.End();
