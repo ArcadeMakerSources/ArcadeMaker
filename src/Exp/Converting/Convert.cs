@@ -21,7 +21,7 @@ public static class Convert
         return new(invoker, attr.ParamsCounts, invokerName, ns);
     }
 
-    public static ClassDefSpan ToClass<T>(string? ns, Interpreter interpreter) where T : Instance, IConvertable
+    public static ClassDefSpan ToClass<T>(Interpreter interpreter) where T : Instance, IConvertable
     {
         Type type = typeof(T);
 
@@ -48,7 +48,7 @@ public static class Convert
         }
 
         // create the class
-        ClassDefSpan cls = new(type.Name, [.. instanceProps], [.. ctors]) { Namespace = ns };
+        ClassDefSpan cls = new(type.Name, [.. instanceProps], [.. ctors]) { Namespace = T.Namespace };
         cls.Vars.AddRange(staticProps);
         instanceProps.ForEach(p => p.Def = cls);
         staticProps.ForEach(p => p.Def = cls);
@@ -57,7 +57,7 @@ public static class Convert
         foreach (var method in type.GetMethods(bindingFlags))
         {
             if (method.CanBeConvertedToExpFunc(out var attr, out var error))
-                interpreter.AddExternFunc(ToFunc(method), cls, false);
+                interpreter.AddExternFunc(ToFunc(method), cls, attr is ExpClassFuncAttribute { Static: true });
             else if (attr != null) // if it's not marked [ExpFunc], just ignore this method
                 throw new Exception(error);
         }
@@ -88,6 +88,10 @@ public static class Convert
                 cls.Funcs = [.. cls.Funcs.Append(ctor)];
             }
         }
+
+        // if no constructors were defined, define a private ctor
+        if (!cls.Funcs.OfType<ConstructorDefSpan>().Any())
+            cls.Funcs = [.. cls.Funcs.Append(new ConstructorDefSpan([], [], cls, interpreter) { Private = true })];
 
         //type.GetProperty(nameof(IConvertable.Class), BindingFlags.Public | BindingFlags.Static).SetValue(null, cls);
         T.Class = cls;

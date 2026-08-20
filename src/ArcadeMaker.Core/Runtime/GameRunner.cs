@@ -23,11 +23,11 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         ArgumentNullException.ThrowIfNull(game);
 
         this.Game = game;
-        game.Scripts.AddRange(GetScripts());
+        game.Scripts.AddRange(ExpSrc.ExpSrc.GetScripts());
         Interpreter = new();
 
-        AddFuncsToInterpreter();
-        AddClassesToInterpreter();
+        ExpSrc.ExpSrc.AddFuncsToInterpreter(this);
+        ExpSrc.ExpSrc.AddClassesToInterpreter(Interpreter);
 
         // build
         ExpError[]? eventsErrors = null;
@@ -39,7 +39,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
             // TODO: do something...
         }
 
-        CreatePropertiesInitializers();
+        ExpSrc.ExpSrc.CreatePropertiesInitializers(this);
 
         if (removeEmptyEvents)
         {
@@ -47,209 +47,6 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
             {
                 model.RemoveEmptyEvents();
             }
-        }
-    }
-
-    private void CreatePropertiesInitializers()
-    {
-        List<ExpError> InitializersErrors = [];
-
-        foreach (ObjectModel model in Game.Objects)
-        {
-            if (model.ExtraProperties.Length == 0)
-                continue;
-
-            // create a script that initializes the property for an instance.
-            // don't add new lines between and after usings, so that the line number of an error in the
-            // property initializer will match the property index
-            string initializerScript = $"using {Interpreter.STD_NAMESPACE} using {ExpSrc.ExpSrc.EngineNamespace} using {ExpSrc.ExpSrc.GameNamespace} ";
-
-            foreach (var extrap in model.ExtraProperties)
-            {
-                initializerScript += $"{extrap.Name} = {extrap.InitValueCode} /* */\n"; // add /* */ to prevent issues with properties with code that ends with a comment
-            }
-
-            // create the initializer script document
-            InstanceScriptDocument initializerDoc = new(model.Name + ".PropertiesInitializer", model.Class, initializerScript);
-            initializerDoc.TryPrepare(Interpreter, out var errors);
-            InitializersErrors.AddRange(errors);
-
-            //// if create event is not set, create it (UPDATE: now we save it to ObjectModel.PropertiesInitializer)
-            //var createEv = model.GetEvent(ObjectEvent.EventType.Create);
-            //if (createEv == null)
-            //{
-            //    createEv = new(ObjectEvent.EventType.Create, []);
-            //    createEv.CreateDocs(model.Class);
-            //    model.Events.Add(createEv);
-            //    model.CreateEvent = createEv;
-            //}
-
-            // save
-            model.PropertiesInitializer = initializerDoc;
-        }
-
-        if (InitializersErrors.Count > 0)
-            throw new BuildFailureException(InitializersErrors);
-    }
-
-    public static IEnumerable<ScriptDocument> GetScripts()
-    {
-        List<ScriptDocument> docs = [];
-
-        // get the types of all the enums that should be copied to the interpreter
-        List<Type> enums = [];
-        enums.AddRange(ExpSrc.ExpSrc.GetEnums());
-
-        // convert them to Exp code
-        docs.AddRange(enums.Select(e => ScriptDocument.FromString(GetEnumCode(e), e.Name + ".exp")));
-
-        return docs;
-
-        static string GetEnumCode(Type type) // converts an enum type to a string of Exp code that defines the same enum
-        {
-            string code = $"namespace {ExpSrc.ExpSrc.EngineNamespace}:\n\nenum {type.Name}\n{{\n";
-
-            string[] names = Enum.GetNames(type);
-            int i = 0;
-            foreach (var name in names)
-            {
-                code += $"    {name.StartWithLowerCase()} = {(type.GetEnumUnderlyingType() == typeof(uint) ? (uint)Enum.Parse(type, name) : (int)Enum.Parse(type, name))}{(i++ < names.Length - 1 ? "," : "")}\n";
-            }
-
-            code += "}";
-            return code;
-        }
-    }
-
-    internal void AddClassesToInterpreter()
-    {
-        // not finished yet
-        return;
-        // iterate on all classes in this assembly
-        foreach (var cls in typeof(IGame).Assembly.GetTypes())
-        {
-            // if it isn't marked with [ExpClass], continue
-            if (cls.GetCustomAttribute<ExpClassAttribute>() is not { } attr)
-                continue;
-
-            // make sure it implements IConvertable
-            if (!cls.GetInterfaces().Contains(typeof(IConvertable)))
-                throw new LoadingException($"The class '{cls.Name}' is marked as [ExpClass] but does not implement {nameof(IConvertable)}.");
-
-            // get MethodInfo for Convert.ToClass<cls>(...)
-            MethodInfo converter = typeof(Exp.Converting.Convert).GetMethod(nameof(Exp.Converting.Convert.ToClass), genericParameterCount: 1, [typeof(string), typeof(Interpreter)])!;
-            MethodInfo constructedConverter = converter.MakeGenericMethod(cls);
-
-            // get the class
-            ClassDefSpan classDef;
-            try
-            {
-                classDef = (ClassDefSpan)constructedConverter.Invoke(null, [attr.Namespace, Interpreter])!;
-            }
-            catch (Exception ex)
-            {
-                throw new LoadingException($"Could not convert class '{cls.Name}' to Exp class. An inner exception is attached.", ex);
-            }
-            Interpreter.definations.Add(classDef);
-        }
-    }
-
-    public void AddFuncsToInterpreter()
-    {
-        List<ExternFunc> funcs = [];
-        var objClasses = Game.Objects.Map(model => model.Class);
-
-        // static classes to add
-        ClassDefSpan instanceStaticClass = new("Instance", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
-        instanceStaticClass.Funcs = instanceStaticClass.Funcs.Append(new ConstructorDefSpan([], [], instanceStaticClass, Interpreter) { Private = true }).ToArray();
-        ClassDefSpan spritesStaticClass = new("Sprites", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
-        spritesStaticClass.Funcs = spritesStaticClass.Funcs.Append(new ConstructorDefSpan([], [], spritesStaticClass, Interpreter) { Private = true }).ToArray();
-        spritesStaticClass.Vars.AddRange(Game.Sprites.Map(s => new Variable(s.Name, s.ID.ToExp(), cons: true)));
-        ClassDefSpan soundsStaticClass = new("Sounds", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
-        soundsStaticClass.Funcs = instanceStaticClass.Funcs.Append(new ConstructorDefSpan([], [], soundsStaticClass, Interpreter) { Private = true }).ToArray();
-        soundsStaticClass.Vars.AddRange(Game.Sounds.Map(s => new Variable(s.Name, s.ID.ToExp(), cons: true)));
-        ClassDefSpan pathsStaticClass = new("Paths", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
-        pathsStaticClass.Funcs = instanceStaticClass.Funcs.Append(new ConstructorDefSpan([], [], pathsStaticClass, Interpreter) { Private = true }).ToArray();
-        pathsStaticClass.Vars.AddRange(Game.Paths.Map(p => new Variable(p.Name, p.ID.ToExp(), cons: true)));
-        ClassDefSpan roomsStaticClass = new("Rooms", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
-        roomsStaticClass.Funcs = roomsStaticClass.Funcs.Append(new ConstructorDefSpan([], [], roomsStaticClass, Interpreter) { Private = true }).ToArray();
-        roomsStaticClass.Vars.AddRange(Game.Rooms.Map(r => new Variable(r.Name, r.ID.ToExp(), cons: true)));
-        ClassDefSpan fontsStaticClass = new("Fonts", [], []) { Namespace = ExpSrc.ExpSrc.EngineNamespace };
-        fontsStaticClass.Funcs = fontsStaticClass.Funcs.Append(new ConstructorDefSpan([], [], fontsStaticClass, Interpreter) { Private = true }).ToArray();
-        fontsStaticClass.Vars.AddRange(Game.FontsData.Map(f => new Variable(f.Name, f.ID.ToExp(), cons: true)));
-        Interpreter.definations.AddRange([spritesStaticClass, instanceStaticClass, soundsStaticClass, pathsStaticClass, roomsStaticClass, fontsStaticClass, SoundPlaybackInstance.Class]);
-
-        // add all methods with [EngineFunc] attribute
-        void AddMarkedFuncs(object? instance, Type? type = null)
-        {
-            foreach (var methodInfo in (type ?? instance?.GetType() ?? throw new ArgumentNullException()).GetMethods())
-            {
-                var attr = methodInfo.GetCustomAttribute<EngineFuncAttribute>();
-                if (attr != null)
-                {
-                    // create Func<...> from methodInfo
-                    var invoker = (Func<Exp.Instance?, IValue?[], IValue?>)Delegate.CreateDelegate(typeof(Func<Exp.Instance?, IValue?[], IValue?>), instance, methodInfo);
-                    string invokerName = attr.CustomName ?? methodInfo.Name.StartWithLowerCase();
-
-                    // add to interpreter
-                    if (attr.IsNonStaticFuncOfGameObjects)
-                        objClasses.ForEach(objCls => Interpreter.AddExternFunc(new(invoker, attr.ParamsCounts, invokerName), objCls));
-                    else
-                        Interpreter.AddExternFunc(new(invoker, attr.ParamsCounts, invokerName, ExpSrc.ExpSrc.EngineNamespace));
-                }
-            }
-        }
-        AddMarkedFuncs(Game, typeof(IGame));
-        AddMarkedFuncs(this);
-        AddMarkedFuncs(null, typeof(Formulas));
-
-        // manually add non-static functions that cannot be marked with [EngineFunc]
-        Interpreter.AddExternFunc(new(Game.PauseSound, 0, "pause"), SoundPlaybackInstance.Class);
-        Interpreter.AddExternFunc(new(Game.ResumeSound, 0, "resume"), SoundPlaybackInstance.Class);
-
-        // add "all()" functions and "i" / "first" getters
-        foreach (var cls in objClasses)
-        {
-            IValue? All(Exp.Instance? _, IValue?[] args)
-            {
-                if (Game.CurrentRoom == null)
-                    return new Exp.Instance(ClassDefSpan.ExpArrayDef, []);
-
-                List<Exp.Instance> all = [];
-
-                foreach (var inst in Game.CurrentRoom.Instances)
-                {
-                    if (inst.Model.Class == cls)
-                        all.Add(inst);
-                }
-
-                return new Exp.Instance(ClassDefSpan.ExpArrayDef, [.. all]);
-            }
-
-            IValue? GetSingleInst()
-            {
-                if (Game.CurrentRoom == null)
-                    return null;
-
-                Instance? i = null;
-
-                foreach (var inst in Game.CurrentRoom.Instances)
-                {
-                    if (inst.Model.Class == cls)
-                    {
-                        if (i == null)
-                            i = inst;
-                        else
-                            Interpreter.ThrowRuntime($"There is more than 1 instance of object '{cls.Name}' in current room.", RuntimeException.INVALID_OPERATION);
-                    }
-                }
-
-                return i;
-            }
-
-            Interpreter.AddExternFunc(new(All, 0, "all" /* name must be specified in local functions! */), cls, true);
-            cls.Vars.Add(new CustomVariable("i", GetSingleInst, null, false));
-            cls.Vars.Add(new CustomVariable("first", () => Game.CurrentRoom?.Instances.FirstOrDefault(i => i.Model.Class == cls), null, false));
         }
     }
 
