@@ -9,6 +9,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <COMReference Include="WMPLib">
+      <WrapperTool>tlbimp</WrapperTool>
+      <VersionMinor>0</VersionMinor>
+      <VersionMajor>1</VersionMajor>
+      <Guid>6bf52a50-394a-11d3-b153-00c04f79faa6</Guid>
+      <Lcid>0</Lcid>
+      <Isolated>false</Isolated>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
+
+  <ItemGroup>
+	<!-- Added to resolve Windows.Media library -->
+	<PackageReference Include="Microsoft.Windows.SDK.NET" Version="10.0.18362.6-preview" />
+	  
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <PackageReference Include="nkast.Kni.Platform.Blazor.GL" Version="4.2.9001.2" />
     <PackageReference Include="RectpackSharp" Version="1.2.0" />

@@ -12,16 +12,27 @@ using IntelliSense.CSharp;
 using Exp;
 using System.Runtime.Versioning;
 using ArcadeMaker.IDE.Items;
+using Windows.Media.Core;
+using Windows.Media.Playback;
 
 namespace ArcadeMaker.IDE
 {
     public partial class SoundEditor : Form
     {
         private GameSound sound = null;
+
+        // new sound control objects
+        private readonly MediaPlayer _player;
+        private bool paused = false;
+
         public SoundEditor(GameSound sound)
         {
             InitializeComponent();
             this.sound = sound;
+
+            // init player
+            _player = new MediaPlayer();
+            _player.MediaEnded += SoundPlayer_MediaEnded;
 
             // set file dialog format
             var crossPlatformFormats = SupportedFormats.Where(f => string.IsNullOrWhiteSpace(f.Comment)).Map(f => f.Format);
@@ -70,6 +81,7 @@ namespace ArcadeMaker.IDE
         {
             //soundPlayer?.Dispose();
             Close();
+            _player.Dispose();
         }
 
         private void MusicEditor_Load(object sender, EventArgs e)
@@ -97,22 +109,22 @@ namespace ArcadeMaker.IDE
         }
 
         //private AudioPlayer soundPlayer = null;
-        private bool isPlaying = false;
         private void playBtn_Click(object sender, EventArgs e)
         {
-            if (isPlaying)
-                return;
             if (sound.Data != null)
             {
                 try
                 {
-                    //soundPlayer = new WaveOut();
-                    //soundPlayer.PlaybackStopped += SoundPlayer_PlaybackStopped;
-                    //reader = new AudioFileReader(sound.filePath);
-                    //reader.Volume = sound.volume;
-                    //soundPlayer.Init(reader);
-                    //soundPlayer.Play();
-                    isPlaying = true;
+                    if (paused)
+                    {
+                        _player.Play();
+                        paused = false;
+                        return;
+                    }
+
+                    _player.Source = MediaSource.CreateFromUri(new Uri(sound.FilePath));
+                    _player.Volume = sound.volume;
+                    _player.Play();
                 }
                 catch (Exception ex)
                 {
@@ -129,43 +141,34 @@ namespace ArcadeMaker.IDE
             }
         }
 
-        private bool userStoppedAudio = false;
-        private void SoundPlayer_PlaybackStopped(object sender, object e)
+        private void pauseBtn_Click(object sender, EventArgs e)
         {
-            //Global.ShowDebugMessage("playback stopped");
-            if (!userStoppedAudio)
+            if (_player != null)
             {
-                //reader.Position = 0;
-                //soundPlayer.Play();
+                try
+                {
+                    _player.Pause();
+                    paused = true;
+                }
+                catch (Exception ex)
+                {
+                    string err = "Error: Cannot pause";
+#if DEBUG
+                    err += "\n\nError message:\n" + ex.Message;
+#endif
+                    MessageBox.Show(err);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Nothing is being played");
             }
         }
 
-        private void pauseBtn_Click(object sender, EventArgs e)
+        private void SoundPlayer_MediaEnded(MediaPlayer sender, object args)
         {
-            //            if (soundPlayer != null && isPlaying)
-            //            {
-            //                try
-            //                {
-            //                    userStoppedAudio = true;
-            //                    soundPlayer.Stop();
-            //                    soundPlayer.Dispose();
-            //                    reader?.Dispose();
-            //                    userStoppedAudio = false;
-            //                    isPlaying = false;
-            //                }
-            //                catch (Exception ex)
-            //                {
-            //                    string err = "Error: Cannot pause";
-            //#if DEBUG
-            //                    err += "\n\nError message:\n" + ex.Message;
-            //#endif
-            //                    MessageBox.Show(err);
-            //                }
-            //            }
-            //            else
-            //            {
-            //                MessageBox.Show("Nothing is being played");
-            //            }
+            paused = false;
+            _player.PlaybackSession.Position = TimeSpan.Zero;
         }
 
         private void loadBtn_Click(object sender, EventArgs e)
