@@ -16,8 +16,7 @@ public class Sound(string name, string filePath, float startVolume, float startP
         Mp3,
         Ogg,
 
-        // NOTE: This attribute currently filters out WMA on windows machine[SupportedOSPlatform("Windows")]
-        // There is no need to filter windows only format since there is no plans to port engine cross-platform
+        [SupportedOSPlatform("Windows")]
         Wma
     }
 
