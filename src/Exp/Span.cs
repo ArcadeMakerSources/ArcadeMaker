@@ -241,11 +241,12 @@ class DefNameSpan : WordSpan
     internal event EventHandler Resolved;
     internal bool CancelResolve { get; set; }
     internal static bool CancelResolveForNewOnes { get; set; }
-    internal DefNameSpan(string specNs, string name, ScriptDocument doc, int docLoc, Interpreter compiler) : base(name)
+    internal DefNameSpan(string specNs, string name, ScriptDocument doc, int docLoc, Interpreter compiler, bool resolve = true) : base(name)
     {
         (this.SpecificNs, this.Name, Document, DocumentLocation) = (specNs, name, doc, docLoc);
-        void Resolve(object sender, EventArgs e)
+        void Resolve(object? sender, EventArgs e)
         {
+            compiler.CollectDefsCompleted -= Resolve;
             if (CancelResolve)
                 return;
 
@@ -278,10 +279,9 @@ class DefNameSpan : WordSpan
                 IsUnknownItem = true;
             }
             Resolved?.Invoke(this, null);
-            compiler.CollectDefsCompleted -= Resolve;
         };
 
-        if (!CancelResolveForNewOnes)
+        if (!CancelResolveForNewOnes && resolve)
         {
             if (compiler.CollectedDefs)
                 Resolve(compiler, null);

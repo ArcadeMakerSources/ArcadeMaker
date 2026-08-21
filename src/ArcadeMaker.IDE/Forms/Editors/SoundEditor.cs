@@ -2,27 +2,27 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Media;
-using IntelliSense.CSharp;
 using Exp;
 using System.Runtime.Versioning;
 using ArcadeMaker.IDE.Items;
 using Windows.Media.Core;
 using Windows.Media.Playback;
+using Windows.Storage.Streams;
 
 namespace ArcadeMaker.IDE
 {
-    public partial class SoundEditor : Form
+    public partial class SoundEditor : Form, IDisposable
     {
-        private GameSound sound = null;
+        private readonly GameSound sound;
 
         // new sound control objects
         private readonly MediaPlayer _player;
+        private MemoryStream? _soundStreamData;
+        private IRandomAccessStream? _winRtStream;
+        private MediaSource? _soundStreamSource;
         private bool paused = false;
 
         public SoundEditor(GameSound sound)
@@ -79,9 +79,7 @@ namespace ArcadeMaker.IDE
 
         private void okBtn_Click(object sender, EventArgs e)
         {
-            //soundPlayer?.Dispose();
             Close();
-            _player.Dispose();
         }
 
         private void MusicEditor_Load(object sender, EventArgs e)
@@ -108,10 +106,21 @@ namespace ArcadeMaker.IDE
             backgroundMusicBtn.Checked = sound.Type == Core.Resources.Sound.Types.BackgroundMusic;
         }
 
-        //private AudioPlayer soundPlayer = null;
         private void playBtn_Click(object sender, EventArgs e)
         {
-            if (sound.Data != null)
+            // if there's only a data buffer for the sound, without file path, create a memory stream to play from
+            if (sound.Data != null && sound.FilePath == null)
+            {
+                _soundStreamSource?.Dispose();
+                _soundStreamData?.Dispose();
+                _winRtStream?.Dispose();
+
+                _soundStreamData = new(sound.Data);
+                _winRtStream = _soundStreamData.AsRandomAccessStream();
+                _soundStreamSource = MediaSource.CreateFromStream(_winRtStream, "audio/" + sound.FileExtension.Replace(".", ""));
+            }
+
+            if (sound.FilePath != null || _soundStreamSource != null)
             {
                 try
                 {
@@ -122,7 +131,7 @@ namespace ArcadeMaker.IDE
                         return;
                     }
 
-                    _player.Source = MediaSource.CreateFromUri(new Uri(sound.FilePath));
+                    _player.Source = _soundStreamSource ?? MediaSource.CreateFromUri(new Uri(sound.FilePath));
                     _player.Volume = sound.volume;
                     _player.Play();
                 }
@@ -229,13 +238,19 @@ namespace ArcadeMaker.IDE
         {
             sound.Pitch = (float)Core.Math.Formulas.LinearMapping(pitchBar.Minimum, pitchBar.Maximum, -1d, 1d, pitchBar.Value);
         }
-    }
 
-    interface ISoundPlayer : IDisposable
-    {
-        void Init();
-        void Play();
-        void Stop();
-        event EventHandler PlaybackStopped;
+        private void SoundEditor_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Dispose();
+        }
+
+        public new void Dispose()
+        {
+            _player.Dispose();
+            _soundStreamSource?.Dispose();
+            _winRtStream?.Dispose();
+            _soundStreamData?.Dispose();
+            GC.SuppressFinalize(this);
+        }
     }
 }
