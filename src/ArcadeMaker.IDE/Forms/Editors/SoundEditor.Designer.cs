@@ -222,7 +222,7 @@ namespace ArcadeMaker.IDE
             label4.AutoSize = true;
             label4.Location = new Point(10, 271);
             label4.Name = "label4";
-            label4.Size = new Size(37, 15);
+            label4.Size = new Size(34, 15);
             label4.TabIndex = 13;
             label4.Text = "Pitch";
             // 
@@ -258,6 +258,7 @@ namespace ArcadeMaker.IDE
             Controls.Add(label1);
             Name = "SoundEditor";
             Text = "Sound Editor";
+            FormClosed += SoundEditor_FormClosed;
             Load += MusicEditor_Load;
             ((System.ComponentModel.ISupportInitialize)volumeBar).EndInit();
             groupBox1.ResumeLayout(false);

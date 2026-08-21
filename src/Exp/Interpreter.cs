@@ -462,7 +462,7 @@ namespace Exp
                 }
             }
 
-            return new DefNameSpan(specNs, name.FullText, name.Document, name.DocumentLocation, this) { CancelResolve = spoiler };
+            return new DefNameSpan(specNs, name.FullText, name.Document, name.DocumentLocation, this, resolve: !spoiler);
         }
 
         private Span Spoiler(int skip = 0)

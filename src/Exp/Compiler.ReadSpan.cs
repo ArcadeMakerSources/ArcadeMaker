@@ -850,10 +850,9 @@ public partial class Interpreter
                 span = new ModuluOperatorSpan();
             else if (text == GreaterThanOperatorSpan.Symbol)
                 span = new GreaterThanOperatorSpan();
-            else if (text == LowerThanOperatorSpan.Symbol)
+            else if (text == LowerThanOperatorSpan.Symbol) // can be used for both lower than operator (x < y) and "typeof" value (<Date>)
             {
-                DefNameSpan defName = null;
-                defName = ReadDefName(null, true);
+                DefNameSpan defName = ReadDefName(null, true);
                 if (defName != null && Spoiler(defName.SpecificNs == null ? 1 : 3) is GreaterThanOperatorSpan)
                 {
                     defName = ReadDefName(); // on the existing one, CancelResolve is true
@@ -864,7 +863,7 @@ public partial class Interpreter
 
                 if (defName == null) // x < y
                     span = new LowerThanOperatorSpan();
-                else                  // <DefName>
+                else                 // <DefName>
                 {
                     var typeofSpan = new TypeOfSpan();
 
