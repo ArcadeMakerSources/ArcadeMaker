@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace ArcadeMaker.IDE.Items
 {
@@ -11,6 +12,10 @@ namespace ArcadeMaker.IDE.Items
     {
         public static Bitmap Icon => Properties.Resources.sound;
         public byte[]? Data { get; private set; }
+
+        // Expose filepath for windows media player consumption
+        [XmlIgnore]
+        public string? FilePath { get; private set; }
 
         /// <summary>
         /// The extension of the file that this sound was load from, including the opening dot, e.g. ".mp3".
@@ -49,11 +54,17 @@ namespace ArcadeMaker.IDE.Items
         public void SetSource(string? file)
         {
             if (file == null)
+            {
                 SetSource(null, null);
+                FilePath = null;
+            }
+                
             else
             {
                 string ext = System.IO.Path.GetExtension(file) ?? throw new ArgumentException($"The given file must have an extenion.\n(Given file: {file}).", paramName: nameof(file));
                 SetSource(ext, File.ReadAllBytes(file));
+
+                FilePath = file;
             }
         }
 
