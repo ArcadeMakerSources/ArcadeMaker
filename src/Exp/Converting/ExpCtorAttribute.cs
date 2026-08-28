@@ -7,5 +7,5 @@ namespace Exp.Converting;
 [AttributeUsage(AttributeTargets.Method)]
 public class ExpCtorAttribute(params int[] paramOptions) : Attribute
 {
-    public int[] ParamOptions => paramOptions;
+    public int[] ParamOptions => paramOptions.Length == 0 ?[0] : paramOptions;
 }

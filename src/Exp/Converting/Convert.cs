@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
 using Exp.Operations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Exp.Converting;
 
@@ -18,7 +19,7 @@ public static class Convert
         var invoker = (Func<Instance?, IValue?[], IValue?>)Delegate.CreateDelegate(typeof(Func<Instance?, IValue?[], IValue?>), null, method);
         string invokerName = attr!.CustomName ?? method.Name.StartWithLowerCase();
 
-        return new(invoker, attr.ParamsCounts, invokerName, ns);
+        return new(invoker, attr.ParamsCounts, invokerName, ns ?? attr.Namespace);
     }
 
     public static ClassDefSpan ToClass<T>(Interpreter interpreter) where T : Instance, IConvertable
@@ -114,19 +115,30 @@ public static class Convert
 
         // make sure that the method's signature matches this: IValue(Instance?, IValue?[])
         if (
-            method.ReturnType != typeof(IValue) ||
-            method.ReturnType.GetInterfaces().Contains(typeof(IValue)) ||
+            method.ReturnType != typeof(IValue) &&
+            !method.ReturnType.GetInterfaces().Contains(typeof(IValue)) ||
             method.ContainsGenericParameters ||
             method.GetParameters() is not { Length: 2 } mParams ||
             mParams[0].ParameterType != typeof(Instance) ||
             mParams[1].ParameterType != typeof(IValue[])
             )
         {
-            invalidReason = $"Method signature must match this: {nameof(IValue)}({nameof(Instance)}?, {nameof(IValue)}?[]).";
+            invalidReason = $"Method signature must match this: {nameof(IValue)}({nameof(Instance)}?, {nameof(IValue)}?[])";
             return false;
         }
 
         return true;
+    }
+
+    public static T ThrowIfNull<T>(this T? val, Interpreter? interpreter = null) where T : IValue
+    {
+        if (val is null)
+        {
+            interpreter ??= Interpreter.Activated;
+            interpreter.ThrowRuntime("Argument was null", RuntimeException.ARGUMENT_NULL);
+        }
+
+        return val;
     }
 
     extension (PropertyInfo propertyInfo)

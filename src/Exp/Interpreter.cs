@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ConstrainedExecution;
+using Exp.Converting;
 using Exp.Operations;
 using Exp.Spans;
 //using Exp.Compiler;
@@ -87,6 +88,7 @@ namespace Exp
     public partial class Interpreter : IVarSystem
     {
         public const string STD_NAMESPACE = "system";
+        internal Builtins.IO.Parameters IOParams { get; } = new();
         private bool neutral = false;
 
         private string source;
@@ -181,6 +183,7 @@ namespace Exp
             this.source = source.Script;
             SourceSpans = source.TextSpans;
 
+            // builtin libs
             var importsLs = new List<ScriptDocument>(imports);
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("xml"), "xml.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("json"), "json.txt"));
@@ -197,6 +200,7 @@ namespace Exp
             definations.Add(AttributeDefSpan.FuncRequirementsAttr);
             definations.Add(AttributeDefSpan.ReadOnlyAttr);
             definations.AddRange(defsToImport ?? []);
+            AddAllExternFuncsInAssembly(typeof(Interpreter).Assembly);
 
             "collecting defs...".Print();
             CollectDefs(importsLs.ToArray());
@@ -240,6 +244,18 @@ namespace Exp
         public void Init()
         {
             RunStaticCtors();
+        }
+
+        private void AddAllExternFuncsInAssembly(Assembly assembly)
+        {
+            foreach (var type in assembly.GetTypes().Where(t => t.IsClass))
+            {
+                foreach (var method in type.GetMethods().Where(m => m.IsStatic && m.GetCustomAttribute<ExpFuncAttribute>() is { } and not ExpClassFuncAttribute))
+                {
+                    var fn = Converting.Convert.ToFunc(method);
+                    AddExternFunc(fn, statc: true);
+                }
+            }
         }
 
         private void RunStaticCtors()
