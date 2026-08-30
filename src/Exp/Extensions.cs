@@ -210,14 +210,14 @@ public static class Extensions
         if (s.def != ClassDefSpan.ExpStringDef || o.def != ClassDefSpan.ExpStringDef)
             return false;
 
-        IValue[] a = s.Vars[0].Value.Inst.ArrayValues, b = o.Vars[0].Value.Inst.ArrayValues;
+        IValue?[] a = s.Vars[0].Value!.Inst.ArrayValues, b = o.Vars[0].Value!.Inst.ArrayValues;
 
         if (a.Length != b.Length)
             return false;
 
         for (int i = 0; i < a.Length; i++)
         {
-            if (a[i].Char != b[i].Char)
+            if (a[i]?.Char != b[i]?.Char)
                 return false;
         }
 

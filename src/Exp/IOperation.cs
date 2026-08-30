@@ -237,7 +237,7 @@ class ForeachStatement(ForEachLoopSpan ctx, Variable var, IReadingOperation read
         IValue counterNum = 0d.ToExp();
         counter?.SetSkippingConstant(counterNum);
         var iter = ReadingOperation.Read()?.Inst;
-        if (iter?.GetBasearray() is Instance { IsArray: true } array)
+        if (iter?.GetBasearray() is ArrayInstance array)
         {
             foreach (var item in array.ArrayValues)
             {
@@ -463,7 +463,7 @@ class LenofReadingOperation(IReadingOperation arrayReading, LenofWordSpan word) 
         var array = ArrayReading.Read().Inst;
         if (array != null)
         {
-            if (array.IsArray == true)
+            if (array.IsArray)
                 return new NumberValue(array.ArrayValues.Length);
             else
                 Interpreter.Activated.ThrowRuntime($"lenof operation failed: {Extensions.GetExpTypeName(array, false)} is not an array.", RuntimeException.INVALID_OPERATION, word);

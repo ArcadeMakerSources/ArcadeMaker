@@ -172,7 +172,7 @@ namespace Exp
                         {
                             var f = GetArg<FuncPntr>(0);
                             func.Returns = f.Func.Args.Length > 0 ?
-                                           new Action<object>((object args) => f.Call(this, CsValToExpVal(args) is Instance { IsArray: true } arr ? arr.ArrayValues : [])).AsExtern() :
+                                           new Action<object>((object args) => f.Call(this, CsValToExpVal(args) is ArrayInstance arr ? arr.ArrayValues : [])).AsExtern() :
                                            new Action(() => f.Call(this, [])).AsExtern();
                             func.Return = true;
                             bin = true;
