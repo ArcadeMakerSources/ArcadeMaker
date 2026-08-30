@@ -155,11 +155,11 @@ namespace ArcadeMaker.IDE
         {
             Menu.Items.Clear();
             LoadMenu();
-            if (Environment.project != null)
+            if (Environment.Project != null)
             {
-                Environment.project.items.CollectionChanged += (s, ea) =>
+                Environment.Project.items.CollectionChanged += (s, ea) =>
                 {
-                    if (Environment.project.items.Contains(Resource))
+                    if (Environment.Project.items.Contains(Resource))
                         Resource = null;
                     LoadMenu();
                 };

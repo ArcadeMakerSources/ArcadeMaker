@@ -23,11 +23,11 @@ namespace ArcadeMaker.IDE
             object[] structs = null;
             if (projectPath != null)
             {
-                Environment.project = GameProject.Open(projectPath, out structs);
+                Environment.Project = GameProject.Open(projectPath, out structs);
                 Global.PushRecentProject(projectPath);
             }
-            if (Environment.project == null)
-                Environment.project = new GameProject("New Project" /*+ DateTime.Today.ToString("dd-MM-yy")*/);
+            if (Environment.Project == null)
+                Environment.Project = new GameProject("New Project" /*+ DateTime.Today.ToString("dd-MM-yy")*/);
             Application.Run(new Form1(structs));
         }
     }

@@ -21,7 +21,7 @@ namespace ArcadeMaker.IDE.Debugging.Solutions
             if (result == DialogResult.Yes)
             {
                 // remove all collision events
-                foreach (var obj in onlyFromObj == null ? Environment.project.items.OfType<GameObject>() : [onlyFromObj])
+                foreach (var obj in onlyFromObj == null ? Environment.Project.items.OfType<GameObject>() : [onlyFromObj])
                 {
                     obj.Events.RemoveAll(ev => ev is CollisionEvent colEv && colEv.Param == deletedObjectName);
                 }

@@ -40,7 +40,7 @@ internal static class Debug
             }
 
             var futileGame = new FutileGame();
-            futileGame.Objects.AddRange(Environment.project.items.OfType<GameObject>().Select(go => new ObjectModel(go.name, null,
+            futileGame.Objects.AddRange(Environment.Project.items.OfType<GameObject>().Select(go => new ObjectModel(go.name, null,
                 //new(
                 //go.GetEventScripts(ObjectEvent.Create)?.Scripts.Select((script, i) => ExpSrc.CreateInstanceScriptDocument($"{go.name}.Events.Create.{i + 1}", null!, script.Script)).ToArray(),
                 //go.GetEventScripts(ObjectEvent.Step)?.Scripts.Select((script, i) => ExpSrc.CreateInstanceScriptDocument($"{go.name}.Events.Step.{i + 1}", null!, script.Script)).ToArray(),
@@ -56,12 +56,12 @@ internal static class Debug
             //    model.Events.Step?.ForEach(script => script?.Def = model.Class);
             //    model.Events.Draw?.ForEach(script => script?.Def = model.Class);
             //});
-            futileGame.Sprites.AddRange(Environment.project.items.OfType<GameSprite>().Map(s => new Core.Resources.Sprite(s.name, null, 0, 0, 0, null)));
-            futileGame.FontsData.AddRange(Environment.project.items.OfType<GameFont>().Map(r => new Core.Resources.Serializeables.GameFont() { Name = r.name }));
-            futileGame.Sounds.AddRange(Environment.project.items.OfType<GameSound>().Map(s => new Core.Resources.Sound(s.name, "", 0, 0, 0, Core.Resources.Sound.Types.SoundEffect)));
-            futileGame.Scripts.AddRange(Environment.project.items.OfType<GameScript>().Map(script => ScriptDocument.FromString(script.Script, script.name)));
-            futileGame.Paths.AddRange(Environment.project.items.OfType<GamePath>().Map(p => new Core.Resources.Path(p.name, 0, 0, [])));
-            futileGame.Rooms.AddRange(Environment.project.items.OfType<GameRoom>().Map(r => new RoomModel(r.name, "", 0, 0, default, new([]))));
+            futileGame.Sprites.AddRange(Environment.Project.items.OfType<GameSprite>().Map(s => new Core.Resources.Sprite(s.name, null, 0, 0, 0, null)));
+            futileGame.FontsData.AddRange(Environment.Project.items.OfType<GameFont>().Map(r => new Core.Resources.Serializeables.GameFont() { Name = r.name }));
+            futileGame.Sounds.AddRange(Environment.Project.items.OfType<GameSound>().Map(s => new Core.Resources.Sound(s.name, "", 0, 0, 0, Core.Resources.Sound.Types.SoundEffect)));
+            futileGame.Scripts.AddRange(Environment.Project.items.OfType<GameScript>().Map(script => ScriptDocument.FromString(script.Script, script.name)));
+            futileGame.Paths.AddRange(Environment.Project.items.OfType<GamePath>().Map(p => new Core.Resources.Path(p.name, 0, 0, [])));
+            futileGame.Rooms.AddRange(Environment.Project.items.OfType<GameRoom>().Map(r => new RoomModel(r.name, "", 0, 0, default, new([]))));
 
             GameRunner = new(futileGame, removeEmptyEvents: false);
 
@@ -91,12 +91,12 @@ internal static class Debug
             //}
 
             // validate object events:
-            foreach (var obj in Environment.project.items.OfType<GameObject>())
+            foreach (var obj in Environment.Project.items.OfType<GameObject>())
             {
                 // collision events
                 foreach (var colEv in obj.Events.OfType<CollisionEvent>())
                 {
-                    if (Environment.project.GetItem<GameObject>(colEv.Param) == null)
+                    if (Environment.Project.GetItem<GameObject>(colEv.Param) == null)
                     {
                         Solutions.RemoveCollisionWithDeletedObjectsSolution allSolution = new(colEv.Param);
                         Solutions.RemoveCollisionWithDeletedObjectsSolution specificSolution = new(colEv.Param, obj);
@@ -119,7 +119,7 @@ internal static class Debug
             errors.AddRange(ex ?? []);
         }
 
-        OnDebugBuild?.Invoke(Environment.project, errors);
+        OnDebugBuild?.Invoke(Environment.Project, errors);
 
         return errors.Count == 0;
     }

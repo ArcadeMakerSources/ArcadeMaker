@@ -23,7 +23,7 @@ namespace ArcadeMaker.IDE
 
         private void LoadAssembliesBox()
         {
-            foreach (AssemblyReference assembly in Environment.project.assemblyReferences)
+            foreach (AssemblyReference assembly in Environment.Project.assemblyReferences)
             {
                 assembliesBox.Items.Add(assembly);
             }
@@ -45,10 +45,10 @@ namespace ArcadeMaker.IDE
 
         private void Save()
         {
-            Environment.project.assemblyReferences.Clear();
+            Environment.Project.assemblyReferences.Clear();
             foreach (AssemblyReference assembly in assembliesBox.Items.OfType<AssemblyReference>())
             {
-                Environment.project.assemblyReferences.Add(assembly);
+                Environment.Project.assemblyReferences.Add(assembly);
             }
         }
 

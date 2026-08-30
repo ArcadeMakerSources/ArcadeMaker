@@ -10,6 +10,7 @@ public class ExpFuncAttribute(params int[] paramsCounts) : Attribute
 {
     public int[] ParamsCounts => paramsCounts;
     public string? CustomName { get; init; }
+    public string? Namespace { get; init; }
 }
 
 public class ExpClassFuncAttribute(params int[] paramsCounts) : ExpFuncAttribute(paramsCounts)
