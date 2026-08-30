@@ -63,7 +63,7 @@ namespace ArcadeMaker.IDE
 
         }
 
-        ScriptBoxSpan[] spans = null;
+        Exp.Spans.TextSpan[] spans = null;
 
         private void ColorTextBox(int startSpan = 0, int endSpan = -1, RichTextBox textBox = null)
         {
@@ -78,7 +78,7 @@ namespace ArcadeMaker.IDE
                 textBox.Text = text;
             }
 
-            ScriptBoxSpan[] newSpans = Global.GetScriptBoxSpans(text);
+            Exp.Spans.TextSpan[] newSpans = Global.GetScriptBoxSpans(text);
 
             if (endSpan < 0)
             {
@@ -97,7 +97,7 @@ namespace ArcadeMaker.IDE
                 if (i < 0 || i >= newSpans.Length)
                     continue;
 
-                ScriptBoxSpan span = newSpans[i];
+                Exp.Spans.TextSpan span = newSpans[i];
 
                 if (!(spans != null && i < spans.Length && span.text == spans[i].text && span.color == spans[i].color))
                 {
@@ -341,84 +341,6 @@ namespace ArcadeMaker.IDE
             }
         }
         */
-    }
-
-    public class ScriptBoxSpan : IDisposable
-    {
-        private string _text = "";
-        public string text
-        {
-            get => _text;
-            set
-            {
-                if (value != _text)
-                {
-                    _text = value;
-                    if (!disposed)
-                        TextChanged?.Invoke(this, value);
-                }
-            }
-        }
-        public Color color = Color.Black;
-        public Color backColor = Color.Transparent;
-        public SpanType type = SpanType.Normal;
-        public bool insideFormattedString = false;
-        public bool isKeyword = false;
-        public string link = null;
-        public bool isLink
-        {
-            get
-            {
-                return link != null;
-            }
-        }
-
-        public event EventHandler<string> TextChanged;
-
-        private bool disposed = false;
-
-        public void Dispose()
-        {
-            text = "";
-            color = Color.Empty;
-            backColor = Color.Empty;
-            disposed = true;
-        }
-
-        public ScriptBoxSpan Duplicate()
-        {
-            return new ScriptBoxSpan { text = text, color = color, backColor = backColor, type = type, insideFormattedString = insideFormattedString };
-        }
-
-        public override string ToString()
-        {
-            return text;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is ScriptBoxSpan other)
-            {
-                return text == other.text && type == other.type && link == other.link;
-            }
-            return false;
-        }
-    }
-
-    public enum SpanType
-    {
-        Space,
-        Dot,
-        Normal,
-        Number,
-        Symbol,
-        Brace,
-        String,
-        Char,
-        EscapedString,
-        FormattedString,
-        Comment,
-        MultiLineComment,
     }
 
     static class RichTextBoxExtensions

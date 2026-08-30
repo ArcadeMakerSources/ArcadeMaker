@@ -14,8 +14,8 @@ namespace ArcadeMaker.IDE
 {
     public partial class SpansTextBox2 : UserControl
     {
-        private readonly List<ScriptBoxSpan> OldSpans = new List<ScriptBoxSpan>();
-        public readonly List<ScriptBoxSpan> Spans = new List<ScriptBoxSpan>();
+        private readonly List<Exp.Spans.TextSpan> OldSpans = new List<Exp.Spans.TextSpan>();
+        public readonly List<Exp.Spans.TextSpan> Spans = new List<Exp.Spans.TextSpan>();
         public readonly List<char> CharAlerts = new List<char>();
 
         private Font _font = new Font("Consolas", 9.5F);
@@ -272,7 +272,7 @@ namespace ArcadeMaker.IDE
                 int totalCharIndex = 0;
                 char? previousChar = null;
 
-                List<ScriptBoxSpan> Spans = this.Spans;
+                List<Exp.Spans.TextSpan> Spans = this.Spans;
 
                 // if text is empty, simulate single line text to draw caret & line highlight
                 bool foundText = false;
@@ -287,9 +287,9 @@ namespace ArcadeMaker.IDE
                 if (!foundText)
                 {
                     Spans.Clear();
-                    Spans = new List<ScriptBoxSpan>
+                    Spans = new List<Exp.Spans.TextSpan>
                     {
-                        new ScriptBoxSpan { text = "\n" }
+                        new Exp.Spans.TextSpan(0) { text = "\n" }
                     };
                     Length = 1; // we're talking about the local parameter 'Length', not the property << int Length { get; } >>
                 }
@@ -1005,7 +1005,7 @@ namespace ArcadeMaker.IDE
                 {
                     // get span before
                     int spanIndex, totalCharIndex;
-                    ScriptBoxSpan span = null;
+                    Exp.Spans.TextSpan span = null;
                     for (spanIndex = 0, totalCharIndex = 0; spanIndex < Spans.Count; spanIndex++)
                     {
                         for (int charIndex = 0; charIndex < Spans[spanIndex].text.Length; charIndex++, totalCharIndex++)
@@ -1041,7 +1041,7 @@ namespace ArcadeMaker.IDE
                     if (setSpans)
                         Spans.AddRange(GetScriptBoxSpans(text));
                     else
-                        Spans.Add(new ScriptBoxSpan { text = text });
+                        Spans.Add(new Exp.Spans.TextSpan(0 /* this 0 might be a mistake */) { text = text });
                     Text = text;
                 }
 
@@ -1156,7 +1156,7 @@ namespace ArcadeMaker.IDE
                         }
                         else if (spanIndex > 0)
                         {
-                            ScriptBoxSpan rspan = Spans[--spanIndex];
+                            Exp.Spans.TextSpan rspan = Spans[--spanIndex];
                             while (rspan.text.Length == 0)
                             {
                                 Spans.Remove(rspan);
@@ -1253,7 +1253,7 @@ namespace ArcadeMaker.IDE
             return Text;
         }
 
-        public ScriptBoxSpan[] GetScriptBoxSpans(string text)
+        public Exp.Spans.TextSpan[] GetScriptBoxSpans(string text)
         {
             return Global.GetScriptBoxSpans(text, replaceTabSpaceWith: TabSpace);
         }
@@ -1546,15 +1546,15 @@ namespace ArcadeMaker.IDE
 
                 //if (!inserted)
                 //{
-                //    Spans.Add(new ScriptBoxSpan { text = sug.Text });
+                //    Spans.Add(new Exp.Spans.TextSpan { text = sug.Text });
                 //    SelectionStart += sug.Text.Length;
                 //}
 
                 string oldText = this.Text;
                 Spans.Clear();
-                // the Math.Min(..) in the following line was added on 30/07/26 due to an ArgumentOutOfRangeException thrown here
+                // the Math.Min(..) in the following line was added in 30/07/26 due to an ArgumentOutOfRangeException thrown here
                 string newText = oldText.Insert(Math.Min(suggestionSpanEnd, oldText.Length), sug.Text).Remove(suggestionSpanStart, suggestionSpanEnd - suggestionSpanStart);
-                Spans.Add(new ScriptBoxSpan { text = newText });
+                Spans.Add(new Exp.Spans.TextSpan(SelectionStart /* probably wrong */) { text = newText });
                 SelectionStart += newText.Length - oldText.Length;
 
                 SetSpans();
@@ -1670,8 +1670,8 @@ namespace ArcadeMaker.IDE
             return -1;
         }
 
-        public ScriptBoxSpan GetSpanByCharIndex(int index) => GetSpanByCharIndex(index);
-        public ScriptBoxSpan GetSpanByCharIndex(int index, out int spanStart)
+        public Exp.Spans.TextSpan GetSpanByCharIndex(int index) => GetSpanByCharIndex(index);
+        public Exp.Spans.TextSpan GetSpanByCharIndex(int index, out int spanStart)
         {
             int spanIndex = GetSpanIndexByCharIndex(index, out spanStart);
             if (spanIndex >= 0)
@@ -1802,9 +1802,9 @@ namespace ArcadeMaker.IDE
     {
         public char Alert { get; private set; }
         public int Index { get; private set; }
-        public ScriptBoxSpan SpanBefore { get; private set; }
+        public Exp.Spans.TextSpan SpanBefore { get; private set; }
 
-        public SpansTextBox2CharAlertEventArgs(char alert, int index, ScriptBoxSpan spanBefore = null)
+        public SpansTextBox2CharAlertEventArgs(char alert, int index, Exp.Spans.TextSpan spanBefore = null)
         {
             this.Alert = alert;
             this.Index = index;
