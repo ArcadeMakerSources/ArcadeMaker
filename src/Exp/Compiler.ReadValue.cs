@@ -69,7 +69,7 @@ public partial class Interpreter
                 ThrowOnlyConst();
 
                 IValue[] vals = ReadParamList(true, true, false);
-                value = new Instance(ClassDefSpan.ExpArrayDef, vals);
+                value = new ArrayInstance(ClassDefSpan.ExpArrayDef, vals);
             }
             else if (span is InstInitSpan init)
             {
@@ -457,8 +457,8 @@ public partial class Interpreter
 
             // built in classes:
             // array
-            bool isArr = cls.Name.Equals("Array");
-            IValue[] arr = null;
+            bool isArr = cls.Name.Equals("Array") && cls.Namespace.Equals(STD_NAMESPACE);
+            IValue[]? arr = null;
             if (isArr)
             {
                 /*if (param[0] is not double)
@@ -468,7 +468,7 @@ public partial class Interpreter
             }
 
             // create instance and call constructor
-            Instance value = new Instance(cls, arr);
+            Instance value = isArr ? new ArrayInstance(cls, arr) : new Instance(cls);
             FuncCall(value, func.Name, currentContext, out bool _, cls.Funcs, param);
             return value;
         }
@@ -660,7 +660,7 @@ public partial class Interpreter
         var carr = new CharValue[s.Length];
         for (int c = 0; c < s.Length; c++)
             carr[c] = s[c];
-        var expCarr = new Instance(ClassDefSpan.ExpArrayDef, carr);
+        var expCarr = new ArrayInstance(ClassDefSpan.ExpArrayDef, carr);
         var exp = new Instance(ClassDefSpan.ExpStringDef);
         exp.Vars[0].SetSkippingConstant(expCarr);
         return exp;

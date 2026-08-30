@@ -1038,7 +1038,7 @@ public partial class Interpreter
             var exparr = new IValue[csarr.Length];
             for (int i = 0; i < csarr.Length; i++)
                 exparr[i] = CsValToExpVal(csarr.GetValue(i));
-            result = new Instance(ClassDefSpan.ExpArrayDef, exparr);
+            result = new ArrayInstance(ClassDefSpan.ExpArrayDef, exparr);
         }
         else
         {

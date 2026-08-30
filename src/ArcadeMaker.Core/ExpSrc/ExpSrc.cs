@@ -183,7 +183,7 @@ namespace ArcadeMaker.Core.ExpSrc
                 IValue? All(Exp.Instance? _, IValue?[] args)
                 {
                     if (runner.Game.CurrentRoom == null)
-                        return new Exp.Instance(ClassDefSpan.ExpArrayDef, []);
+                        return new ArrayInstance(ClassDefSpan.ExpArrayDef, []);
 
                     List<Exp.Instance> all = [];
 
@@ -193,7 +193,7 @@ namespace ArcadeMaker.Core.ExpSrc
                             all.Add(inst);
                     }
 
-                    return new Exp.Instance(ClassDefSpan.ExpArrayDef, [.. all]);
+                    return new ArrayInstance(ClassDefSpan.ExpArrayDef, [.. all]);
                 }
 
                 IValue? GetSingleInst()

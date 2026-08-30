@@ -107,7 +107,7 @@ public static class Extensions
 
         var objs = new IValue[arr.Length];
         Array.Copy(arr, objs, arr.Length);
-        return new Instance(ClassDefSpan.ExpArrayDef, objs);
+        return new ArrayInstance(ClassDefSpan.ExpArrayDef, objs);
     }
 
     public static Instance ToExpString(this string str)
