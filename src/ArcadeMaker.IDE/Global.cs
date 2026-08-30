@@ -92,9 +92,9 @@ namespace ArcadeMaker.IDE
             {
                 if (name[0] > '9' || name[0] < '0')
                 {
-                    if (Environment.project != null)
+                    if (Environment.Project != null)
                     {
-                        foreach (GameItem item in Environment.project.items)
+                        foreach (GameItem item in Environment.Project.items)
                         {
                             if (item.name == name && item.name != current)
                                 return false;

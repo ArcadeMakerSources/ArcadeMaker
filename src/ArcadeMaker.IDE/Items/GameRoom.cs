@@ -67,8 +67,8 @@ namespace ArcadeMaker.IDE.Items
             {
                 var activateGet = editor;
             };
-            if (Environment.project != null)
-                caption = Environment.project.name;
+            if (Environment.Project != null)
+                caption = Environment.Project.name;
             else
                 caption = name;
             editor = new RoomEditor(this);

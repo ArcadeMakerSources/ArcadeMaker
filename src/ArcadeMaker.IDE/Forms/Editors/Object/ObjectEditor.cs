@@ -85,7 +85,7 @@ namespace ArcadeMaker.IDE
             }
             solidBox.Checked = obj.solid;
             depthBox.Value = obj.depth;
-            Environment.project.items.CollectionChanged += (s, ea) =>
+            Environment.Project.items.CollectionChanged += (s, ea) =>
             {
                 LoadSpriteBox();
             };
@@ -384,7 +384,7 @@ namespace ArcadeMaker.IDE
             // Get the icon
             Image? icon = null;
             if (item is CollisionEvent colEv)
-                icon = Environment.project.GetItem<GameObject>(colEv.Param)?.CollisionIcon;
+                icon = Environment.Project.GetItem<GameObject>(colEv.Param)?.CollisionIcon;
             icon ??= GetIcon(item.Type);
 
             // Calculate vertical alignment positions

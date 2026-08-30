@@ -26,14 +26,14 @@ namespace ArcadeMaker.IDE
                 {
                     // clear node icon by setting its ImageIndex property to a value higher than the number
                     // of images in the ImageList
-                    node.ImageIndex = Environment.project.items.Count + treeImages.Images.Count + 2;
+                    node.ImageIndex = Environment.Project.items.Count + treeImages.Images.Count + 2;
                     node.SelectedImageIndex = node.ImageIndex;
                     continue;
                 }
 
                 SetNodeAsFolder(node, types[node.Index], types[node.Index].GetProperty(nameof(ISetsIcon.Icon), BindingFlags.Static | BindingFlags.Public)?.GetValue(null) as Bitmap);
             }
-            foreach (var item in Environment.project.items)
+            foreach (var item in Environment.Project.items)
             {
                 InsertItemToTree(item);
             }
@@ -75,7 +75,7 @@ namespace ArcadeMaker.IDE
         private void SetFormTitle(GameProject forProject = null)
         {
             if (forProject == null)
-                forProject = Environment.project;
+                forProject = Environment.Project;
             Text = forProject.name + " - " + Global.ProgramName;
         }
 
@@ -103,7 +103,7 @@ namespace ArcadeMaker.IDE
                 {
                     // clear node icon by setting its ImageIndex property to a value higher than the number
                     // of images in the ImageList
-                    node.ImageIndex = Environment.project.items.Count + treeImages.Images.Count + 2;
+                    node.ImageIndex = Environment.Project.items.Count + treeImages.Images.Count + 2;
                     node.SelectedImageIndex = node.ImageIndex;
                     continue;
                 }
@@ -250,7 +250,7 @@ namespace ArcadeMaker.IDE
                                 return;
                             if (child.Tag is GameItem item)
                             {
-                                Environment.project.items.Remove(item);
+                                Environment.Project.items.Remove(item);
                             }
                             else
                             {
@@ -344,7 +344,7 @@ namespace ArcadeMaker.IDE
             int index = 0;
 
         restart:
-            foreach (GameItem pitem in Environment.project.items)
+            foreach (GameItem pitem in Environment.Project.items)
             {
                 if (pitem.name == baseName + index)
                 {
@@ -360,7 +360,7 @@ namespace ArcadeMaker.IDE
         {
             if (name != null)
                 item.name = GenerateItemName(name);
-            Environment.project.items.Add(item);
+            Environment.Project.items.Add(item);
             if (show)
             {
                 item.editor.MdiParent = this;
@@ -430,7 +430,7 @@ namespace ArcadeMaker.IDE
             treeImages.Images.Add(icon);
             if (amNode != null)
             {
-                amNode.ImageIndex = Environment.project.items.Count + treeImages.Images.Count + 3;
+                amNode.ImageIndex = Environment.Project.items.Count + treeImages.Images.Count + 3;
                 amNode.SelectedImageIndex = amNode.ImageIndex;
             }
             itemNode.ImageIndex = treeImages.Images.Count - 1;
@@ -455,7 +455,7 @@ namespace ArcadeMaker.IDE
                 string validateMsg = $"You are about to delete {item.name}. This will be permanent. Continue?";
                 if (MessageBox.Show(validateMsg, "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
                 {
-                    Environment.project.items.Remove(item);
+                    Environment.Project.items.Remove(item);
                     try
                     {
                         projectTree.Nodes.Remove(itemNode);
@@ -549,7 +549,7 @@ namespace ArcadeMaker.IDE
                         string fileNotFoundError = "Could not find the project at " + project;
                         try
                         {
-                            Environment.project = new GameProject("escape_equal_names");
+                            Environment.Project = new GameProject("escape_equal_names");
                             GameProject gameProject = GameProject.Open(project, out object[] pTree);
                             Global.PushRecentProject(project);
                             OpenProject(gameProject, pTree);
@@ -618,8 +618,8 @@ namespace ArcadeMaker.IDE
             // old code
             using SaveFileDialog saveFileDialog = new();
             saveFileDialog.Filter = "Executeable File|*.exe";
-            if (Environment.project.name != null)
-                saveFileDialog.FileName = Environment.project.name + ".exe";
+            if (Environment.Project.name != null)
+                saveFileDialog.FileName = Environment.Project.name + ".exe";
             else
                 saveFileDialog.FileName = "Game " + DateTime.Now.ToString("dd-MM-yy") + ".exe";
 
@@ -640,16 +640,16 @@ namespace ArcadeMaker.IDE
 
         private static void SaveProject(bool saveAs = false)
         {
-            string projectName = Environment.project.name;
+            string projectName = Environment.Project.name;
 
-            saveAs = saveAs || Environment.project.projectFilePath == null;
+            saveAs = saveAs || Environment.Project.projectFilePath == null;
             string path;
             if (saveAs)
             {
                 using SaveFileDialog dialog = new();
                 dialog.Filter = $"{Global.ProgramName} Bundled Project (*.ampb)|*{GameProject.FileFormats.ArcadeMakerBundledProject}|{Global.ProgramName} Project (*.amp)|*{GameProject.FileFormats.ArcadeMakerProject}";
-                if (Environment.project.name != null)
-                    dialog.FileName = Environment.project.name;
+                if (Environment.Project.name != null)
+                    dialog.FileName = Environment.Project.name;
                 else
                 {
                     string name = DateTime.Now.ToString("dd-MM-yy");
@@ -658,14 +658,14 @@ namespace ArcadeMaker.IDE
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
                     path = dialog.FileName;
-                    Environment.project.name = path.FileNameWithoutExtension();
+                    Environment.Project.name = path.FileNameWithoutExtension();
                 }
                 else return;
             }
             else
-                path = Environment.project.projectFilePath!;
+                path = Environment.Project.projectFilePath!;
 
-            Environment.project.Save(path);
+            Environment.Project.Save(path);
         }
 
         // make the toolstrip enabled with 1 click when form is not focused
@@ -682,7 +682,7 @@ namespace ArcadeMaker.IDE
 
         private void openProjectBtn_Click(object sender, EventArgs e)
         {
-            Environment.project = new GameProject("escape_equal_names");
+            Environment.Project = new GameProject("escape_equal_names");
 
             OpenFileDialog fileDialog = new OpenFileDialog();
             fileDialog.Filter = $"{Global.ProgramName} Projects|*{GameProject.FileFormats.ArcadeMakerProject};*{GameProject.FileFormats.ArcadeMakerBundledProject}";
@@ -695,7 +695,7 @@ namespace ArcadeMaker.IDE
 
         private void OpenProject(GameProject project, object[]? pTree = null)
         {
-            Environment.project = project;
+            Environment.Project = project;
 
             // reset form
             Form1 newForm;
@@ -723,7 +723,7 @@ namespace ArcadeMaker.IDE
             string name = Microsoft.VisualBasic.Interaction.InputBox("Resource Name");
             if (!string.IsNullOrWhiteSpace(name))
             {
-                foreach (GameItem item in Environment.project.items)
+                foreach (GameItem item in Environment.Project.items)
                 {
                     if (item.name.Equals(name, StringComparison.CurrentCultureIgnoreCase))
                     {
@@ -742,7 +742,7 @@ namespace ArcadeMaker.IDE
 
         private void newProjectBtn_Click(object sender, EventArgs e)
         {
-            if ((!Environment.project.saved) && Environment.project.items.Any())
+            if ((!Environment.Project.saved) && Environment.Project.items.Any())
             {
                 var result = MessageBox.Show("Do you want to save project first?", "Save Project", MessageBoxButtons.YesNoCancel);
                 if (result == DialogResult.Yes)
@@ -882,10 +882,10 @@ namespace ArcadeMaker.IDE
                     // try moving the dragged item in the project collection as well
                     if (draggedNode != null && draggedNode.Tag is GameItem draggedItem)
                     {
-                        int projectOldIndex = Environment.project.items.IndexOf(draggedItem);
-                        int projectNewIndex = Environment.project.items.IndexOf(targetItem);
+                        int projectOldIndex = Environment.Project.items.IndexOf(draggedItem);
+                        int projectNewIndex = Environment.Project.items.IndexOf(targetItem);
                         if (projectOldIndex >= 0 && projectNewIndex >= 0)
-                            Environment.project.items.Move(projectOldIndex, projectNewIndex);
+                            Environment.Project.items.Move(projectOldIndex, projectNewIndex);
                     }
                 }
 

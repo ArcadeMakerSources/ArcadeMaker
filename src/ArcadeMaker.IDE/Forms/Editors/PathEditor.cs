@@ -35,7 +35,7 @@ namespace ArcadeMaker.IDE
         {
             nameBox.Text = path.name;
             roomBox.Items.Add("None");
-            roomBox.Items.AddRange(Environment.project.items.OfType<GameRoom>().ToArray());
+            roomBox.Items.AddRange(Environment.Project.items.OfType<GameRoom>().ToArray());
             roomBox.SelectedIndex = 0;
             closeCheckBox.Checked = path.close;
 
