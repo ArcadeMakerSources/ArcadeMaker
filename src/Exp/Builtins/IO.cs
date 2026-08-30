@@ -129,9 +129,30 @@ static class IO
     public static Void Echo(Instance? _, IValue?[] args)
     {
         string content = ValueAsString(args[0]);
-        string path = GetCd(ValueAsString(args[1]));
 
-        TryIO(() => File.WriteAllText(path, content));
+        // validate file name input
+        bool append = false;
+        string file = ValueAsString(args[1]);
+        if (file.Length == 0) // throw on empty file name
+            Interpreter.Activated.ThrowRuntime("File name cannot be empty.", RuntimeException.INVALID_ARGUMENT);
+        else if (file[0] == '>') // detect APPEND flag (>>)
+        {
+            if (file.Length == 1 || file[1] != '>') // throw if the first > was not followed by another >
+                Interpreter.Activated.ThrowRuntime("Invalid flag. To append text to the end of a file, use '>>' flag. To overwrite, do not include a flag.", RuntimeException.INVALID_ARGUMENT);
+            else if (file.Length == 2) // throw if the APPEND flag was not followed by a file name
+                Interpreter.Activated.ThrowRuntime("File name cannot be empty.", RuntimeException.INVALID_ARGUMENT);
+            append = true;
+        }
+
+        string path = GetCd(file);
+        
+        TryIO(() =>
+        {
+            if (append)
+                File.AppendAllText(path, content);
+            else
+                File.WriteAllText(path, content);
+        });
 
         return Void.Return;
     }

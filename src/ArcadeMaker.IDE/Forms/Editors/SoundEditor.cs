@@ -14,7 +14,7 @@ using Windows.Storage.Streams;
 
 namespace ArcadeMaker.IDE
 {
-    public partial class SoundEditor : Form, IDisposable
+    public partial class SoundEditor : Form , IDisposable
     {
         private readonly GameSound sound;
 
@@ -116,6 +116,7 @@ namespace ArcadeMaker.IDE
                 _winRtStream?.Dispose();
 
                 _soundStreamData = new(sound.Data);
+                _soundStreamData.Position = 0;
                 _winRtStream = _soundStreamData.AsRandomAccessStream();
                 _soundStreamSource = MediaSource.CreateFromStream(_winRtStream, "audio/" + sound.FileExtension.Replace(".", ""));
             }
@@ -241,16 +242,18 @@ namespace ArcadeMaker.IDE
 
         private void SoundEditor_FormClosed(object sender, FormClosedEventArgs e)
         {
-            Dispose();
+            (this as IDisposable).Dispose();
         }
 
-        public new void Dispose()
+        void IDisposable.Dispose()
         {
             _player.Dispose();
             _soundStreamSource?.Dispose();
             _winRtStream?.Dispose();
             _soundStreamData?.Dispose();
             GC.SuppressFinalize(this);
+
+            base.Dispose();
         }
     }
 }
