@@ -332,7 +332,7 @@ namespace Exp
                         }
 
                         func.Return = true;
-                        func.Returns = new Instance(ClassDefSpan.ExpArrayDef, props.ToArray());
+                        func.Returns = new ArrayInstance(ClassDefSpan.ExpArrayDef, props.ToArray());
                         bin = true;
                     }
                     else if (func.Name == "getProperty")
@@ -387,13 +387,13 @@ namespace Exp
                             f.Vars[0].Value = type;
                             if (!ctors)
                                 f.Vars[1].Value = StringToExpString(funcDefs.ElementAt(i).Name);
-                            f.Vars[ctors ? 1 : 2].Value = new Instance(ClassDefSpan.ExpArrayDef, funcDefs.ElementAt(i).Args.Select(a => a.Name.ToExpString()).ToArray());
+                            f.Vars[ctors ? 1 : 2].Value = new ArrayInstance(ClassDefSpan.ExpArrayDef, funcDefs.ElementAt(i).Args.Select(a => a.Name.ToExpString()).ToArray());
                             f.Vars[ctors ? 2 : 3].Value = funcDefs.ElementAt(i).Private.ToExp();
                             f.Vars[ctors ? 3 : 4].Value = funcDefs.ElementAt(i).Static.ToExp();
                             funcs[i] = f;
                         }
 
-                        var results = new Instance(ClassDefSpan.ExpArrayDef, funcs);
+                        var results = new ArrayInstance(ClassDefSpan.ExpArrayDef, funcs);
                         func.Return = true;
                         func.Returns = results;
                         bin = true;

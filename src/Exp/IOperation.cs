@@ -449,11 +449,11 @@ class ArrayReadingOperation(IReadingOperation[] readings) : IReadingOperation
     internal IReadingOperation[] Readings => readings ?? throw new ArgumentNullException();
     public IValue Read()
     {
-        return new Instance(ClassDefSpan.ExpArrayDef, readings.Select(r => r.Read()).ToArray());
+        return new ArrayInstance(ClassDefSpan.ExpArrayDef, readings.Select(r => r.Read()).ToArray());
     }
 }
 
-class ConstArrayReadingOperation(ConstValueReadingOperation[] readings) : ConstValueReadingOperation(new Instance(ClassDefSpan.ExpArrayDef, readings.Select(r => r.Read()).ToArray()));
+class ConstArrayReadingOperation(ConstValueReadingOperation[] readings) : ConstValueReadingOperation(new ArrayInstance(ClassDefSpan.ExpArrayDef, readings.Select(r => r.Read()).ToArray()));
 
 class LenofReadingOperation(IReadingOperation arrayReading, LenofWordSpan word) : IReadingOperation
 {
@@ -522,7 +522,7 @@ class InitOperation : IReadingOperation
                 int len = (int)(Args[0].Read()?.Number ?? Interpreter.Activated.ThrowRuntime<int>("Argument value was null.", RuntimeException.INVALID_ARGUMENT)); // null check is critical because the arguments null check wasn't happening yet!
                 if (len < 0)
                     Interpreter.Activated.ThrowRuntime("Array length cannot have a negative size.", RuntimeException.INVALID_ARGUMENT);
-                inst = new Instance(Def, new IValue[len]);
+                inst = new ArrayInstance(Def, new IValue[len]);
             }
             else
                 inst = new Instance(Def);

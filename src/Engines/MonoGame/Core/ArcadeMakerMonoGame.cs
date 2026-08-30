@@ -565,7 +565,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         private GamePadState PrevGamepad4State { get; set; }
         private MouseState PrevMouseState { get; set; }
 
-        public Exp.Instance GetPressedKeys(Exp.Instance? _, IValue?[] args)
+        public ArrayInstance GetPressedKeys(Exp.Instance? _, IValue?[] args)
         {
             var keys = KeyboardState.GetPressedKeys();
             IValue[] expKeys = new IValue[keys.Length];

@@ -111,7 +111,7 @@ static class IO
     public static Instance Pwd(Instance? _, IValue?[] args) => Parameters.OfActivated.CD.ToExpString();
 
     [ExpFunc(Namespace = ns)]
-    public static Instance Ls(Instance? _, IValue?[] args)
+    public static ArrayInstance Ls(Instance? _, IValue?[] args)
     {
         List<string> names = [];
         TryIO(() =>
