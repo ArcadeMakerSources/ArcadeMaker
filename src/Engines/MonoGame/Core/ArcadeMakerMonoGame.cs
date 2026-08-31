@@ -19,6 +19,7 @@ using MonoGame.Extended;
 using MonoGame.Extended.ViewportAdapters;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.IO.Pipes;
@@ -85,6 +86,9 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         public TextureAtlasMap MainTextureAtlasMap { get; set; }
         public TextureAtlas MainTextureAtlas { get; private set; }
         public string MainTextureAtlasFilePath { get; set; }
+
+        private RenderTarget2D renderTarget = null;
+        private bool IsInsideDraw = false;
 
         // runtime private data
         private GameRunner<ArcadeMakerMonoGame> GameRunner { get; set; }
@@ -182,6 +186,10 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             LocalizationManager.SetCulture(selectedLanguage);
 
             SpriteBatch = new SpriteBatch(GraphicsDevice);
+            renderTarget = new RenderTarget2D(
+                GraphicsDevice,
+                graphicsDeviceManager.PreferredBackBufferWidth,
+                graphicsDeviceManager.PreferredBackBufferHeight);
 
             try
             {
@@ -380,8 +388,15 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         {
             if (isOnError || CurrentRoom == null)
                 return;
-
-            DrawScene();
+            IsInsideDraw = true;
+            try
+            {
+                DrawScene();
+            }
+            finally
+            {
+                IsInsideDraw = false;
+            }
 
             base.Draw(gameTime);
         }
@@ -746,6 +761,18 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             else
                 throw new NotImplementedException("Drawing a filled ellipse is currently not supported."); // TODO: impl
 
+            return Exp.Void.Return;
+        }
+
+
+        public Exp.Void TakeScreenshot(Exp.Instance? _, IValue?[] args)
+        {
+            if(!IsInsideDraw)
+                throw new InvalidOperationException(
+                    "TakeScreenshot must be called from inside Draw().");
+            GraphicsDevice.SetRenderTarget(renderTarget);
+            DrawScene();
+            GraphicsDevice.SetRenderTarget(null);
             return Exp.Void.Return;
         }
 
