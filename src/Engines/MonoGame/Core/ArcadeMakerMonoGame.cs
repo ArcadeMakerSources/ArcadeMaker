@@ -381,6 +381,13 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             if (isOnError || CurrentRoom == null)
                 return;
 
+            DrawScene();
+
+            base.Draw(gameTime);
+        }
+
+        private void DrawScene()
+        {
             GraphicsDevice.Clear(backColor);
 
             // if views are defined, we need to draw the room for each view, applying the corresponding camera transformations.
@@ -451,8 +458,6 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
                 SpriteBatch.End();
             }
-
-            base.Draw(gameTime);
         }
 
         public void DrawBackgrounds(int w, int h, Matrix transformMatrix)
