@@ -74,4 +74,6 @@ internal sealed class FutileGame : ArcadeMaker.Core.IGame
     public Exp.Void ResumeSound(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
 
     public Exp.Void ResumeAllSounds(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
+
+    public Exp.Void TakeScreenshot(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
 }
