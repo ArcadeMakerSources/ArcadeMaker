@@ -694,6 +694,22 @@ public partial interface IGame
     Exp.Void DrawEllipse(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
+    /// Draws a triangle.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(x1, y1, x2, y2, x3, y3, [outline], [thickness]).</param>
+    [EngineFunc(6, 7, 8)]
+    [Param("x1", ParamType.Number, "The x value of the first point in the triangle.")]
+    [Param("y1", ParamType.Number, "The y value of the first point in the triangle.")]
+    [Param("x2", ParamType.Number, "The x value of the second point in the triangle.")]
+    [Param("y2", ParamType.Number, "The y value of the second point in the triangle.")]
+    [Param("x3", ParamType.Number, "The x value of the third point in the triangle.")]
+    [Param("y3", ParamType.Number, "The y value of the third point in the triangle.")]
+    [Param("outline", ParamType.Bool, "Whether to fill a triangle or only draw the outline.", Optional = true)]
+    [Param("thickness", ParamType.Number, "Outline thickness.", Optional = true)]
+    Exp.Void DrawTriangle(Exp.Instance? _, IValue?[] args);
+
+    /// <summary>
     /// Draws a path starting at the path's start position or an optional provided position.
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>

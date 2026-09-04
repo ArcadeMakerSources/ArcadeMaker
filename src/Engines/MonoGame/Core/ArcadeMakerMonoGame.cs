@@ -744,6 +744,65 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             return Exp.Void.Return;
         }
 
+        public Exp.Void DrawTriangle(Exp.Instance? _, IValue?[] args)
+        {
+            var x1 = (float)args[0].ThrowIfNull().Number;
+            var y1 = (float)args[1].ThrowIfNull().Number;
+            var x2 = (float)args[2].ThrowIfNull().Number;
+            var y2 = (float)args[3].ThrowIfNull().Number;
+            var x3 = (float)args[4].ThrowIfNull().Number;
+            var y3 = (float)args[5].ThrowIfNull().Number;
+            bool outline = args.Length < 7 || args[6].ThrowIfNull().Bool;
+            var thickness = args.Length >= 8 ? (float)args[7].ThrowIfNull().Number : 1f;
+
+            Vector2 p1 = new(x1, y1);
+            Vector2 p2 = new(x2, y2);
+            Vector2 p3 = new(x3, y3);
+
+            if (outline)
+                SpriteBatch.DrawPolygon(Vector2.Zero, [p1, p2, p3], drawColor, thickness);
+            else
+                FillTriangle(p1, p2, p3);
+
+            return Exp.Void.Return;
+        }
+
+        /// <summary>
+        /// Fills a triangle by drawing it as a series of horizontal scanlines.
+        /// MonoGame.Extended only exposes a solid-fill helper for rectangles, so the
+        /// triangle is rasterized one row at a time.
+        /// </summary>
+        private void FillTriangle(Vector2 p1, Vector2 p2, Vector2 p3)
+        {
+            int minY = (int)MathF.Floor(MathF.Min(p1.Y, MathF.Min(p2.Y, p3.Y)));
+            int maxY = (int)MathF.Ceiling(MathF.Max(p1.Y, MathF.Max(p2.Y, p3.Y)));
+
+            for (int y = minY; y <= maxY; y++)
+            {
+                // sample each row at its center, so rows the triangle barely covers are not filled
+                float rowCenter = y + 0.5f;
+                float left = float.MaxValue, right = float.MinValue;
+
+                ScanEdge(p1, p2, rowCenter, ref left, ref right);
+                ScanEdge(p2, p3, rowCenter, ref left, ref right);
+                ScanEdge(p3, p1, rowCenter, ref left, ref right);
+
+                if (left < right)
+                    SpriteBatch.FillRectangle(left, y, right - left, 1f, drawColor);
+            }
+
+            // Widens [left, right] to cover where the given edge crosses the scanline at 'y'.
+            static void ScanEdge(Vector2 a, Vector2 b, float y, ref float left, ref float right)
+            {
+                if (a.Y == b.Y || y < MathF.Min(a.Y, b.Y) || y > MathF.Max(a.Y, b.Y))
+                    return;
+
+                float x = a.X + (b.X - a.X) * (y - a.Y) / (b.Y - a.Y);
+                left = MathF.Min(left, x);
+                right = MathF.Max(right, x);
+            }
+        }
+
         public (int x, int y) MousePositionInWindow
         {
             get
