@@ -69,14 +69,14 @@ public partial interface IGame
     /// <param name="args">(Unused).</param>
     /// <returns>An <see cref="Exp.Instance"/> which its <see cref="Exp.Instance.ArrayValues"/> property contains all of the currently pressed keys.</returns>
     [EngineFunc]
-    Exp.Instance GetPressedKeys(Exp.Instance? _, IValue?[] args);
+    ArrayInstance GetPressedKeys(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
     /// Returns an array of values holding all of the keyboard keys that are currently being pressed.
     /// </summary>
     /// <param name="_">(Unused).</param>
     /// <param name="args">(Unused).</param>
-    /// <returns>An <see cref="Exp.Instance"/> which its <see cref="Exp.Instance.ArrayValues"/> property contains all of the currently pressed keys.</returns>
+    /// <returns>An <see cref="Exp.ArrayInstance"/> which its <see cref="Exp.Instance.ArrayValues"/> property contains all of the currently pressed keys.</returns>
     [EngineFunc]
     IValue? GetPressedKey(Exp.Instance? _, IValue?[] args)
     {

@@ -12,21 +12,19 @@ public class Instance : IVarSystem, IValue, IExpItem
     public readonly ClassDefSpan def;
     public List<Variable> Vars { get; }
     public IVarSystem Parent { get; set; }
-    public bool IsArray => ArrayValues != null;
-    public IValue?[]? ArrayValues { get; }
-
+    public virtual bool IsArray => false;
+    public virtual IValue?[] ArrayValues => throw new Exception("This instance is not an array.");
     public string TypeName => def.Name;
     bool IValue.IsInst => true;
     Instance IValue.Inst { get => this; }
     public object Object => this;
 
-    public Instance(ClassDefSpan def, IValue?[]? arrVals = null, bool addProperties = true)
+    public Instance(ClassDefSpan def, bool addProperties = true)
     {
         ArgumentNullException.ThrowIfNull(def);
 
         this.def = def;
         this.Vars = [];
-        this.ArrayValues = arrVals;
 
         if (addProperties)
         {
@@ -109,6 +107,12 @@ public class Instance : IVarSystem, IValue, IExpItem
             interpreter.ThrowRuntime(ClassDefSpan.ExpTypeDef.GetExpTypeName(false) + " was expected, but " + def.GetExpTypeName(false) + " was received.", RuntimeException.INVALID_ARGUMENT);
         return ((SpecialValue<ClassDefSpan>)Vars[2].Value!).Value!;
     }
+}
+
+public class ArrayInstance(ClassDefSpan cls, IValue[] array, bool addProperties = true) : Instance(cls, addProperties)
+{
+    public override bool IsArray => true;
+    public override IValue?[] ArrayValues => array;
 }
 
 public class ExternTypeInstance : Instance

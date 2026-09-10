@@ -14,7 +14,7 @@ namespace ArcadeMaker.IDE
 {
     public partial class SpansTextBox : UserControl
     {
-        public readonly List<ScriptBoxSpan> Spans = new List<ScriptBoxSpan>();
+        public readonly List<Exp.Spans.TextSpan> Spans = new List<Exp.Spans.TextSpan>();
         public float ScrollX, ScrollY;
         public int SelectionStart = 5, SelectionLength = 4;
         public Color SelectionColor = Color.Black;
@@ -33,7 +33,7 @@ namespace ArcadeMaker.IDE
             get
             {
                 string text = "";
-                foreach (ScriptBoxSpan span in Spans)
+                foreach (Exp.Spans.TextSpan span in Spans)
                     text += span.text;
                 return text;
             }
@@ -181,7 +181,7 @@ namespace ArcadeMaker.IDE
         {
             // find the span at SelectionStart, remove all the selected text and insert clipboard text at the right location of the span
             int spanIndex = 0, spanCharInd = 0, pastePos = -1;
-            ScriptBoxSpan pasteSpan = null;
+            Exp.Spans.TextSpan pasteSpan = null;
             for (int i = 0; i <= SelectionStart + SelectionLength; i++)
             {
                 if (spanCharInd >= Spans[spanIndex].text.Length)
@@ -343,7 +343,7 @@ namespace ArcadeMaker.IDE
 
             int charInd = 0;
             bool drewCaret = false;
-            foreach (ScriptBoxSpan span in Spans)
+            foreach (Exp.Spans.TextSpan span in Spans)
             {
                 if (span.text.Length == 0)
                     continue;

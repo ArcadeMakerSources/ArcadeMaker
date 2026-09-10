@@ -398,17 +398,21 @@ public static class Spanner
             {
                 case SpanType.Normal:
                     // check if the span is a keyword, and if it does set its color
-                    if (Filter.Operators.Contains(sp.text))
+                    if (Filter.Keywords.Contains(sp.text))
                     {
-                        sp.color = Color.Blue;
+                        sp.color = Color.Yellow;
                         sp.isKeyword = true;
                     }
                     break;
                 case SpanType.Number:
-                    sp.color = Color.Purple;
+                    sp.color = Color.DeepPink;
                     break;
                 case SpanType.Symbol:
+                case SpanType.Count:
                     sp.color = Color.OrangeRed;
+                    break;
+                case SpanType.Tag:
+                    sp.color = Color.Brown;
                     break;
                 case SpanType.String:
                 case SpanType.EscapedString:
@@ -420,7 +424,7 @@ public static class Spanner
                 case SpanType.Comment:
                 case SpanType.MultiLineComment:
                     checkLink = true;
-                    sp.color = Color.Green;
+                    sp.color = Color.LimeGreen;
                     break;
             }
 
@@ -568,7 +572,7 @@ public class TextSpan : IDisposable
     }
     public int location;
     public ScriptDocument Doc { get; set; }
-    public Color color = Color.Black;
+    public Color color = Color.White;
     public Color backColor = Color.Transparent;
     public SpanType type = SpanType.Normal;
     public bool insideFormattedString = false;
@@ -621,5 +625,5 @@ public class TextSpan : IDisposable
 public static class Filter
 {
     public static string[] Operators { get; } = ["=", "==", ">", "<", "!=", ">=", "<=", "!", "&", "|", "+", "-", "++", "--", "+=", "-=", "/", "*", "%", "=>", "->"];
-    public static string[] Keywords { get; } = ["using", "namespace", "class", "func", "constructor", "private", "static", "if", "while", "for", "foreach", "basearray", "in", "from", "to", "is", "not", "throw", "true", "false", "new", "try", "catch", "when", "finally", "var", "const", "return", "break", "continue", "bool", "char", "number", "attribute", "null", "function", "this", "extern", "lenof", "counter", "id", "object"];
+    public static string[] Keywords { get; } = ["using", "namespace", "class", "func", "constructor", "private", "static", "if", "else", "while", "for", "foreach", "basearray", "in", "from", "to", "is", "not", "throw", "true", "false", "new", "try", "catch", "when", "finally", "var", "const", "return", "break", "continue", "bool", "char", "number", "attribute", "null", "function", "this", "extern", "lenof", "counter", "id", "object"];
 }

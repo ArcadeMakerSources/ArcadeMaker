@@ -15,7 +15,7 @@ public static class CSBasicTypes
         return new ExternTypeInstance(obj);
     }
 
-    internal static Array MinArray(Instance arr)
+    internal static Array MinArray(ArrayInstance arr)
     {
         if (arr == null || !arr.IsArray)
             Interpreter.Activated.Error($"Invalid argument: {nameof(arr)} must be an array.");

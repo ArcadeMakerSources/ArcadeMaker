@@ -961,12 +961,12 @@ public partial class Interpreter
                             args[i] = ExpStringToString(expinst);
                             types[i] = typeof(string);
                         }
-                        else if (expinst.def == ClassDefSpan.ExpArrayDef)
+                        else if (expinst.def == ClassDefSpan.ExpArrayDef && expinst is ArrayInstance arrinst)
                         {
                             Type[] _ = new Type[expinst.ArrayValues.Length];
                             for (int j = 0; j < expinst.ArrayValues.Length; j++)
                                 Convert(expinst.ArrayValues, _, j);
-                            args[i] = CSBasicTypes.MinArray(expinst);
+                            args[i] = CSBasicTypes.MinArray(arrinst);
                             types[i] = args[i].GetType();
                         }
                         else if (expinst is ExternTypeInstance extrn)
@@ -1038,7 +1038,7 @@ public partial class Interpreter
             var exparr = new IValue[csarr.Length];
             for (int i = 0; i < csarr.Length; i++)
                 exparr[i] = CsValToExpVal(csarr.GetValue(i));
-            result = new Instance(ClassDefSpan.ExpArrayDef, exparr);
+            result = new ArrayInstance(ClassDefSpan.ExpArrayDef, exparr);
         }
         else
         {

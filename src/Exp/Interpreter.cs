@@ -846,7 +846,7 @@ namespace Exp
         private void SetArrVar(string name, int index, object value, IVarSystem specificVS = null)
         {
             var v = GetPointer(name, specificVS);
-            if (v.Value is Instance inst && inst.IsArray)
+            if (v.Value is ArrayInstance inst)
             {
                 if (index < 0 || index >= inst.ArrayValues.Length)
                     ThrowRuntime($"index is out of range (index: {index}, array length: {inst.ArrayValues.Length}).", RuntimeException.INDEX_OUT_OF_RANGE);

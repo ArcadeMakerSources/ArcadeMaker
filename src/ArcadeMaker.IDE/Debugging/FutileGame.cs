@@ -41,7 +41,7 @@ internal sealed class FutileGame : ArcadeMaker.Core.IGame
 
     public Exp.Void SetClipboardText(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
 
-    public Exp.Instance GetPressedKeys(Exp.Instance? _, IValue?[] args) => null!;
+    public ArrayInstance GetPressedKeys(Exp.Instance? _, IValue?[] args) => null!;
 
     public BoolValue KeyDown(Exp.Instance? _, IValue?[] args) => false;
 

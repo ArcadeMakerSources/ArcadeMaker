@@ -237,7 +237,7 @@ class ForeachStatement(ForEachLoopSpan ctx, Variable var, IReadingOperation read
         IValue counterNum = 0d.ToExp();
         counter?.SetSkippingConstant(counterNum);
         var iter = ReadingOperation.Read()?.Inst;
-        if (iter?.GetBasearray() is Instance { IsArray: true } array)
+        if (iter?.GetBasearray() is ArrayInstance array)
         {
             foreach (var item in array.ArrayValues)
             {
@@ -449,11 +449,11 @@ class ArrayReadingOperation(IReadingOperation[] readings) : IReadingOperation
     internal IReadingOperation[] Readings => readings ?? throw new ArgumentNullException();
     public IValue Read()
     {
-        return new Instance(ClassDefSpan.ExpArrayDef, readings.Select(r => r.Read()).ToArray());
+        return new ArrayInstance(ClassDefSpan.ExpArrayDef, readings.Select(r => r.Read()).ToArray());
     }
 }
 
-class ConstArrayReadingOperation(ConstValueReadingOperation[] readings) : ConstValueReadingOperation(new Instance(ClassDefSpan.ExpArrayDef, readings.Select(r => r.Read()).ToArray()));
+class ConstArrayReadingOperation(ConstValueReadingOperation[] readings) : ConstValueReadingOperation(new ArrayInstance(ClassDefSpan.ExpArrayDef, readings.Select(r => r.Read()).ToArray()));
 
 class LenofReadingOperation(IReadingOperation arrayReading, LenofWordSpan word) : IReadingOperation
 {
@@ -463,7 +463,7 @@ class LenofReadingOperation(IReadingOperation arrayReading, LenofWordSpan word) 
         var array = ArrayReading.Read().Inst;
         if (array != null)
         {
-            if (array.IsArray == true)
+            if (array.IsArray)
                 return new NumberValue(array.ArrayValues.Length);
             else
                 Interpreter.Activated.ThrowRuntime($"lenof operation failed: {Extensions.GetExpTypeName(array, false)} is not an array.", RuntimeException.INVALID_OPERATION, word);
@@ -522,7 +522,7 @@ class InitOperation : IReadingOperation
                 int len = (int)(Args[0].Read()?.Number ?? Interpreter.Activated.ThrowRuntime<int>("Argument value was null.", RuntimeException.INVALID_ARGUMENT)); // null check is critical because the arguments null check wasn't happening yet!
                 if (len < 0)
                     Interpreter.Activated.ThrowRuntime("Array length cannot have a negative size.", RuntimeException.INVALID_ARGUMENT);
-                inst = new Instance(Def, new IValue[len]);
+                inst = new ArrayInstance(Def, new IValue[len]);
             }
             else
                 inst = new Instance(Def);

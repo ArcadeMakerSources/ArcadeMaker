@@ -49,7 +49,7 @@ namespace ArcadeMaker.IDE
         private string classname = null;
         private readonly IContainsScript obj = null;
 
-        private List<ScriptBoxSpan> Spans => scriptBox.Spans;
+        private List<Exp.Spans.TextSpan> Spans => scriptBox.Spans;
 
         public ScriptEditor(IContainsScript obj, string defaultText = "", string classname = null)
         {
@@ -202,7 +202,7 @@ namespace ArcadeMaker.IDE
             if (textSpan == null)
                 return;
 
-            string? word = textSpan.type == SpanType.Normal ? textSpan.text : null;
+            string? word = textSpan.type == Exp.Spans.SpanType.Normal ? textSpan.text : null;
 
             // if it's a word and not another kind of span, show the suggestions which contains this word
             if (word != null)
