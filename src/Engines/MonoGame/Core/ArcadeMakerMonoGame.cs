@@ -19,6 +19,7 @@ using MonoGame.Extended;
 using MonoGame.Extended.ViewportAdapters;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.IO.Pipes;
@@ -86,9 +87,14 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         public TextureAtlas MainTextureAtlas { get; private set; }
         public string MainTextureAtlasFilePath { get; set; }
 
+
         // runtime private data
         private GameRunner<ArcadeMakerMonoGame> GameRunner { get; set; }
         private RectangleF roomBounds;
+        private RenderTarget2D? screenshotRenderTarget;
+        private bool isInsideDraw;
+        private bool isCurrentlyTakingScreenshot;
+        private Matrix transformMatrix;
 
         // project file info
         private string? ProjectFilePath { get; }
@@ -380,7 +386,21 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         {
             if (isOnError || CurrentRoom == null)
                 return;
+            isInsideDraw = true;
+            try
+            {
+                DrawScene();
+            }
+            finally
+            {
+                isInsideDraw = false;
+            }
 
+            base.Draw(gameTime);
+        }
+
+        private void DrawScene()
+        {
             GraphicsDevice.Clear(backColor);
 
             // if views are defined, we need to draw the room for each view, applying the corresponding camera transformations.
@@ -397,7 +417,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
                         GraphicsDevice.Viewport = Cameras[CurrentViewIndex].port;
 
-                        Matrix transformMatrix = Cameras[CurrentViewIndex].camera.GetViewMatrix();
+                        transformMatrix = Cameras[CurrentViewIndex].camera.GetViewMatrix();
 
                         DrawBackgrounds((int)roomBounds.Width, (int)roomBounds.Height, transformMatrix);
 
@@ -432,6 +452,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             {
                 DrawBackgrounds(Window.ClientBounds.Width, Window.ClientBounds.Height, Matrix.Identity);
 
+                transformMatrix = Matrix.Identity; // default matrix
                 SpriteBatch.Begin();
 
                 try
@@ -451,8 +472,6 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
                 SpriteBatch.End();
             }
-
-            base.Draw(gameTime);
         }
 
         public void DrawBackgrounds(int w, int h, Matrix transformMatrix)
@@ -741,6 +760,58 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             else
                 throw new NotImplementedException("Drawing a filled ellipse is currently not supported."); // TODO: impl
 
+            return Exp.Void.Return;
+        }
+
+
+        public Exp.Void TakeScreenshot(Exp.Instance? _, IValue?[] args)
+        {
+            if (isCurrentlyTakingScreenshot)
+                return Exp.Void.Return;
+            isCurrentlyTakingScreenshot = true;
+
+            try
+            {
+                if (!isInsideDraw)
+                    throw new ArcadeMaker.Core.Exceptions.EngineException(
+                        nameof(TakeScreenshot).StartWithLowerCase() + " must be called from inside Draw event.");
+
+                // get filename arg
+                string filename;
+                if (args[0] is not Exp.Instance fnameExp || fnameExp.def != ClassDefSpan.ExpStringDef)
+                    throw new ArcadeMaker.Core.Exceptions.EngineException("Argument 'fileName' must be a string.");
+                filename = fnameExp.ToString();
+
+                // draw the scene into a render target
+                screenshotRenderTarget = new(GraphicsDevice, graphicsDeviceManager.PreferredBackBufferWidth, graphicsDeviceManager.PreferredBackBufferHeight);
+                using var __ = screenshotRenderTarget; // make sure it's being disposed
+                SpriteBatch.End();
+                GraphicsDevice.SetRenderTarget(screenshotRenderTarget);
+                DrawScene();
+                GraphicsDevice.SetRenderTarget(null);
+                SpriteBatch.Begin(transformMatrix: this.transformMatrix); // the SpriteBatch was opened when we entered this function,
+                                                                          // and it'll be opened when we leave it
+
+                // save the render target to a file
+                try
+                {
+                    using FileStream stream = File.OpenWrite(filename);
+                    if (filename.EndsWith(".png"))
+                        screenshotRenderTarget.SaveAsPng(stream, screenshotRenderTarget.Width, screenshotRenderTarget.Height);
+                    else if (filename.EndsWith(".jpeg"))
+                        screenshotRenderTarget.SaveAsJpeg(stream, screenshotRenderTarget.Width, screenshotRenderTarget.Height);
+                    else
+                        throw new ArcadeMaker.Core.Exceptions.EngineException("Invalid file format. Must be .png or .jpeg.");
+                }
+                catch (Exception ex) when (ex is not ArcadeMaker.Core.Exceptions.EngineException)
+                {
+                    throw new ArcadeMaker.Core.Exceptions.EngineException("Could not save the file. See inner exception.", ex);
+                }
+            }
+            finally
+            {
+                isCurrentlyTakingScreenshot = false;
+            }
             return Exp.Void.Return;
         }
 

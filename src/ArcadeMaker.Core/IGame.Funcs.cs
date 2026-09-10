@@ -1017,4 +1017,14 @@ public partial interface IGame
     /// <returns>The index of the currently activated room as a <see cref="NumberValue"/>.</returns>
     [EngineFunc]
     IValue GetRoomIndex(Exp.Instance? _, IValue?[] args) => Rooms.IndexOf(GetActivatedRoom().Model).ToExp();
+
+    /// <summary>
+    /// Takes a screenshot of the game and saves to a file.
+    /// </summary>
+    /// <param name="_"></param>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    [EngineFunc(1)]
+    [Param("fileName", ParamType.String, "The full path of the file to save the screenshot to. Must end with .png or .jpeg.")]
+    Exp.Void TakeScreenshot(Exp.Instance? _, IValue?[] args);
 }
