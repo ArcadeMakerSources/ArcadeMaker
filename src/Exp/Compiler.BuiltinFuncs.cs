@@ -49,38 +49,38 @@ namespace Exp
                     func.Returns = extrn.Func?.Invoke(instance, [..func.ParamVariables.Map(p => p.Value)]);
                     bin = true;
                 }
-                else if (func == FuncDefSpan.ArrayIndexGetter)
-                {
-                    int i = (int)GetArg<IValue>(0).Number;
+                //else if (func == FuncDefSpan.ArrayIndexGetter)
+                //{
+                //    int i = (int)GetArg<IValue>(0).Number;
 
-                    if (i >= instance.ArrayValues.Length)
-                        ThrowRuntime("Index is out of range.", RuntimeException.INDEX_OUT_OF_RANGE);
-                    func.Returns = instance.ArrayValues[i];
-                    func.Return = true;
-                    bin = true;
-                }
-                else if (func == FuncDefSpan.ArrayIndexSetter)
-                {
-                    int i = (int)GetArg<IValue>(0).Number;
-                    if (i >= instance.ArrayValues.Length)
-                        ThrowRuntime("Index is out of range.", RuntimeException.INDEX_OUT_OF_RANGE);
-                    ActionOperator op = (ActionOperator)GetArg<IValue>(1).Number;
-                    var val = GetArg<IValue>(2, allowDefault: true);
-                    if (op == ActionOperator.Reset)
-                        instance.ArrayValues[i] = val;
-                    else if (op == ActionOperator.Add)
-                        instance.ArrayValues[i] = PlusOperatorSpan.GetResult(instance.ArrayValues[i], val, null);
-                    else if (op == ActionOperator.Subtract)
-                        instance.ArrayValues[i] = MinusOperatorSpan.GetResult(instance.ArrayValues[i], val, null);
-                    else if (op == ActionOperator.PlusPlus)
-                        instance.ArrayValues[i] = PlusOperatorSpan.GetResult(instance.ArrayValues[i], 1d.ToExp(), null);
-                    else if (op == ActionOperator.MinusMinus)
-                        instance.ArrayValues[i] = MinusOperatorSpan.GetResult(instance.ArrayValues[i], 1d.ToExp(), null);
-                    else
-                        throw new Exception("Unexpected action operator on array index.");
+                //    if (i >= instance.ArrayValues.Length)
+                //        ThrowRuntime("Index is out of range.", RuntimeException.INDEX_OUT_OF_RANGE);
+                //    func.Returns = instance.ArrayValues[i];
+                //    func.Return = true;
+                //    bin = true;
+                //}
+                //else if (func == FuncDefSpan.ArrayIndexSetter)
+                //{
+                //    int i = (int)GetArg<IValue>(0).Number;
+                //    if (i >= instance.ArrayValues.Length)
+                //        ThrowRuntime("Index is out of range.", RuntimeException.INDEX_OUT_OF_RANGE);
+                //    ActionOperator op = (ActionOperator)GetArg<IValue>(1).Number;
+                //    var val = GetArg<IValue>(2, allowDefault: true);
+                //    if (op == ActionOperator.Reset)
+                //        instance.ArrayValues[i] = val;
+                //    else if (op == ActionOperator.Add)
+                //        instance.ArrayValues[i] = PlusOperatorSpan.GetResult(instance.ArrayValues[i], val, null);
+                //    else if (op == ActionOperator.Subtract)
+                //        instance.ArrayValues[i] = MinusOperatorSpan.GetResult(instance.ArrayValues[i], val, null);
+                //    else if (op == ActionOperator.PlusPlus)
+                //        instance.ArrayValues[i] = PlusOperatorSpan.GetResult(instance.ArrayValues[i], 1d.ToExp(), null);
+                //    else if (op == ActionOperator.MinusMinus)
+                //        instance.ArrayValues[i] = MinusOperatorSpan.GetResult(instance.ArrayValues[i], 1d.ToExp(), null);
+                //    else
+                //        throw new Exception("Unexpected action operator on array index.");
 
-                    bin = true;
-                }
+                //    bin = true;
+                //}
                 else if (func == FuncDefSpan.ExternInvoker)
                 {
                     var type = GetArg<SpecialValue<Type>>(0).Value;
@@ -109,148 +109,149 @@ namespace Exp
 
                 if (func.DefinedAt != null)
                 {
-                    if (func.DefinedAt.Name == "Date" && func.Name == "setToNow")
+                    //if (func.DefinedAt.Name == "Date" && func.Name == "setToNow")
+                    //{
+                    //    DateTime now = DateTime.Now;
+                    //    //instance.Vars.First(v => v.Name == "day").Value = (double)now.Day;
+                    //    //instance.Vars.First(v => v.Name == "month").Value = (double)now.Month;
+                    //    //instance.Vars.First(v => v.Name == "year").Value = (double)now.Year;
+                    //    //instance.Vars.First(v => v.Name == "hour").Value = (double)now.Hour;
+                    //    //instance.Vars.First(v => v.Name == "minute").Value = (double)now.Minute;
+                    //    //instance.Vars.First(v => v.Name == "sec").Value = (double)now.Second;
+                    //    //instance.Vars.First(v => v.Name == "millis").Value = (double)now.Millisecond;
+                    //    //instance.Vars.First(v => v.Name == "nanos").Value = (double)now.Nanosecond;
+                    //    instance.Vars[0].Value = ((double)now.Year).ToExp();
+                    //    instance.Vars[1].Value = ((double)now.Month).ToExp();
+                    //    instance.Vars[2].Value = ((double)now.Day).ToExp();
+                    //    instance.Vars[3].Value = ((double)now.Hour).ToExp();
+                    //    instance.Vars[4].Value = ((double)now.Minute).ToExp();
+                    //    instance.Vars[5].Value = ((double)now.Second).ToExp();
+                    //    instance.Vars[6].Value = ((double)now.Millisecond).ToExp();
+                    //    instance.Vars[7].Value = ((double)now.Nanosecond).ToExp();
+                    //    bin = true;
+                    //}
+                    //else
+                    //if (func.Static && func.DefinedAt == ClassDefSpan.ExpTypeDef && func.Name == "get")
+                    //{
+                    //    var arg = func.Vars[0].Value as Instance;
+                    //    if (arg == null)
+                    //        ThrowRuntime($"Invalid Argument: {func.Args[0].Name} must be a non-premitive type (received: {func.Vars[0].Value}).", RuntimeException.INVALID_ARGUMENT);
+                    //    else
+                    //    {
+                    //        func.Returns = arg.def.ExpType;
+                    //        func.Return = true;
+                    //        bin = true;
+                    //    }
+                    //}
+                    if (func.DefinedAt?.Name == "cs")
                     {
-                        DateTime now = DateTime.Now;
-                        //instance.Vars.First(v => v.Name == "day").Value = (double)now.Day;
-                        //instance.Vars.First(v => v.Name == "month").Value = (double)now.Month;
-                        //instance.Vars.First(v => v.Name == "year").Value = (double)now.Year;
-                        //instance.Vars.First(v => v.Name == "hour").Value = (double)now.Hour;
-                        //instance.Vars.First(v => v.Name == "minute").Value = (double)now.Minute;
-                        //instance.Vars.First(v => v.Name == "sec").Value = (double)now.Second;
-                        //instance.Vars.First(v => v.Name == "millis").Value = (double)now.Millisecond;
-                        //instance.Vars.First(v => v.Name == "nanos").Value = (double)now.Nanosecond;
-                        instance.Vars[0].Value = ((double)now.Year).ToExp();
-                        instance.Vars[1].Value = ((double)now.Month).ToExp();
-                        instance.Vars[2].Value = ((double)now.Day).ToExp();
-                        instance.Vars[3].Value = ((double)now.Hour).ToExp();
-                        instance.Vars[4].Value = ((double)now.Minute).ToExp();
-                        instance.Vars[5].Value = ((double)now.Second).ToExp();
-                        instance.Vars[6].Value = ((double)now.Millisecond).ToExp();
-                        instance.Vars[7].Value = ((double)now.Nanosecond).ToExp();
-                        bin = true;
-                    }
-                    else if (func.Static && func.DefinedAt == ClassDefSpan.ExpTypeDef && func.Name == "get")
-                    {
-                        var arg = func.Vars[0].Value as Instance;
-                        if (arg == null)
-                            ThrowRuntime($"Invalid Argument: {func.Args[0].Name} must be a non-premitive type (received: {func.Vars[0].Value}).", RuntimeException.INVALID_ARGUMENT);
-                        else
-                        {
-                            func.Returns = arg.def.ExpType;
-                            func.Return = true;
-                            bin = true;
-                        }
-                    }
-                    else if (func.DefinedAt?.Name == "cs")
-                    {
-                        if (func.Name == "int")
-                        {
-                            func.Returns = ((int)GetArg<IValue>(0).Number).AsExtern();
-                            func.Return = true;
-                            bin = true;
-                        }
-                        else if (func.Name == "float")
-                        {
-                            func.Returns = ((float)GetArg<IValue>(0).Number).AsExtern();
-                            func.Return = true;
-                            bin = true;
-                        }
-                        else if (func.Name == "long")
-                        {
-                            func.Returns = ((long)GetArg<IValue>(0).Number).AsExtern();
-                            func.Return = true;
-                            bin = true;
-                        }
-                        else if (func.Name == "byte")
-                        {
-                            func.Returns = (GetArg<NumberValue>(0)).AsExtern();
-                            func.Return = true;
-                            bin = true;
-                        }
-                        else if (func.Name == "action")
-                        {
-                            var f = GetArg<FuncPntr>(0);
-                            func.Returns = f.Func.Args.Length > 0 ?
-                                           new Action<object>((object args) => f.Call(this, CsValToExpVal(args) is ArrayInstance arr ? arr.ArrayValues : [])).AsExtern() :
-                                           new Action(() => f.Call(this, [])).AsExtern();
-                            func.Return = true;
-                            bin = true;
-                        }
-                        else if (func.Name == "exp")
-                        {
-                            NumberValue val = 0;
-                            var ext = ((ExternTypeInstance)GetInstArg(0, ClassDefSpan.ExternTypeValueDef)).ExternInstance;
-                            if (ext is double i)
-                                val = i;
-                            else if (ext is byte b)
-                                val = b;
-                            else if (ext is float f)
-                                val = (double)f;
-                            else if (ext is long l)
-                                val = l;
-                            else if (ext is decimal d)
-                                val = (double)d;
-                            else
-                            {
-                                try
-                                {
-                                    val = Convert.ToDouble(ext);
-                                }
-                                catch (Exception ex)
-                                {
-                                    ThrowRuntime($"Could not cast the given value to {ValueHelper.tnum} (Error: {ex.Message}).", RuntimeException.INVALID_ARGUMENT);
-                                }
-                            }
+                        //if (func.Name == "int")
+                        //{
+                        //    func.Returns = ((int)GetArg<IValue>(0).Number).AsExtern();
+                        //    func.Return = true;
+                        //    bin = true;
+                        //}
+                        //else if (func.Name == "float")
+                        //{
+                        //    func.Returns = ((float)GetArg<IValue>(0).Number).AsExtern();
+                        //    func.Return = true;
+                        //    bin = true;
+                        //}
+                        //else if (func.Name == "long")
+                        //{
+                        //    func.Returns = ((long)GetArg<IValue>(0).Number).AsExtern();
+                        //    func.Return = true;
+                        //    bin = true;
+                        //}
+                        //else if (func.Name == "byte")
+                        //{
+                        //    func.Returns = ((byte)GetArg<IValue>(0).Number).AsExtern();
+                        //    func.Return = true;
+                        //    bin = true;
+                        //}
+                        //else if (func.Name == "action")
+                        //{
+                        //    var f = GetArg<FuncPntr>(0);
+                        //    func.Returns = f.Func.Args.Length > 0 ?
+                        //                   new Action<object>((object args) => f.Call(this, CsValToExpVal(args) is ArrayInstance arr ? arr.ArrayValues : [])).AsExtern() :
+                        //                   new Action(() => f.Call(this, [])).AsExtern();
+                        //    func.Return = true;
+                        //    bin = true;
+                        //}
+                        //else if (func.Name == "exp")
+                        //{
+                            //NumberValue val = 0;
+                            //var ext = ((ExternTypeInstance)GetInstArg(0, ClassDefSpan.ExternTypeValueDef)).ExternInstance;
+                            //if (ext is double i)
+                            //    val = i;
+                            //else if (ext is byte b)
+                            //    val = b;
+                            //else if (ext is float f)
+                            //    val = (double)f;
+                            //else if (ext is long l)
+                            //    val = l;
+                            //else if (ext is decimal d)
+                            //    val = (double)d;
+                            //else
+                            //{
+                            //    try
+                            //    {
+                            //        val = Convert.ToDouble(ext);
+                            //    }
+                            //    catch (Exception ex)
+                            //    {
+                            //        ThrowRuntime($"Could not cast the given value to {ValueHelper.tnum} (Error: {ex.Message}).", RuntimeException.INVALID_ARGUMENT);
+                            //    }
+                            //}
 
-                            func.Returns = (IValue)val ?? SpecialValue.From(ext);
-                            func.Return = true;
-                            bin = true;
-                        }
+                            //func.Returns = (IValue)val ?? SpecialValue.From(ext);
+                            //func.Return = true;
+                            //bin = true;
+                        //}
                     }
                 }
-                else if (func.Name == "refEquals")
-                {
-                    IValue a = GetArg<IValue>(0), b = GetArg<IValue>(1);
-                    if (a == null || b == null)
-                        func.Returns = (a == b).ToExp(); // operator == does not fire .Equals(...) so it's fine if one of them is an Instance
-                    else
-                        func.Returns = (a.IsInst && b.IsInst && ReferenceEquals(a, b)).ToExp();
-                    func.Return = true;
-                    bin = true;
-                }
-                else if (func.Name == "setTimeout")
-                {
-                    double millis = GetArg<IValue>(0).Number;
-                    FuncPntr action = GetArg<FuncPntr>(1);
+                //else if (func.Name == "refEquals")
+                //{
+                //    IValue a = GetArg<IValue>(0), b = GetArg<IValue>(1);
+                //    if (a == null || b == null)
+                //        func.Returns = (a == b).ToExp(); // operator == does not fire .Equals(...) so it's fine if one of them is an Instance
+                //    else
+                //        func.Returns = (a.IsInst && b.IsInst && ReferenceEquals(a, b)).ToExp();
+                //    func.Return = true;
+                //    bin = true;
+                //}
+                //else if (func.Name == "setTimeout")
+                //{
+                //    double millis = GetArg<IValue>(0).Number;
+                //    FuncPntr action = GetArg<FuncPntr>(1);
 
-                    async Task Make()
-                    {
-                        await Task.Delay((int)millis);
-                        action.Call(this, []);
-                    }
+                //    async Task Make()
+                //    {
+                //        await Task.Delay((int)millis);
+                //        action.Call(this, []);
+                //    }
 
-                    RunAsync(Make());
+                //    RunAsync(Make());
 
-                    func.Return = false;
-                    bin = true;
-                }
-                else if (func.Name == "runAsync" && func.Args.Length == 2)
-                {
-                    FuncPntr action = GetArg<FuncPntr>(0);
-                    FuncPntr onComplete = GetArg<FuncPntr>(1, allowDefault: true);
+                //    func.Return = false;
+                //    bin = true;
+                //}
+                //else if (func.Name == "runAsync" && func.Args.Length == 2)
+                //{
+                //    FuncPntr action = GetArg<FuncPntr>(0);
+                //    FuncPntr onComplete = GetArg<FuncPntr>(1, allowDefault: true);
 
-                    async Task Make()
-                    {
-                        var res = await Task.Run(() => action.Call(this, []));
-                        onComplete.Call(this, [res]);
-                    }
+                //    async Task Make()
+                //    {
+                //        var res = await Task.Run(() => action.Call(this, []));
+                //        onComplete.Call(this, [res]);
+                //    }
 
-                    RunAsync(Make());
+                //    RunAsync(Make());
 
-                    func.Return = false;
-                    bin = true;
-                }
+                //    func.Return = false;
+                //    bin = true;
+                //}
 
 
                 else if (func.Namespace == "reflection")
@@ -268,110 +269,111 @@ namespace Exp
                         return p;
                     }
 
-                    if (func.Name == "getAttr")
-                    {
-                        if (func.Args.Length == 2) // for property
-                        {
-                            Instance type = GetInstArg(0, ClassDefSpan.ExpTypeDef);
-                            ClassDefSpan cls = type.GetClassFromExpTypeInstanceOrThrowRuntime(this);
+                    //if (func.Name == "getAttr")
+                    //{
+                    //    if (func.Args.Length == 2) // for property
+                    //    {
+                    //        Instance type = GetInstArg(0, ClassDefSpan.ExpTypeDef);
+                    //        ClassDefSpan cls = type.GetClassFromExpTypeInstanceOrThrowRuntime(this);
 
-                            string propName = GetInstArg(1, ClassDefSpan.ExpStringDef).ToString();
-                            ICanSetAttr prop = (ICanSetAttr)cls.Props.FirstOrDefault(p => p.Name == propName) ?? cls.Vars.OfType<ClassStaticVar>().FirstOrDefault(p => p.Name == propName);
-                            if (prop == null)
-                                ThrowRuntime($"'{((IDefination)cls).FullName}' does not contain a property named '{propName}'.", RuntimeException.INVALID_ARGUMENT);
-                            if (prop.AttrInfo == null)
-                                ThrowRuntime($"{((IDefination)cls).FullName}.{propName} does not have tags.", RuntimeException.INVALID_ARGUMENT);
+                    //        string propName = GetInstArg(1, ClassDefSpan.ExpStringDef).ToString();
+                    //        ICanSetAttr prop = (ICanSetAttr)cls.Props.FirstOrDefault(p => p.Name == propName) ?? cls.Vars.OfType<ClassStaticVar>().FirstOrDefault(p => p.Name == propName);
+                    //        if (prop == null)
+                    //            ThrowRuntime($"'{((IDefination)cls).FullName}' does not contain a property named '{propName}'.", RuntimeException.INVALID_ARGUMENT);
+                    //        if (prop.AttrInfo == null)
+                    //            ThrowRuntime($"{((IDefination)cls).FullName}.{propName} does not have tags.", RuntimeException.INVALID_ARGUMENT);
 
-                            func.Returns = prop.AttrInfo.ToExpArray();
-                            func.Return = true;
-                            bin = true;
-                        }
-                        else if (func.Args.Length == 3) // for funcs
-                        {
-                            Instance type = GetInstArg(0, ClassDefSpan.ExpTypeDef);
-                            ClassDefSpan cls = type.GetClassFromExpTypeInstanceOrThrowRuntime(this);
+                    //        func.Returns = prop.AttrInfo.ToExpArray();
+                    //        func.Return = true;
+                    //        bin = true;
+                    //    }
+                    //    else if (func.Args.Length == 3) // for funcs
+                    //    {
+                    //        Instance type = GetInstArg(0, ClassDefSpan.ExpTypeDef);
+                    //        ClassDefSpan cls = type.GetClassFromExpTypeInstanceOrThrowRuntime(this);
 
-                            string funcName = GetInstArg(1, ClassDefSpan.ExpStringDef).ToString();
-                            int paramsCount = (int)GetArg<IValue>(2).Number;
-                            FuncDefSpan fn = cls.Funcs.FirstOrDefault(p => p.Args.Length == paramsCount && p.Name == funcName);
-                            if (fn == null)
-                                ThrowRuntime($"'{((IDefination)cls).FullName}' does not contain a function named '{funcName}' taking {paramsCount} parameters.", RuntimeException.INVALID_ARGUMENT);
-                            if (fn.AttrInfo == null)
-                                ThrowRuntime($"{((IDefination)cls).FullName}.{funcName}(..{paramsCount}) does not have tags.", RuntimeException.INVALID_ARGUMENT);
+                    //        string funcName = GetInstArg(1, ClassDefSpan.ExpStringDef).ToString();
+                    //        int paramsCount = (int)GetArg<IValue>(2).Number;
+                    //        FuncDefSpan fn = cls.Funcs.FirstOrDefault(p => p.Args.Length == paramsCount && p.Name == funcName);
+                    //        if (fn == null)
+                    //            ThrowRuntime($"'{((IDefination)cls).FullName}' does not contain a function named '{funcName}' taking {paramsCount} parameters.", RuntimeException.INVALID_ARGUMENT);
+                    //        if (fn.AttrInfo == null)
+                    //            ThrowRuntime($"{((IDefination)cls).FullName}.{funcName}(..{paramsCount}) does not have tags.", RuntimeException.INVALID_ARGUMENT);
 
-                            func.Returns = fn.AttrInfo.ToExpArray();
-                            func.Return = true;
-                            bin = true;
-                        }
-                        else if (func.Args.Length == 1) // for class
-                        {
-                            Instance type = GetInstArg(0, ClassDefSpan.ExpTypeDef);
-                            ClassDefSpan cls = type.GetClassFromExpTypeInstanceOrThrowRuntime(this);
+                    //        func.Returns = fn.AttrInfo.ToExpArray();
+                    //        func.Return = true;
+                    //        bin = true;
+                    //    }
+                    //    else if (func.Args.Length == 1) // for class
+                    //    {
+                    //        Instance type = GetInstArg(0, ClassDefSpan.ExpTypeDef);
+                    //        ClassDefSpan cls = type.GetClassFromExpTypeInstanceOrThrowRuntime(this);
 
-                            func.Returns = cls.AttrInfo.ToExpArray();
-                            func.Return = true;
-                            bin = true;
-                        }
-                    }
-                    else if (func.Name == "getProperties")
-                    {
-                        List<Instance> props = [];
-                        Instance input = null;
+                    //        func.Returns = cls.AttrInfo.ToExpArray();
+                    //        func.Return = true;
+                    //        bin = true;
+                    //    }
+                    //}
+                    //else
+                    //if (func.Name == "getProperties")
+                    //{
+                    //    List<Instance> props = [];
+                    //    Instance input = null;
 
-                        input = GetInstArg(0);
+                    //    input = GetInstArg(0);
 
-                        foreach (var prop in input.Vars)
-                        {
-                            try
-                            {
-                                ValidateAccess(prop, input.def, currentContext);
-                                var p = ToExpPropertyInst(prop);
-                                props.Add(p);
-                            }
-                            catch { } // access denied
-                        }
+                    //    foreach (var prop in input.Vars)
+                    //    {
+                    //        try
+                    //        {
+                    //            ValidateAccess(prop, input.def, currentContext);
+                    //            var p = ToExpPropertyInst(prop);
+                    //            props.Add(p);
+                    //        }
+                    //        catch { } // access denied
+                    //    }
 
-                        func.Return = true;
-                        func.Returns = new ArrayInstance(ClassDefSpan.ExpArrayDef, props.ToArray());
-                        bin = true;
-                    }
-                    else if (func.Name == "getProperty")
-                    {
-                        Instance input = null;
-                        string pname = null;
-                        Variable p = null;
+                    //    func.Return = true;
+                    //    func.Returns = new ArrayInstance(ClassDefSpan.ExpArrayDef, props.ToArray());
+                    //    bin = true;
+                    //}
+                    //else if (func.Name == "getProperty")
+                    //{
+                    //    Instance input = null;
+                    //    string pname = null;
+                    //    Variable p = null;
 
-                        input = GetInstArg(0);
-                        pname = GetInstArg(1, ClassDefSpan.ExpStringDef).ToString();
+                    //    input = GetInstArg(0);
+                    //    pname = GetInstArg(1, ClassDefSpan.ExpStringDef).ToString();
 
-                        p = input.Vars.FirstOrDefault(prop => prop.Name == pname);
-                        if (p == null)
-                            ThrowRuntime($"Property '{pname}' not found.", RuntimeException.NOT_FOUND);
-                        ValidateAccess(p, input.def, currentContext);
+                    //    p = input.Vars.FirstOrDefault(prop => prop.Name == pname);
+                    //    if (p == null)
+                    //        ThrowRuntime($"Property '{pname}' not found.", RuntimeException.NOT_FOUND);
+                    //    ValidateAccess(p, input.def, currentContext);
 
-                        func.Return = true;
-                        func.Returns = ToExpPropertyInst(p);
-                        bin = true;
-                    }
-                    else if (func.Name == "setProperty")
-                    {
-                        Instance input = null;
-                        string pname = null;
-                        Variable p = null;
+                    //    func.Return = true;
+                    //    func.Returns = ToExpPropertyInst(p);
+                    //    bin = true;
+                    //}
+                    //if (func.Name == "setProperty")
+                    //{
+                    //    Instance input = null;
+                    //    string pname = null;
+                    //    Variable p = null;
 
-                        input = GetInstArg(0);
-                        pname = GetInstArg(1, ClassDefSpan.ExpStringDef).ToString();
+                    //    input = GetInstArg(0);
+                    //    pname = GetInstArg(1, ClassDefSpan.ExpStringDef).ToString();
 
-                        p = input.Vars.FirstOrDefault(prop => prop.Name == pname);
-                        if (p == null)
-                            ThrowRuntime($"Property '{pname}' not found.", RuntimeException.NOT_FOUND);
-                        ValidateAccess(p, input.def, currentContext);
+                    //    p = input.Vars.FirstOrDefault(prop => prop.Name == pname);
+                    //    if (p == null)
+                    //        ThrowRuntime($"Property '{pname}' not found.", RuntimeException.NOT_FOUND);
+                    //    ValidateAccess(p, input.def, currentContext);
 
-                        p.Value = func.Vars[2].Value;
+                    //    p.Value = func.Vars[2].Value;
 
-                        bin = true;
-                    }
-                    else if (func.Name == "getFunctions" || func.Name == "getConstructors")
+                    //    bin = true;
+                    //}
+                    if (func.Name == "getFunctions" || func.Name == "getConstructors")
                     {
                         bool ctors = func.Name == "getConstructors";
 

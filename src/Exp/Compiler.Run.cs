@@ -899,7 +899,7 @@ public partial class Interpreter
         isFuncCall = true;
 
         // return
-        var returns = func.Return ? func.Returns?.Pass() : Void.Return;
+        var returns = func.Return ? func.Returns : Void.Return;
         func.Return = false;
         func.Returns = null;
         return returns;

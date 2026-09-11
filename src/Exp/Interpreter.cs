@@ -139,6 +139,7 @@ namespace Exp
             }
         }
 
+        internal List<FuncDefSpan> FuncsThatMustBeImplementedExternally { get; } = [];
         internal IEnumerable<FuncDefSpan> UsedFuncs(Span from) => UsedDefinations(from).OfType<FuncDefSpan>();
         internal IEnumerable<ClassDefSpan> UsedClasses(Span from) => UsedDefinations(from).OfType<ClassDefSpan>();
         internal IEnumerable<IDefination> UsedDefinations(Span from)
@@ -149,6 +150,7 @@ namespace Exp
         internal List<ExternClassDefSpan> externs = [];
 
         public readonly List<IDefination> definations = [];
+        public T? GetDef<T>(string fullName) where T : class, IDefination => definations.FirstOrDefault(d => d.FullName == fullName) as T;
         private readonly Dictionary<ClassStaticVar, IReadingOperation> staticPropsToInit = [];
 
         /// <summary>
@@ -192,6 +194,7 @@ namespace Exp
             docs.AddRange(importsLs);
             importsLs.ForEach(doc => Errors.AddRange(doc.SettingsErrors));
 
+            definations.Add(AttributeDefSpan.ExternImplAttr);
             definations.Add(AttributeDefSpan.ToString);
             definations.Add(AttributeDefSpan.EqualizerAttr);
             definations.Add(AttributeDefSpan.AllowFor);
@@ -229,6 +232,10 @@ namespace Exp
                         staticPropsToInit.Add(staticProp, ReadReadingOperation(staticProp.InitValueCode));
                 }
             }
+
+            // overrides
+            Builtins.OverridesAttribute.ApplyForAll(this);
+
             operations = ReadOperations(null, this);
             AfterAllOperationsCreated?.Invoke(this, null);
 
@@ -738,6 +745,15 @@ namespace Exp
                     if (taggedItem is FuncDefSpan func)
                     {
                         func.ReadOnly = true;
+                    }
+                }
+
+                // if it's @ExternImpl attr, add this to the list
+                if (attr == AttributeDefSpan.ExternImplAttr)
+                {
+                    if (taggedItem is FuncDefSpan func)
+                    {
+                        FuncsThatMustBeImplementedExternally.Add(func);
                     }
                 }
 

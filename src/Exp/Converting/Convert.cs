@@ -10,16 +10,16 @@ namespace Exp.Converting;
 
 public static class Convert
 {
-    public static ExternFunc ToFunc(MethodInfo method, string? ns = null)
+    public static ExternFunc ToFunc(MethodInfo method, string? ns = null, bool allowNotMakred = false)
     {
-        if (!method.CanBeConvertedToExpFunc(out var attr, out var error))
+        if (!method.CanBeConvertedToExpFunc(out var attr, out var error, allowNotMakred))
             throw new Exception(error);
 
         // create Func<...> from methodInfo
         var invoker = (Func<Instance?, IValue?[], IValue?>)Delegate.CreateDelegate(typeof(Func<Instance?, IValue?[], IValue?>), null, method);
-        string invokerName = attr!.CustomName ?? method.Name.StartWithLowerCase();
+        string invokerName = attr?.CustomName ?? method.Name.StartWithLowerCase();
 
-        return new(invoker, attr.ParamsCounts, invokerName, ns ?? attr.Namespace);
+        return new(invoker, attr?.ParamsCounts ?? [], invokerName, ns ?? attr?.Namespace);
     }
 
     public static ClassDefSpan ToClass<T>(Interpreter interpreter) where T : Instance, IConvertable
@@ -99,19 +99,21 @@ public static class Convert
         return cls;
     }
 
-    private static bool CanBeConvertedToExpFunc(this MethodInfo method, out ExpFuncAttribute? attr, out string? invalidReason)
+    private static bool CanBeConvertedToExpFunc(this MethodInfo method, out ExpFuncAttribute? attr, out string? invalidReason, bool allowNotMarked = false)
     {
         invalidReason = null;
         attr = null;
 
         // make sure that the method is marked as [ExpFunc]
-        if (method.GetCustomAttribute<ExpFuncAttribute>() is not { } _attr)
+        if (!allowNotMarked)
         {
-            invalidReason = $"The method must be marked with the [{nameof(ExpFuncAttribute)}] attribute.";
-            return false;
+            if (method.GetCustomAttribute<ExpFuncAttribute>() is not { } _attr)
+            {
+                invalidReason = $"The method must be marked with the [{nameof(ExpFuncAttribute)}] attribute.";
+                return false;
+            }
+            attr = _attr;
         }
-
-        attr = _attr;
 
         // make sure that the method's signature matches this: IValue(Instance?, IValue?[])
         if (
@@ -141,7 +143,7 @@ public static class Convert
         return val;
     }
 
-    extension (PropertyInfo propertyInfo)
+    extension(PropertyInfo propertyInfo)
     {
         public bool IsStatic => (propertyInfo.GetMethod ?? propertyInfo.SetMethod)?.IsStatic ?? false;
     }

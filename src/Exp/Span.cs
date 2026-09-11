@@ -1525,6 +1525,9 @@ class SectionWordSpan : WordSpan, IContext, IKeyword, IExpItem
 
 class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
 {
+    internal static AttributeDefSpan ExternImplAttr = new("ExternImpl", [])
+    { AllowFor_Class = false, AllowFor_Constructor = true, AllowFor_Func = true, AllowFor_Property = false, AllowFor_Attr = false };
+
     internal static new AttributeDefSpan ToString = new("Translator", [])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = true, AllowFor_Property = false, AllowFor_Attr = false, LimitTo1InCls = true, Func_StaticRequirement = StaticRequirement.NonStatic, Func_ParamsCountRequirement = 0 };
 

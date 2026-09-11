@@ -9,10 +9,8 @@ class FunctionInfo (const definedAt, const name, const params, const prvt, const
 {
 	private constructor() {}
 
-	func invoke(inst?, args)
-	{
-	    // BUILTIN FUNCTION
-	}
+	@ExternImpl
+	func invoke(inst?, args) {}
 }
 
 class ConstructorInfo (const type, const params, const prvt, const isStatic)
@@ -25,45 +23,33 @@ class AttributeInfo (const type, const ns, const name, const values)
     private constructor() {}
 }
 
-func getAttr(type)
-{
-	// BUILTIN FUNCTION
-}
+@ExternImpl
+func getAttr(type) {}
 
-func getAttr(type, prop)
-{
-    // BUILTIN FUNCTION
-}
+@ExternImpl
+func getAttr(type, prop) {}
 
-func getAttr(type, fnc, paramsCount)
-{
-	// BUILTIN FUNCTION
-}
+@ExternImpl
+func getAttr(type, fnc, paramsCount) {}
 
 func getCtorAttr(type, paramsCount)
 {
-	return getAttr(type, type.name + ".ctor", paramsCount)
+    return getAttr(type, type.name + ".ctor", paramsCount)
 }
 
-func getProperties(inst)
-{
-	// BUILTIN FUNCTION
-}
+@ExternImpl
+func getProperties(inst) {}
 
 func getProperty(inst, name)
 {
-	// BUILTIN FUNCTION
+	return getProperties(inst).first(func(p) => p.name == name)
 }
 
-func setProperty(inst, name, value?)
-{
-	// BUILTIN FUNCTION
-}
+@ExternImpl
+func setProperty(inst, name, value?) {}
 
-func getFunctions(type)
-{
-	// BUILTIN FUNCTION
-}
+@ExternImpl
+func getFunctions(type) {}
 
 func getFunction(type, name, paramsCount)
 {
@@ -71,10 +57,8 @@ func getFunction(type, name, paramsCount)
 	return fs.first(func(i) => i.name == name & i.params.length() == paramsCount)
 }
 
-func getConstructors(type)
-{
-	// BUILTIN FUNCTION
-}
+@ExternImpl
+func getConstructors(type) {}
 
 func getConstructor(type, paramsCount)
 {
@@ -82,17 +66,11 @@ func getConstructor(type, paramsCount)
 	return ctors.first(func(i) => i.params.length() == paramsCount)
 }
 
-func invoke(inst, name, args)
-{
-	// BUILTIN FUNCTION
-}
+@ExternImpl
+func invoke(inst, name, args) {}
 
-func getTypeByName(name)
-{
-	// BUILTIN FUNCTION
-}
+@ExternImpl
+func getTypeByName(name) {}
 
-func createInstance(type, args)
-{
-	// BUILTIN FUNCTION
-}
+@ExternImpl
+func createInstance(type, args) {}
