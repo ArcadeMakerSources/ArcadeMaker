@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.ConstrainedExecution;
 using Exp.Converting;
 using Exp.Operations;
 using Exp.Spans;
@@ -150,7 +149,13 @@ namespace Exp
         internal List<ExternClassDefSpan> externs = [];
 
         public readonly List<IDefination> definations = [];
-        public T? GetDef<T>(string fullName) where T : class, IDefination => definations.FirstOrDefault(d => d.FullName == fullName) as T;
+        public T? GetDef<T>(string? ns, string name) where T : class, IDefination => GetDef<T>(ns, name, out var _);
+        public T? GetDef<T>(string? ns, string name, out IDefination? def) where T : class, IDefination
+        {
+            def = definations.FirstOrDefault(d => d.Namespace == ns && d.Name == name);
+            return def as T;
+        }
+
         private readonly Dictionary<ClassStaticVar, IReadingOperation> staticPropsToInit = [];
 
         /// <summary>
@@ -209,6 +214,7 @@ namespace Exp
             CollectDefs(importsLs.ToArray());
             CollectDefs(); // also loads code spans
             source.Usings.AddRange(currUsings);
+            CatchCoreDefinitions();
 
             " OK".Println();
             CollectedDefs = true;
@@ -263,6 +269,27 @@ namespace Exp
                     AddExternFunc(fn, statc: true);
                 }
             }
+        }
+
+        private void CatchCoreDefinitions()
+        {
+            // classes
+            ClassDefSpan.ExpArrayDef = GetClass(STD_NAMESPACE, "Array");
+            ClassDefSpan.ExpStringDef = GetClass(STD_NAMESPACE, "string");
+            ClassDefSpan.ExpTypeDef = GetClass(STD_NAMESPACE, "Type");
+            ClassDefSpan.ExpExceptionDef = GetClass(STD_NAMESPACE, "Exception");
+            ClassDefSpan.ExpAttrInfoDef = GetClass(Builtins.Reflection.Impl.NS, "AttributeInfo");
+            ClassDefSpan.ExternTypeValueDef = GetClass(STD_NAMESPACE, "ExternTypeValue");
+
+            // functions
+            FuncDefSpan.ArrayIndexGetter = ClassDefSpan.ExpArrayDef.Funcs.First(f => f.Name == "get");
+            FuncDefSpan.ArrayIndexSetter = ClassDefSpan.ExpArrayDef.Funcs.First(f => f.Name == "set");
+            FuncDefSpan.ArrayIndexGetter.Name = "array.get";
+            FuncDefSpan.ArrayIndexSetter.Name = "array.set";
+
+            ClassDefSpan GetClass(string? ns, string name) =>
+                GetDef<ClassDefSpan>(ns, name) ??
+                throw new Exception($"Core class {ns ?? "<no-ns>"}{NamespaceSpecificationSpan.Symbol}{name} was not found.");
         }
 
         private void RunStaticCtors()

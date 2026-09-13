@@ -5,19 +5,21 @@ namespace Exp.Builtins.STD;
 
 static partial class Impl
 {
-    [Overrides(Interpreter.STD_NAMESPACE, "cs")]
+    private const string CsClsName = "cs";
+
+    [Overrides(Interpreter.STD_NAMESPACE, CsClsName)]
     public static Instance Int(Instance? _, IValue?[] args) => ((int)args[0]!.Number).AsExtern();
 
-    [Overrides(Interpreter.STD_NAMESPACE, "cs")]
+    [Overrides(Interpreter.STD_NAMESPACE, CsClsName)]
     public static Instance Byte(Instance? _, IValue?[] args) => ((byte)args[0]!.Number).AsExtern();
 
-    [Overrides(Interpreter.STD_NAMESPACE, "cs")]
+    [Overrides(Interpreter.STD_NAMESPACE, CsClsName)]
     public static Instance Float(Instance? _, IValue?[] args) => ((float)args[0]!.Number).AsExtern();
 
-    [Overrides(Interpreter.STD_NAMESPACE, "cs")]
+    [Overrides(Interpreter.STD_NAMESPACE, CsClsName)]
     public static Instance Long(Instance? _, IValue?[] args) => ((long)args[0]!.Number).AsExtern();
 
-    [Overrides(Interpreter.STD_NAMESPACE, "cs")]
+    [Overrides(Interpreter.STD_NAMESPACE, CsClsName)]
     public static Instance Action(Instance? _, IValue?[] args)
     {
         var f = args[0]!.FuncPntr;
@@ -26,13 +28,13 @@ static partial class Impl
                    new Action(() => f.Call(Interpreter.Activated, [])).AsExtern();
     }
 
-    [Overrides(Interpreter.STD_NAMESPACE, "cs")]
+    [Overrides(Interpreter.STD_NAMESPACE, CsClsName)]
     public static IValue Exp(Instance? _, IValue?[] args)
     {
         NumberValue val = 0;
 
         object ext = args[0] is ExternTypeInstance eti ? eti.ExternInstance : Interpreter.Activated.ThrowRuntime<object>("An extern value was expected.", RuntimeException.INVALID_ARGUMENT);
-        
+
         if (ext is double i)
             val = i;
         else if (ext is byte b)

@@ -8,7 +8,7 @@ namespace Exp;
 
 public partial class Interpreter
 {
-    private Dictionary<IOperation, Span> OperationsSpanPair = [];
+    internal Dictionary<IOperation, Span> OperationsSpanPair { get; } = [];
     private List<Span> readOps_codeRecord = null;
     
     internal IOperation[] ReadOperations(Span[] spans, IVarSystem vs, out Span[] src, bool @throw = false, bool breakAfter1 = false)

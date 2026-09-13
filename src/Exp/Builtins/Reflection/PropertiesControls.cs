@@ -6,7 +6,7 @@ namespace Exp.Builtins.Reflection;
 
 static partial class Impl
 {
-    private const string NS = "reflection";
+    internal const string NS = "reflection";
 
     [Overrides(NS, null)]
     public static ArrayInstance GetProperties(Instance? _, IValue?[] args)

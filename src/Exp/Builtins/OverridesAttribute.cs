@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Exp.Converting;
 using Exp.Operations;
 using Exp.Spans;
 
@@ -14,7 +13,7 @@ class OverridesAttribute(string? ns, string? cls, string? func = null) : Attribu
     public string? Class => cls;
     public string? Func { get => func; private set => func = value; }
 
-    public static void ApplyForAll(Interpreter interpreter)
+    internal static void ApplyForAll(Interpreter interpreter)
     {
         // find all C# methods with [Overrides] tag
         foreach (Type type in typeof(OverridesAttribute).Assembly.GetTypes())
@@ -45,7 +44,9 @@ class OverridesAttribute(string? ns, string? cls, string? func = null) : Attribu
                             // apply for this function
                             try
                             {
-                                func.Operations = [new ExternFuncInvocationOperation(func, Converting.Convert.ToFunc(method, attr.Namespace, true))];
+                                ExternFuncInvocationOperation invokeOp = new(func, Converting.Convert.ToFunc(method, attr.Namespace, true));
+                                func.Operations = [invokeOp];
+                                interpreter.OperationsSpanPair.Add(invokeOp, func);
                             }
                             catch (Exception ex)
                             {
