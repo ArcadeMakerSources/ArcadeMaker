@@ -165,6 +165,7 @@ namespace Exp
 
         internal event EventHandler CollectDefsCompleted;
         internal bool CollectedDefs { get; private set; } = false;
+        internal HashSet<string> AllNamespaces { get; } = [];
 
         /// <summary>
         /// The document to run.
@@ -215,6 +216,7 @@ namespace Exp
             CollectDefs(); // also loads code spans
             source.Usings.AddRange(currUsings);
             CatchCoreDefinitions();
+            CollectNamespaces();
 
             " OK".Println();
             CollectedDefs = true;
@@ -296,6 +298,37 @@ namespace Exp
             T Catch<T>(string? ns, string name) where T : class, IDefination, IExpItem =>
                 GetDef<T>(ns, name) ??
                 throw new Exception($"Core {T.ItemName} {ns ?? "<no-ns>"}{NamespaceSpecificationSpan.Symbol}{name} was not found.");
+        }
+
+        private void CollectNamespaces()
+        {
+            // collect from both docs and defs
+            IEnumerable<ScriptDocument> allDocs = docs.Append(MainDoc);
+
+            foreach (var doc in allDocs)
+            {
+                if (doc.Namespace != null)
+                    AllNamespaces.Add(doc.Namespace);
+            }
+
+            foreach (var def in definations)
+            {
+                if (def.Namespace != null)
+                    AllNamespaces.Add(def.Namespace);
+            }
+
+            // make a built-time error for using directives that reference namespaces that were not found
+            foreach (var doc in allDocs)
+            {
+                foreach (var usingSpan in doc.UsingSpans)
+                {
+                    if (!AllNamespaces.Contains(usingSpan.text))
+                    {
+                        usingSpan.Document = doc;
+                        Error($"The namespace name '{usingSpan.text}' could not be found.", usingSpan);
+                    }
+                }
+            }
         }
 
         private void RunStaticCtors()

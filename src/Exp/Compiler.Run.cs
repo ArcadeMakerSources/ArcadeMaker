@@ -629,7 +629,7 @@ public partial class Interpreter
         spansCursor = 0;
         codeCursor = 0;
         SourceSpans = Spanner.GetTextSpans(src);
-        SourceSpans.ForEach(span => span.Doc = ShellDoc);
+        SourceSpans.ForEach(span => span.Document = ShellDoc);
 
         List<Span> srcCode = [];
         Span next;

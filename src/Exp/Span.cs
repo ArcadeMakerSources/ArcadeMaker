@@ -44,7 +44,7 @@ interface IExpItem
     }
 }
 
-public abstract class Span
+public abstract class Span : ILocatableSourceSpan
 {
     public ScriptDocument Document { get; set; }
     public int DocumentLocation { get; set; }

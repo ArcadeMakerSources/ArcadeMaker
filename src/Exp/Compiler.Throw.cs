@@ -12,7 +12,7 @@ namespace Exp
     public partial class Interpreter
     {
         internal HashSet<ExpError> Errors { get; } = [];
-        internal void Error(string msg, Span throwing = null, bool beforeCurrentSpan = true)
+        internal void Error(string msg, ILocatableSourceSpan? throwing = null, bool beforeCurrentSpan = true)
         {
             GetLocLine(beforeCurrentSpan, out int line, out int col, out string sourceName, throwing);
             var err = new ExpError(sourceName, line, col, msg);
@@ -20,28 +20,17 @@ namespace Exp
             //throw err;
         }
 
-        private void GetLocLine(bool beforeCurrentSpan, out int line, out int col, out string sourceName, Span throwing = null)
+        private void GetLocLine(bool beforeCurrentSpan, out int line, out int col, out string sourceName, ILocatableSourceSpan? throwing = null)
         {
-            //string source = this.source;
-            //sourceName = "UnknownSource";
-            //int loc = 0;
-            //if (SourceSpans.Length > 0 && spansCursor > 0)
-            //{
-            //    loc = SourceSpans[spansCursor - 1].location;
-            //    source = SourceSpans[spansCursor - 1].doc?.Script ?? source;
-            //    sourceName = SourceSpans[spansCursor - 1].doc?.Name ?? sourceName;
-            //}
-
-            //if (beforeCurrentSpan && lastSpan != null)
-            //    loc -= lastSpan.FullText.Length;
             bool throwingAttached = throwing != null;
             throwing ??= lastSpan;
             if (!throwingAttached)
             {
                 if (RunOpsRunning)
                 {
-                    if (!OperationsSpanPair.TryGetValue(lastOp, out throwing))
+                    if (!OperationsSpanPair.TryGetValue(lastOp, out var _throwing))
                         throw new Exception("An operation without span pair found.");
+                    throwing = _throwing;
                 }
             }
 
@@ -93,7 +82,7 @@ namespace Exp
             ex.Vars[0].SetSkippingConstant(msg.ToExpString());
             ex.Vars[1].SetSkippingConstant(type.ToExpString());
             ThrowRuntime(ex, throwing, beforeCurrentSpan);
-            throw null;
+            throw null!;
         }
 
         internal void ThrowRuntime(Instance ex, Span? throwing = null, bool beforeCurrentSpan = true, bool byExpThrowStmt = false)

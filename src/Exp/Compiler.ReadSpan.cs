@@ -944,8 +944,8 @@ public partial class Interpreter
 
         span ??= new WordSpan(text);
 
-        span.Document = textSpan.Doc;
-        span.DocumentLocation = textSpan.location;
+        span.Document = textSpan.Document;
+        span.DocumentLocation = textSpan.DocumentLocation;
 
         readValue_codeRecord = record_bu ?? readValue_codeRecord;
         if (recording && !spoiler) readValue_codeRecord?.Add(span);
