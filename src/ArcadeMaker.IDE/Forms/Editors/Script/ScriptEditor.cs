@@ -1,22 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.IO;
-using System.ComponentModel.Design.Serialization;
-using System.Xml.Linq;
-using System.Diagnostics;
-using System.Collections.Immutable;
-using System.Reflection;
-using System.Threading;
 using ArcadeMaker.IDE.Scripting;
-using System.Xml;
-using System.Xml.Serialization;
 using Exp;
 using ArcadeMaker.IDE.Debugging;
 using ArcadeMaker.IDE.Items;
@@ -26,26 +11,6 @@ namespace ArcadeMaker.IDE
 {
     public partial class ScriptEditor : Form
     {
-        /// <summary>
-        /// <inheritdoc cref="string.IndexOf(char, int)" path="/param[@name='startIndex']"/> 
-        /// Ruuning on a <see cref="Task">Tasking</see> thread <seealso href="http://www.www">link</seealso><paramref name="param">pref</paramref> <c>for (int i = 0;;)</c>
-        /// <list type="table">
-        /// <listheader><description>hello <see langword="false"/></description></listheader><item><term>hello</term><description>world</description></item>
-        /// </list>
-        /// </summary> 
-        /// <typeparam name="Hello"></typeparam>
-        /// <typeparam name="World"></typeparam>
-        /// <param name="param"></param>
-        /// <inheritdoc cref="string.IndexOf(char)" path="/param"/>
-        /// <returns>a task</returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public static async Task TestG<Hello, World>(int param, char value) where World : unmanaged
-        {
-            bool @bool = false;
-            if (@bool) await TestG<EventArgs, int>(7, 'a');
-            throw new NotImplementedException();
-        }
-
         private string classname = null;
         private readonly IContainsScript obj = null;
 
@@ -174,10 +139,11 @@ namespace ArcadeMaker.IDE
         private bool changes = false;
         private void scriptBox_Load(object sender, EventArgs e)
         {
+            textOnClosing = null;
             textChangedTimer.Tick += textChangedTimer_Tick;
         }
 
-        private System.Windows.Forms.Timer textChangedTimer = new() { Interval = 5000 };
+        private readonly System.Windows.Forms.Timer textChangedTimer = new() { Interval = 5000 };
         private void scriptBox_TextChanged(object sender, SpansTextBox2TextChangedEventArgs e)
         {
             textChangedTimer.Stop();
@@ -217,10 +183,9 @@ namespace ArcadeMaker.IDE
             textChangedTimer.Stop();
 
             var scriptBu = obj.Script;
-            obj.Script = scriptBox.Text;
+            obj.Script = textOnClosing ?? scriptBox.Text;
 
             // check errors
-            HashSet<ExpError>? errors = null;
             await Task.Run(() =>
             {
                 Debugging.Debug.TryBuild();
@@ -273,8 +238,10 @@ namespace ArcadeMaker.IDE
         }
 
         private bool loaded = false;
-        private void ScriptEditor_FormClosing(object sender, FormClosingEventArgs e)
+        private string? textOnClosing;
+        private void ScriptEditor_FormClosing(object? sender, FormClosingEventArgs e)
         {
+            textOnClosing = scriptBox.Text;
             if (loaded && /*changes &&*/ !okClose)
             {
                 DialogResult result = MessageBox.Show("Do you want to save changes?", "Close Code Editor", MessageBoxButtons.YesNoCancel);

@@ -22,7 +22,7 @@ namespace ArcadeMaker.IDE
 {
     public partial class ObjectEditor : Form
     {
-        private GameObject obj = null;
+        private readonly GameObject obj;
         public GameSprite sprite
         {
             get
@@ -38,10 +38,7 @@ namespace ArcadeMaker.IDE
             InitializeComponent();
 
             this.obj = obj;
-            if (obj == null)
-            {
-                throw new ArgumentNullException("obj");
-            }
+            ArgumentNullException.ThrowIfNull(obj);
 
             // update name box when object is renamed
             obj.NameChanged += (s, e) =>
@@ -313,19 +310,23 @@ namespace ArcadeMaker.IDE
 
         private void scriptsListView_DoubleClick(object sender, EventArgs e)
         {
-            ObjectEvent ev = eventsListView.SelectedItem as ObjectEvent ?? throw new Exception("No event is selected.");
-            int scriptIndex = scriptsListView.SelectedIndex;
+            if (eventsListView.SelectedItem is not ObjectEvent)
+                return;
 
             if (scriptsListView.SelectedItem is not EventScript script)
                 return;
 
             ScriptEditor editor = new(script) { Owner = this };
 
-            editor.OKClicked += (s, e) =>
+            void OnOKClicked(object? sender, string text)
             {
-                script.Script = e; // updates in the event itself
+                script.Script = text; // updates in the event itself
                 scriptsListView.Refresh(); // to update script desc
+
+                editor.OKClicked -= OnOKClicked;
             };
+
+            editor.OKClicked += OnOKClicked;
 
             editor.ShowDialog();
         }

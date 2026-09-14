@@ -20,10 +20,17 @@ namespace ArcadeMaker.IDE.Items
             {
                 if (editorClosed)
                 {
-                    base.editor = new ScriptEditor(this, Script);
-                    (base.editor as ScriptEditor).OKClicked += (s, e) => Script = e;
+                    ScriptEditor _editor = new(this, Script);
+                    base.editor = _editor;
+
+                    void OKClicked(object? sender, string text)
+                    {
+                        Script = text;
+                        _editor.OKClicked -= OKClicked;
+                    }
+                    _editor.OKClicked += OKClicked;
                 }
-                return base.Editor as ScriptEditor;
+                return (ScriptEditor)base.Editor;
             }
             set
             {
@@ -32,7 +39,7 @@ namespace ArcadeMaker.IDE.Items
             }
         }
 
-        public GameScript(string name, string code = null) : base(name)
+        public GameScript(string name, string? code = null) : base(name)
         {
             if (code != null)
                 Script = code;
