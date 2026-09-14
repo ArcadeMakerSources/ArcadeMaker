@@ -1,10 +1,10 @@
-﻿using system
+﻿using std
 using reflection
 
 namespace json:
 
 @AllowFor(false, true, false, false, false)
-attribute JsonRelateAs(system::Type type)
+attribute JsonRelateAs(std::Type type)
 
 @AllowFor(false, true, false, false, false)
 attribute JsonIgnore()
@@ -41,11 +41,11 @@ class JsonSerializer (const types)
     {
         if type is not Type
         {
-            throw new Exception(Exception.INVALID_ARGUMENT, "Argument type must be of type system::Type")
+            throw new Exception(Exception.INVALID_ARGUMENT, "Argument type must be of type std::Type")
         }
         if json is not JsonObject
         {
-            throw new Exception(Exception.INVALID_ARGUMENT, "Argument json must be of type system_text::JsonObject")
+            throw new Exception(Exception.INVALID_ARGUMENT, "Argument json must be of type json::JsonObject")
         }
         
         // find a constructor which all of its arguments exist in the json

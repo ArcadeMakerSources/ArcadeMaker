@@ -286,7 +286,7 @@ public partial interface IGame
             return PlaceMeeting(x, y, angle, other);
 
         // if 3rd argument is a type, check all instances of that type
-        else if (args[2]!.IsInst) // IsInst means Exp.Instance, which is what system::Type is
+        else if (args[2]!.IsInst) // IsInst means Exp.Instance, which is what std::Type is
         {
             foreach (var i in GetActivatedRoom().Instances)
             {

@@ -89,7 +89,7 @@ namespace Exp
         {
             //if (!RunOpsRunning)
             //    return;
-            var ex = new Instance(ClassDefSpan.ExpExceptionDef ?? throw new Exception("Exp system::Exception class was not defined."));
+            var ex = new Instance(ClassDefSpan.ExpExceptionDef ?? throw new Exception("Exp std::Exception class was not defined."));
             ex.Vars[0].SetSkippingConstant(msg.ToExpString());
             ex.Vars[1].SetSkippingConstant(type.ToExpString());
             ThrowRuntime(ex, throwing, beforeCurrentSpan);

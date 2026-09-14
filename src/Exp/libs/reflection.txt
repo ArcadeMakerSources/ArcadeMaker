@@ -1,4 +1,4 @@
-﻿using system
+﻿using std
 namespace reflection:
 
 class Property (const name, const value, const prvt, const isConst)

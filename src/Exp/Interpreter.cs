@@ -86,7 +86,7 @@ namespace Exp
     /// </summary>
     public partial class Interpreter : IVarSystem
     {
-        public const string STD_NAMESPACE = "system";
+        public const string STD_NAMESPACE = "std";
         internal Builtins.IO.Parameters IOParams { get; } = new();
         private bool neutral = false;
 
@@ -195,7 +195,7 @@ namespace Exp
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("xml"), "xml.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("json"), "json.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("reflection"), "reflection.txt"));
-            importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("system"), "system.txt"));
+            importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("std"), "std.txt"));
             docs.AddRange(importsLs);
             importsLs.ForEach(doc => Errors.AddRange(doc.SettingsErrors));
 
@@ -998,7 +998,7 @@ namespace Exp
         internal RuntimeException(Instance ex, string msg, string type, string source = null, int line = 0, int col = 0, bool byExpThrowStmt = false) : base($"{source ?? "Unknown"}({line}, {col}): {msg}")
         {
             if (ex == null || ex.def != ClassDefSpan.ExpExceptionDef)
-                throw new Exception($"Argument '{nameof(ex)}' was not an instance of system::Exception.");
+                throw new Exception($"Argument '{nameof(ex)}' was not an instance of std::Exception.");
             this.ex = ex;
             this.msg = msg;
             this.type = type;
