@@ -111,7 +111,13 @@ internal static class Debug
         }
         catch (Exception ex)
         {
-            CatchErrors([new("Debugger", $"Uncaught build exception: {ex.Message}.", "", 0, [])]);
+            System.Diagnostics.StackTrace stackTrace = new(ex, true);
+            System.Diagnostics.StackFrame? frame = stackTrace.GetFrame(0);
+
+            string sourceFile = frame?.GetFileName() ?? "<Unknown>";
+            int line = frame?.GetFileLineNumber() ?? 0;
+
+            CatchErrors([new("Debugger", $"Uncaught build exception: {ex.Message}.", "[Project Source Code] " + sourceFile, line, [])]);
         }
 
         void CatchErrors(params IEnumerable<ProjectError> ex)

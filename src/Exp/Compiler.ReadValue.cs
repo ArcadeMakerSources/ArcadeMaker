@@ -255,7 +255,7 @@ public partial class Interpreter
             {
                 nullCoalscingEx = ReadValue<Instance>(allowUnknownVars: allowUnknownVars);
                 if (nullCoalscingEx == null || nullCoalscingEx.def != ClassDefSpan.ExpExceptionDef)
-                    Error($"Only instances of type {(ClassDefSpan.ExpExceptionDef as IDefination)?.FullName ?? "system::Exception"} can be thrown.");
+                    Error($"Only instances of type {(ClassDefSpan.ExpExceptionDef as IDefination)?.FullName ?? "std::Exception"} can be thrown.");
             }
 
             if (val is int i32)

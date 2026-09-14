@@ -156,7 +156,7 @@ public class EventScript : IContainsScript
 
     private void UpdateDescription()
     {
-        ScriptDocument.ReadDocSettings("", Spanner.GetTextSpans(Script), out var _, out string? description, out var _, out var _, out var _);
+        ScriptDocument.ReadDocSettings("", Spanner.GetTextSpans(Script), out var _, out string? description, out var _, out var _, out var _, out var _);
         if (string.IsNullOrWhiteSpace(description))
             description = "<No Description>";
         this.Description = description;

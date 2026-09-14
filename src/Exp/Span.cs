@@ -40,11 +40,11 @@ interface IExpItem
             return ForLoopSpan.ItemName;
         if (this is ForEachLoopSpan)
             return ForEachLoopSpan.ItemName;
-        return GetType().GetProperty(nameof(ItemName), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public)?.GetValue(null) as string ?? "Item";
+        return GetType().GetProperty(nameof(ItemName), BindingFlags.Static | BindingFlags.Public)?.GetValue(null) as string ?? "Item";
     }
 }
 
-public abstract class Span
+public abstract class Span : ILocatableSourceSpan
 {
     public ScriptDocument Document { get; set; }
     public int DocumentLocation { get; set; }
@@ -1101,7 +1101,7 @@ public class FuncDefSpan : WordSpan, IContext, IDefination, IKeyword, IClassMemb
     public IContext Context { get; set; }
     internal bool IsRunning { get; set; }
     public bool ReadOnly { get; internal set; }
-    public string Name { get; }
+    public string Name { get; internal set; } // to set Array's get & set functions
     public bool Private { get; set; }
     public IValue Value => throw new Exception("A function value can only be accessed by calling it.");
     public bool IsVar => false;
@@ -1139,20 +1139,6 @@ public class FuncDefSpan : WordSpan, IContext, IDefination, IKeyword, IClassMemb
             Vars.Add(pv);
             ParamVariables[i] = pv;
         }
-
-        if (DefinedAt == ClassDefSpan.ExpArrayDef)
-        {
-            if (name == "get")
-            {
-                ArrayIndexGetter = this;
-                this.Name = "array." + name;
-            }
-            else if (name == "set")
-            {
-                ArrayIndexSetter = this;
-                this.Name = "array." + name;
-            }
-        }
     }
 
     internal override string FullText
@@ -1170,7 +1156,7 @@ public class FuncDefSpan : WordSpan, IContext, IDefination, IKeyword, IClassMemb
         }
     }
 
-    string IDefination.FullName => (DefinedAt != null ? (DefinedAt.GetExpTypeName(false) + ".") : (Namespace == null ? "" : (Namespace + NamespaceSpecificationSpan.Symbol))) + Name + "(.." + Args.Length + ")";
+    string IDefination.FullName => (DefinedAt != null ? (DefinedAt.GetExpTypeName(false) + ".") : (Namespace == null ? "" : (Namespace + NamespaceSpecificationSpan.Symbol))) + Name + (Args.Length == 0 ? "()" : ("(.." + Args.Length + ")"));
     public override string ToString() => Keyword + " " + ((IDefination)this).FullName;
 }
 
@@ -1264,22 +1250,22 @@ public class ClassDefSpan : WordSpan, IDefination, IVarSystem, IKeyword, ICanSet
         //n.Props.ForEach(pr => pr.Def = n); now done at constructor
         return n;
     }
-    public static ClassDefSpan ExpArrayDef { get; private set; } = new("Array", []);
-    public static ClassDefSpan ExpStringDef { get; private set; } = Create("string", [new Property(null, true, "chars", true, true)]);
-    public static ClassDefSpan ExpExceptionDef { get; private set; } = new("Exception", []);
-    public static ClassDefSpan ExternTypeValueDef { get; private set; } = new("ExternTypeValue", []);
-    public static ClassDefSpan ExpTypeDef { get; private set; } = new("Type", []);
-    public static ClassDefSpan ExpAttrInfoDef { get; private set; } = new("AttrInfo", []);
+
+    public static ClassDefSpan ExpArrayDef { get; internal set; } = new("Array", []);
+    public static ClassDefSpan ExpStringDef { get; internal set; } = Create("string", [new Property(null, true, "chars", true, true)]);
+    public static ClassDefSpan ExpExceptionDef { get; internal set; } = new("Exception", []);
+    public static ClassDefSpan ExternTypeValueDef { get; internal set; } = new("ExternTypeValue", []);
+    public static ClassDefSpan ExpTypeDef { get; internal set; } = new("Type", []);
+    public static ClassDefSpan ExpAttrInfoDef { get; internal set; } = new("AttrInfo", []);
 
     public static string Keyword { get; } = "class";
     public static string ItemName { get; } = "class";
-    public string Namespace { get; set; }
+    public string? Namespace { get; set; }
     public string Name { get; }
     public List<Variable> Vars { get; } = []; // static props
     public IVarSystem Parent { get; set; }
     public Property[] Props { get; }
     public FuncDefSpan[] Funcs { get; set; }
-    internal Property BaseArrayProp => Props.FirstOrDefault(p => p.BaseArray);
     public Instance ExpType
     {
         get
@@ -1299,28 +1285,15 @@ public class ClassDefSpan : WordSpan, IDefination, IVarSystem, IKeyword, ICanSet
     public Instance[] AttrInfo { get; set; }
 
     internal new FuncDefSpan ToString { get; set; }
-    internal new FuncDefSpan Equalizer { get; set; }
+    internal FuncDefSpan Equalizer { get; set; }
 
-    public ClassDefSpan(string name, Property[] props, FuncDefSpan[] funcs = null, Instance[] attr = null) : base(Keyword)
+    public ClassDefSpan(string name, Property[] props, FuncDefSpan[]? funcs = null, Instance[]? attr = null) : base(Keyword)
     {
         this.Name = name;
         this.Props = props;
         props.ForEach(p => p.Def = this);
-        this.Funcs = funcs;
-        this.AttrInfo = attr;
-
-        if (name == "Array")
-            ExpArrayDef = this;
-        else if (name == "string")
-            ExpStringDef = this;
-        else if (name == "Exception")
-            ExpExceptionDef = this;
-        else if (name == "ExternTypeValue")
-            ExternTypeValueDef = this;
-        else if (name == "Type")
-            ExpTypeDef = this;
-        else if (name == "AttributeInfo")
-            ExpAttrInfoDef = this;
+        this.Funcs = funcs ?? [];
+        this.AttrInfo = attr ?? [];
     }
 
     internal override string FullText
@@ -1525,13 +1498,16 @@ class SectionWordSpan : WordSpan, IContext, IKeyword, IExpItem
 
 class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
 {
-    internal static new AttributeDefSpan ToString = new("Translator", [])
+    internal static AttributeDefSpan ExternImplAttr { get; } = new("ExternImpl", [])
+    { AllowFor_Class = false, AllowFor_Constructor = true, AllowFor_Func = true, AllowFor_Property = false, AllowFor_Attr = false, Namespace = Interpreter.STD_NAMESPACE };
+
+    internal static new AttributeDefSpan ToString { get; } = new("Translator", [])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = true, AllowFor_Property = false, AllowFor_Attr = false, LimitTo1InCls = true, Func_StaticRequirement = StaticRequirement.NonStatic, Func_ParamsCountRequirement = 0 };
 
-    internal static new AttributeDefSpan EqualizerAttr = new("Equalizer", [])
+    internal static AttributeDefSpan EqualizerAttr { get; } = new("Equalizer", [])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = true, AllowFor_Property = false, AllowFor_Attr = false, LimitTo1InCls = true, Func_StaticRequirement = StaticRequirement.NonStatic, Func_ParamsCountRequirement = 1 };
 
-    internal static AttributeDefSpan AllowFor = new("AllowFor",
+    internal static AttributeDefSpan AllowFor { get; } = new("AllowFor",
         [new(typeof(BoolValue), "class"),
         new(typeof(BoolValue), "property"),
         new(typeof(BoolValue), "func"),
@@ -1539,13 +1515,13 @@ class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
         new(typeof(BoolValue), "attr")])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false };
 
-    internal static AttributeDefSpan AllowMultipleAttr = new("AllowMultiple", [])
+    internal static AttributeDefSpan AllowMultipleAttr { get; } = new("AllowMultiple", [])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false };
 
-    internal static AttributeDefSpan LimitTo1InClsAttr = new("OneInClass", [])
+    internal static AttributeDefSpan LimitTo1InClsAttr { get; } = new("OneInClass", [])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false };
 
-    internal static AttributeDefSpan FuncRequirementsAttr = new("FuncRequirements",
+    internal static AttributeDefSpan FuncRequirementsAttr { get; } = new("FuncRequirements",
         [
             new(typeof(NumberValue), "stat"),
             new(typeof(NumberValue), "params")
@@ -1560,11 +1536,11 @@ class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false, AllowMultiple = true };
     */
 
-    internal static AttributeDefSpan ReadOnlyAttr = new("ReadOnly", [])
+    internal static AttributeDefSpan ReadOnlyAttr { get; } = new("ReadOnly", [])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = true, AllowFor_Property = false, AllowFor_Attr = false };
 
-    internal static AttributeDefSpan IteratableAttr /*= new("Iteratable", [])
-    { AllowFor_Class = true, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false, AllowFor_Attr = false }*/;
+    internal static AttributeDefSpan IteratableAttr { get; set; } /*= new("Iteratable", [])
+    { AllowFor_Class = true, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false, AllowFor_Attr = false }*/
 
     public static string Keyword { get; } = "attribute";
     public static string ItemName { get; } = "attribute";
@@ -1607,10 +1583,6 @@ class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
     {
         this.Name = name;
         this.Params = param;
-        if (name == "ExpectFunc")
-            ExpectFuncAttr ??= this;
-        else if (name == "Iteratable")
-            IteratableAttr ??= this;
     }
 }
 

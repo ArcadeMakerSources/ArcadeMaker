@@ -6,6 +6,10 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    
+	  <!-- These allow getting exception file name & line to show on Debugger exception in the IDE's error list (TODO: add them to the other projects too) -->
+	<DebugSymbols>true</DebugSymbols>
+	<DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>

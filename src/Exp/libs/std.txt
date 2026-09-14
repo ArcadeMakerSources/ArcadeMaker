@@ -1,4 +1,4 @@
-﻿namespace system:
+﻿namespace std:
 
 @AllowFor(false, false, false, false, true)
 @AllowMultiple
@@ -20,20 +20,14 @@ enum StaticRequirements
 @xml::OverridesXmlSerialization
 class Array (const csType private) 
 {
-    constructor(len) 
-    {
-        // BUILTIN FUNCTION
-    }
+    @ExternImpl
+    constructor(len) {}
     
-    func set(i, operator, val?)
-    {
-        // BUILTIN FUNCTION
-    }
+    @ExternImpl
+    func set(i, operator, val?) {}
     
-    func get(i)
-    {
-        // BUILTIN FUNCTION
-    }
+    @ExternImpl
+    func get(i) {}
     
     func length() 
     {
@@ -189,7 +183,8 @@ class Array (const csType private)
 @xml::OverridesXmlSerialization
 class string (const chars private basearray) 
 {
-    @Equalizer func equals(obj?)
+    @Equalizer
+    func equals(obj?)
     {
         if obj is not string | obj.length() != length()
         {
@@ -423,10 +418,9 @@ class ExternTypeValue ()
 class Type (const name, const fullName, const def private)
 {
     private constructor() {}
-    static func get(obj)
-    {
-        // BUILTIN FUNCTION
-    }
+
+    @ExternImpl
+    static func get(obj) {}
 }
 
 class List (array private basearray) 
@@ -627,6 +621,9 @@ class Date (year, month, day, hour, minute, sec, millis, nanos)
         this.day = day
         this.hour = hour
         this.minute = minute
+        sec = 0
+        millis = 0
+        nanos = 0
     }
 
     constructor(year, month, day, hour, minute, sec, millis, nanos)
@@ -640,16 +637,11 @@ class Date (year, month, day, hour, minute, sec, millis, nanos)
         this.millis = millis
         this.nanos = nanos
     }
+
+    private constructor() {}
     
-    constructor()
-    {
-        
-    }
-    
-    func setToNow()
-    {
-        // BUILTIN FUNCTION
-    }
+    @ExternImpl
+    func setToNow() {}
     
     @ReadOnly
     static func now()
@@ -686,21 +678,60 @@ class Date (year, month, day, hour, minute, sec, millis, nanos)
     }
 }
 
-class cs()
+class cs ()
 {
     private constructor() {}
+
+    @ExternImpl
+    @ReadOnly
     static func int(n) {}
+
+    @ExternImpl
+    @ReadOnly
     static func byte(n) {}
+
+    @ExternImpl
+    @ReadOnly
     static func float(n) {}
+
+    @ExternImpl
+    @ReadOnly
     static func long(n) {}
+
+    @ExternImpl
+    @ReadOnly
     static func action(f) {}
+
+    @ExternImpl
+    @ReadOnly
     static func exp(o) {}
 }
 
-func refEquals(a?, b?)
+@ExternImpl
+func refEquals(a?, b?) {}
+
+@ReadOnly
+func str(obj?) => obj + ""
+
+
+func println(text?)
 {
-    // BUILTIN FUNCTION
+    print text + "\n"
 }
+
+@ExternImpl
+func setTimeout(millis, action) {}
+
+@ExternImpl
+func runAsync(action, onComplete?) {}
+
+func runAsync(action)
+{
+    runAsync(action, null)
+}
+
+// ---- some basic math functions we want to be accessible without using math ----
+func floor(num) => num - num % 1
 
 func round(num)
 {
@@ -711,36 +742,6 @@ func round(num)
         num = num + 1
     }
     return num
-}
-
-func stringOf(obj?)
-{
-    return obj + ""
-}
-
-func floor(num)
-{
-    return num - num % 1
-}
-
-func println(text?)
-{
-    print text + "\n"
-}
-
-func setTimeout(millis, action)
-{
-    // BUILTIN FUNCTION
-}
-
-func runAsync(action, onComplete?)
-{
-    // BUILTIN FUNCTION
-}
-
-func runAsync(action)
-{
-    runAsync(action, null)
 }
 
 func pow(a, b)
@@ -765,3 +766,4 @@ func sign(n)
     if n < 0 { return 0 - 1 }
     return 0
 }
+// -------------------------------------------------------------------------------

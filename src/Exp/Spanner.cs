@@ -554,7 +554,7 @@ public enum SpanType
     MultiLineComment,
 }
 
-public class TextSpan : IDisposable
+public class TextSpan : IDisposable, ILocatableSourceSpan
 {
     private string _text = "";
     public string text
@@ -570,8 +570,8 @@ public class TextSpan : IDisposable
             }
         }
     }
-    public int location;
-    public ScriptDocument Doc { get; set; }
+    public int DocumentLocation { get; set; }
+    public ScriptDocument Document { get; set; }
     public Color color = Color.White;
     public Color backColor = Color.Transparent;
     public SpanType type = SpanType.Normal;
@@ -590,7 +590,7 @@ public class TextSpan : IDisposable
     public event EventHandler<string> TextChanged;
     public TextSpan(int location)
     {
-        this.location = location;
+        this.DocumentLocation = location;
     }
     private bool disposed = false;
 
@@ -604,7 +604,7 @@ public class TextSpan : IDisposable
 
     public TextSpan Duplicate()
     {
-        return new TextSpan(location) { text = text, color = color, backColor = backColor, type = type, insideFormattedString = insideFormattedString };
+        return new TextSpan(DocumentLocation) { text = text, color = color, backColor = backColor, type = type, insideFormattedString = insideFormattedString };
     }
 
     public override string ToString()

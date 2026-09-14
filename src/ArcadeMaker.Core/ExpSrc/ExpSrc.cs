@@ -19,7 +19,7 @@ namespace ArcadeMaker.Core.ExpSrc
 
         public const string CURRENT_VIEW_INDEX_ARG_NAME = "currentViewIndex";
 
-        public static HashSet<string> GlobalUsings { get; } = ["system", EngineNamespace];
+        public static HashSet<string> GlobalUsings { get; } = ["std", EngineNamespace];
 
 
         internal static void CreatePropertiesInitializers<T>(GameRunner<T> runner) where T : IGame

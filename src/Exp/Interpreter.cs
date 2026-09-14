@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.ConstrainedExecution;
 using Exp.Converting;
 using Exp.Operations;
 using Exp.Spans;
@@ -87,7 +86,7 @@ namespace Exp
     /// </summary>
     public partial class Interpreter : IVarSystem
     {
-        public const string STD_NAMESPACE = "system";
+        public const string STD_NAMESPACE = "std";
         internal Builtins.IO.Parameters IOParams { get; } = new();
         private bool neutral = false;
 
@@ -139,6 +138,7 @@ namespace Exp
             }
         }
 
+        internal List<FuncDefSpan> FuncsThatMustBeImplementedExternally { get; } = [];
         internal IEnumerable<FuncDefSpan> UsedFuncs(Span from) => UsedDefinations(from).OfType<FuncDefSpan>();
         internal IEnumerable<ClassDefSpan> UsedClasses(Span from) => UsedDefinations(from).OfType<ClassDefSpan>();
         internal IEnumerable<IDefination> UsedDefinations(Span from)
@@ -149,6 +149,13 @@ namespace Exp
         internal List<ExternClassDefSpan> externs = [];
 
         public readonly List<IDefination> definations = [];
+        public T? GetDef<T>(string? ns, string name) where T : class, IDefination => GetDef<T>(ns, name, out var _);
+        public T? GetDef<T>(string? ns, string name, out IDefination? def) where T : class, IDefination
+        {
+            def = definations.FirstOrDefault(d => d.Namespace == ns && d.Name == name);
+            return def as T;
+        }
+
         private readonly Dictionary<ClassStaticVar, IReadingOperation> staticPropsToInit = [];
 
         /// <summary>
@@ -158,6 +165,7 @@ namespace Exp
 
         internal event EventHandler CollectDefsCompleted;
         internal bool CollectedDefs { get; private set; } = false;
+        internal HashSet<string> AllNamespaces { get; } = [];
 
         /// <summary>
         /// The document to run.
@@ -188,10 +196,11 @@ namespace Exp
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("xml"), "xml.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("json"), "json.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("reflection"), "reflection.txt"));
-            importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("system"), "system.txt"));
+            importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("std"), "std.txt"));
             docs.AddRange(importsLs);
             importsLs.ForEach(doc => Errors.AddRange(doc.SettingsErrors));
 
+            definations.Add(AttributeDefSpan.ExternImplAttr);
             definations.Add(AttributeDefSpan.ToString);
             definations.Add(AttributeDefSpan.EqualizerAttr);
             definations.Add(AttributeDefSpan.AllowFor);
@@ -206,6 +215,8 @@ namespace Exp
             CollectDefs(importsLs.ToArray());
             CollectDefs(); // also loads code spans
             source.Usings.AddRange(currUsings);
+            CatchCoreDefinitions();
+            CollectNamespaces();
 
             " OK".Println();
             CollectedDefs = true;
@@ -229,6 +240,10 @@ namespace Exp
                         staticPropsToInit.Add(staticProp, ReadReadingOperation(staticProp.InitValueCode));
                 }
             }
+
+            // overrides
+            Builtins.OverridesAttribute.ApplyForAll(this);
+
             operations = ReadOperations(null, this);
             AfterAllOperationsCreated?.Invoke(this, null);
 
@@ -254,6 +269,64 @@ namespace Exp
                 {
                     var fn = Converting.Convert.ToFunc(method);
                     AddExternFunc(fn, statc: true);
+                }
+            }
+        }
+
+        private void CatchCoreDefinitions()
+        {
+            // classes
+            ClassDefSpan.ExpArrayDef = CatchClass(STD_NAMESPACE, "Array");
+            ClassDefSpan.ExpStringDef = CatchClass(STD_NAMESPACE, "string");
+            ClassDefSpan.ExpTypeDef = CatchClass(STD_NAMESPACE, "Type");
+            ClassDefSpan.ExpExceptionDef = CatchClass(STD_NAMESPACE, "Exception");
+            ClassDefSpan.ExpAttrInfoDef = CatchClass(Builtins.Reflection.Impl.NS, "AttributeInfo");
+            ClassDefSpan.ExternTypeValueDef = CatchClass(STD_NAMESPACE, "ExternTypeValue");
+
+            // functions
+            FuncDefSpan.ArrayIndexGetter = ClassDefSpan.ExpArrayDef.Funcs.First(f => f.Name == "get");
+            FuncDefSpan.ArrayIndexSetter = ClassDefSpan.ExpArrayDef.Funcs.First(f => f.Name == "set");
+            FuncDefSpan.ArrayIndexGetter.Name = "array.get";
+            FuncDefSpan.ArrayIndexSetter.Name = "array.set";
+
+            // attributes (use ??=)
+            AttributeDefSpan.ExpectFuncAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "ExpectFunc");
+            AttributeDefSpan.IteratableAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "Iteratable");
+
+            ClassDefSpan CatchClass(string? ns, string name) => Catch<ClassDefSpan>(ns, name);
+
+            T Catch<T>(string? ns, string name) where T : class, IDefination, IExpItem =>
+                GetDef<T>(ns, name) ??
+                throw new Exception($"Core {T.ItemName} {ns ?? "<no-ns>"}{NamespaceSpecificationSpan.Symbol}{name} was not found.");
+        }
+
+        private void CollectNamespaces()
+        {
+            // collect from both docs and defs
+            IEnumerable<ScriptDocument> allDocs = docs.Append(MainDoc);
+
+            foreach (var doc in allDocs)
+            {
+                if (doc.Namespace != null)
+                    AllNamespaces.Add(doc.Namespace);
+            }
+
+            foreach (var def in definations)
+            {
+                if (def.Namespace != null)
+                    AllNamespaces.Add(def.Namespace);
+            }
+
+            // make a built-time error for using directives that reference namespaces that were not found
+            foreach (var doc in allDocs)
+            {
+                foreach (var usingSpan in doc.UsingSpans)
+                {
+                    if (!AllNamespaces.Contains(usingSpan.text))
+                    {
+                        usingSpan.Document = doc;
+                        Error($"The namespace name '{usingSpan.text}' could not be found.", usingSpan);
+                    }
                 }
             }
         }
@@ -741,6 +814,15 @@ namespace Exp
                     }
                 }
 
+                // if it's @ExternImpl attr, add this to the list
+                if (attr == AttributeDefSpan.ExternImplAttr)
+                {
+                    if (taggedItem is FuncDefSpan func)
+                    {
+                        FuncsThatMustBeImplementedExternally.Add(func);
+                    }
+                }
+
                 // reset source properties
                 CodeSpans = sourceSpans_backup;
                 lastSpan = ls;
@@ -949,7 +1031,7 @@ namespace Exp
         internal RuntimeException(Instance ex, string msg, string type, string source = null, int line = 0, int col = 0, bool byExpThrowStmt = false) : base($"{source ?? "Unknown"}({line}, {col}): {msg}")
         {
             if (ex == null || ex.def != ClassDefSpan.ExpExceptionDef)
-                throw new Exception($"Argument '{nameof(ex)}' was not an instance of system::Exception.");
+                throw new Exception($"Argument '{nameof(ex)}' was not an instance of std::Exception.");
             this.ex = ex;
             this.msg = msg;
             this.type = type;

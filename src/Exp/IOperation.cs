@@ -573,7 +573,13 @@ class ExternInvocationOperation(ExternClassDefSpan extrn, object inst, string me
 class ExternFuncInvocationOperation(FuncDefSpan invoker, ExternFunc externFunc) : IReadingOperation, IOperation
 {
     public void Make() => Read();
-    public IValue Read() => externFunc.Func.Invoke(invoker.Parent as Instance, invoker.ParamVariables.Map(v => v.Value).ToArray());
+    public IValue Read()
+    {
+        IValue? val = externFunc.Func.Invoke(invoker.Parent as Instance, invoker.ParamVariables.Select(v => v.Value).ToArray());
+        invoker.Return = true; // it's ok if it's void
+        invoker.Returns = val;
+        return val;
+    }
 }
 
 class TryStatement(TryWordSpan ctx, IOperation[] body, CatchStatement catc, FinallyStatement finaly) : IOperationWithInnerSource

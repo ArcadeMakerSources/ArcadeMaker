@@ -629,7 +629,7 @@ public partial class Interpreter
         spansCursor = 0;
         codeCursor = 0;
         SourceSpans = Spanner.GetTextSpans(src);
-        SourceSpans.ForEach(span => span.Doc = ShellDoc);
+        SourceSpans.ForEach(span => span.Document = ShellDoc);
 
         List<Span> srcCode = [];
         Span next;
@@ -872,7 +872,11 @@ public partial class Interpreter
         foreach (var param in parameters)
         {
             if (i < func.ParamVariables.Length)
+            {
+                if (func.Args[i].NotNull && param is null)
+                    ThrowRuntime($"Argument '{func.Args[i].Name}' cannot be null.", RuntimeException.ARGUMENT_NULL);
                 func.ParamVariables[i++].Value = param;
+            }
         }
 
         // on non-static funcs, set parent VS to the instance we're calling on
@@ -883,8 +887,7 @@ public partial class Interpreter
         try
         {
             // run func (or handle built-in function)
-            if (!BuiltinFuncs(func, inst))
-                RunOps(func.Operations);
+            RunOps(func.Operations);
         }
         finally
         {
@@ -899,7 +902,7 @@ public partial class Interpreter
         isFuncCall = true;
 
         // return
-        var returns = func.Return ? func.Returns?.Pass() : Void.Return;
+        var returns = func.Return ? func.Returns : Void.Return;
         func.Return = false;
         func.Returns = null;
         return returns;

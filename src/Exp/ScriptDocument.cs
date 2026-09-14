@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.IO;
 using Exp.Spans;
 using Exp.Operations;
 
@@ -17,6 +16,7 @@ public class ScriptDocument
     internal Span[] CodeSpans { get; private protected set; }
     public bool IsPrepared => CodeSpans != null;
     public HashSet<string> Usings { get; } = [];
+    internal TextSpan[] UsingSpans { get; private set; }
     public string? Namespace { get; set; }
     internal IOperation[] Operations { get; set; }
 
@@ -30,24 +30,26 @@ public class ScriptDocument
         TextSpans = Spanner.GetTextSpans(this.Script);
         ReadDocSettings();
         foreach (var span in TextSpans)
-            span.Doc = this;
+            span.Document = this;
     }
 
     private void ReadDocSettings()
     {
-        ReadDocSettings(Name, TextSpans, out var updatedTextSpans, out var description, out var @namespace, out var usings, out var settingsErrors);
+        ReadDocSettings(Name, TextSpans, out var updatedTextSpans, out var description, out var @namespace, out var usings, out var settingsErrors, out var usingSpans);
         (this.TextSpans, this.Description, this.Namespace) = (updatedTextSpans, description, @namespace);
         this.Usings.AddRange(usings);
         this.SettingsErrors.AddRange(settingsErrors);
+        this.UsingSpans = [.. usingSpans];
     }
 
-    public static void ReadDocSettings(string Name, TextSpan[] TextSpans, out TextSpan[] updatedTextSpans, out string? Description, out string? Namespace, out HashSet<string> Usings, out HashSet<ExpError> SettingsErrors)
+    public static void ReadDocSettings(string Name, TextSpan[] TextSpans, out TextSpan[] updatedTextSpans, out string? Description, out string? Namespace, out HashSet<string> Usings, out HashSet<ExpError> SettingsErrors, out List<TextSpan> usingSpans)
     {
         updatedTextSpans = TextSpans;
         Description = null;
         Namespace = null;
         Usings = [];
         SettingsErrors = [];
+        usingSpans = [];
 
 
         int spanIndex = 0, line = 0, col = 1;
@@ -93,7 +95,8 @@ public class ScriptDocument
         while (next?.text == UsingWordSpan.Keyword)
         {
             anySettingsRead = true;
-            string? use = NextSpan()?.text;
+            var nsNameSpan = NextSpan();
+            string? use = nsNameSpan?.text;
             if (use == null)
                 SettingsErrors.Add(new(Name, line, col, "Namespace name expected."));
             else if (!use.IsLiterallyValidName())
@@ -102,6 +105,8 @@ public class ScriptDocument
             {
                 if (!Usings.Add(use))
                     SettingsErrors.Add(new(Name, line, col, $"Namespace '{use}' is already imported."));
+                else
+                    usingSpans.Add(nsNameSpan);
             }
             next = NextSpan();
         }
@@ -215,4 +220,10 @@ public class InstanceScriptDocument(string name, ClassDefSpan def, string script
         compiler.FuncCall(inst, Runner!, null, out bool _, args);
         compiler.RunOpsRunning = false;
     }
+}
+
+public interface ILocatableSourceSpan
+{
+    ScriptDocument Document { get; }
+    int DocumentLocation { get; }
 }
