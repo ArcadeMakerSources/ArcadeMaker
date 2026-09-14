@@ -274,12 +274,12 @@ namespace Exp
         private void CatchCoreDefinitions()
         {
             // classes
-            ClassDefSpan.ExpArrayDef = GetClass(STD_NAMESPACE, "Array");
-            ClassDefSpan.ExpStringDef = GetClass(STD_NAMESPACE, "string");
-            ClassDefSpan.ExpTypeDef = GetClass(STD_NAMESPACE, "Type");
-            ClassDefSpan.ExpExceptionDef = GetClass(STD_NAMESPACE, "Exception");
-            ClassDefSpan.ExpAttrInfoDef = GetClass(Builtins.Reflection.Impl.NS, "AttributeInfo");
-            ClassDefSpan.ExternTypeValueDef = GetClass(STD_NAMESPACE, "ExternTypeValue");
+            ClassDefSpan.ExpArrayDef = CatchClass(STD_NAMESPACE, "Array");
+            ClassDefSpan.ExpStringDef = CatchClass(STD_NAMESPACE, "string");
+            ClassDefSpan.ExpTypeDef = CatchClass(STD_NAMESPACE, "Type");
+            ClassDefSpan.ExpExceptionDef = CatchClass(STD_NAMESPACE, "Exception");
+            ClassDefSpan.ExpAttrInfoDef = CatchClass(Builtins.Reflection.Impl.NS, "AttributeInfo");
+            ClassDefSpan.ExternTypeValueDef = CatchClass(STD_NAMESPACE, "ExternTypeValue");
 
             // functions
             FuncDefSpan.ArrayIndexGetter = ClassDefSpan.ExpArrayDef.Funcs.First(f => f.Name == "get");
@@ -287,9 +287,15 @@ namespace Exp
             FuncDefSpan.ArrayIndexGetter.Name = "array.get";
             FuncDefSpan.ArrayIndexSetter.Name = "array.set";
 
-            ClassDefSpan GetClass(string? ns, string name) =>
-                GetDef<ClassDefSpan>(ns, name) ??
-                throw new Exception($"Core class {ns ?? "<no-ns>"}{NamespaceSpecificationSpan.Symbol}{name} was not found.");
+            // attributes (use ??=)
+            AttributeDefSpan.ExpectFuncAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "ExpectFunc");
+            AttributeDefSpan.IteratableAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "Iteratable");
+
+            ClassDefSpan CatchClass(string? ns, string name) => Catch<ClassDefSpan>(ns, name);
+
+            T Catch<T>(string? ns, string name) where T : class, IDefination, IExpItem =>
+                GetDef<T>(ns, name) ??
+                throw new Exception($"Core {T.ItemName} {ns ?? "<no-ns>"}{NamespaceSpecificationSpan.Symbol}{name} was not found.");
         }
 
         private void RunStaticCtors()
