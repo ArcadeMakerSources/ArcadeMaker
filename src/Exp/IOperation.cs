@@ -166,7 +166,7 @@ class WhileStatement(WhileConditionSpan ctx, IReadingOperation cond, IOperation[
                 }
             }
 
-            continue_while:
+        continue_while:
             if (counter != null)
             {
                 counterNum = (counterNum.Number + 1).ToExp();
@@ -217,7 +217,7 @@ class ForStatement(ForLoopSpan ctx, IOperation init, IReadingOperation cond, IOp
                 counterNum = (counterNum.Number + 1).ToExp();
                 counter.SetSkippingConstant(counterNum);
             }
-            continue_for:;
+        continue_for:;
         }
     break_for:;
     }
@@ -290,7 +290,7 @@ class ForeachStatement(ForEachLoopSpan ctx, Variable var, IReadingOperation read
                         goto continue_fe;
                     }
                 }
-            
+
             continue_fe:
                 if (counter != null)
                 {
@@ -664,7 +664,7 @@ class Throwing(IReadingOperation exread) : IOperation, IReadingOperation
     }
 }
 
-class PointingOrFuncCall(bool isOp, string name, IEnumerable<IReadingOperation[]> argLists, int? paramsCounter, IVarSystem vs, Span span, bool readValue, bool first) : IReadingOperation
+class PointingOrFuncCall(bool isOperationButNotReadingOperation, string name, IEnumerable<IReadingOperation[]> argLists, int? paramsCounter, IVarSystem vs, Span span, bool readValue, bool first) : IReadingOperation
 {
     internal IVarSystem VS { get => vs; set => vs = value; }
     internal PointingOrFuncCall Next { get; set; }
@@ -693,32 +693,28 @@ class PointingOrFuncCall(bool isOp, string name, IEnumerable<IReadingOperation[]
     internal IEnumerable<IReadingOperation[]> ArgLists => argLists;
     public IValue Read()
     {
-        //ArgumentNullException.ThrowIfNull(VS);
         IValue value;
 
         // 'this' keyword
         if (first && Known == null && name == ThisWordSpan.Keyword)
         {
-            Instance thiss = Interpreter.FindParentVarSystem<Instance>(vs);
-
-            if (thiss != null)
-            {
-                if (Next == null)
-                    return thiss;
-
-                Next.VS = thiss;
-                return Next.Read();
-            }
-
-            Interpreter.Activated.ThrowRuntime($"Keyword 'this' is not valid in a static content.", RuntimeException.INVALID_OPERATION, span);
+            if (GetThisOrPropertyOfThis(out IValue? result))
+                return result;
+            else
+                Interpreter.Activated.ThrowRuntime($"Keyword '{ThisWordSpan.Keyword}' is not valid in a static content.", RuntimeException.INVALID_OPERATION, span);
         }
 
         // get the current item
-        int numOfParams = paramsCounter.HasValue ? paramsCounter.Value : (argLists.FirstOrDefault()?.Length ?? -1);
-        INamedValue? item = Known ?? Interpreter.Activated.GetNamedValueItem(VS, name, span, first, numOfParams);
+        int numOfParams = paramsCounter ?? argLists.FirstOrDefault()?.Length ?? -1;
+        INamedValue? item =
+            Known ??
+            Interpreter.Activated.GetNamedValueItem(VS, name, span, first, numOfParams);
         if (item == null)
         {
-            Interpreter.Activated.ThrowRuntime(numOfParams >= 0 ? $"Unknown function '{(VS as Instance)?.def.GetExpTypeName(false) ?? "(?)"}.{name}(..{numOfParams})'." : $"Unknown item '{(VS as Instance)?.def.GetExpTypeName(false) ?? "(?)"}.{name}'.", RuntimeException.INVALID_SYNTAX, span);
+            Interpreter.Activated.ThrowRuntime(
+                numOfParams >= 0 ? $"Unknown function '{(VS as Instance)?.def.GetExpTypeName(false) ?? "(?)"}.{name}(..{numOfParams})'." :
+                $"Unknown item '{(VS as Instance)?.def.GetExpTypeName(false) ?? "(?)"}.{name}'.", RuntimeException.INVALID_SYNTAX, span
+                );
             throw null!;
         }
 
@@ -727,8 +723,6 @@ class PointingOrFuncCall(bool isOp, string name, IEnumerable<IReadingOperation[]
         {
             if (argLists.Any())
             {
-                if (Name == "pause")
-                    _ = 1;
                 FuncDefSpan? fn = item as FuncDefSpan;
                 Instance? inst = VS as Instance;
                 if (fn == null && item is Variable v && v.Value?.IsFunc == true) // it's not a function, but it IS a function POINTER
@@ -747,7 +741,10 @@ class PointingOrFuncCall(bool isOp, string name, IEnumerable<IReadingOperation[]
                 }
 
                 if (item is FuncDefSpan fn)
-                    return new FuncPntr(fn, VS as Instance);
+                {
+                    FuncPntr funcPntr = new(fn, Interpreter.FindParentVarSystem<Instance>(fn));
+                    return funcPntr;
+                }
 
                 if (item is IValue v)
                     return v;
@@ -812,7 +809,7 @@ class PointingOrFuncCall(bool isOp, string name, IEnumerable<IReadingOperation[]
             else
             {
                 ThrowPremitiveRef();
-                throw null;
+                throw null!;
             }
         }
         else if (item == null)
@@ -828,7 +825,7 @@ class PointingOrFuncCall(bool isOp, string name, IEnumerable<IReadingOperation[]
     Return:
         return value;
 
-        IValue RunFunc(FuncDefSpan? func, Instance? instance)
+        IValue? RunFunc(FuncDefSpan? func, Instance? instance)
         {
             if (func == null)
                 Interpreter.Activated.ThrowRuntime($"An argument list was read, but the given value was not a function but {Extensions.GetExpTypeName(item, true)} ({name}).", RuntimeException.INVALID_SYNTAX, span);
@@ -836,17 +833,39 @@ class PointingOrFuncCall(bool isOp, string name, IEnumerable<IReadingOperation[]
             if (!argLists.Any())
                 Interpreter.Activated.ThrowRuntime("Missing argument list.", RuntimeException.INVALID_SYNTAX, span);
 
-            if (isOp && Next == null && func.ReadOnly)
+            if (isOperationButNotReadingOperation && Next == null && func.ReadOnly)
                 Interpreter.Activated.ThrowRuntime($"The value returned by {func.GetExpTypeName(false)} must be used.", RuntimeException.INVALID_OPERATION, span);
 
-            IValue val = null;
+            IValue? val = null;
             foreach (var ls in argLists)
             {
                 instance ??= func == FuncDefSpan.ExternInvoker || func == FuncDefSpan.ExternPropGetSet ? null : (first ? Interpreter.FindParentVarSystem<Instance>(vs) : VS as Instance);
-                val = Interpreter.Activated.FuncCall(instance, func, null, out bool _, ls.Map(a => a?.Read()));
+                val = Interpreter.Activated.FuncCall(instance, func!, null, out bool _, ls.Map(a => a?.Read()));
                 func = val as FuncDefSpan;
             }
             return val;
+        }
+
+        bool GetThisOrPropertyOfThis(out IValue? value)
+        {
+            Instance thiss = Interpreter.FindParentVarSystem<Instance>(vs);
+
+            if (thiss != null)
+            {
+                if (Next == null)
+                {
+                    value = thiss;
+                }
+                else
+                {
+                    Next.VS = thiss;
+                    value = Next.Read();
+                }
+                return true;
+            }
+
+            value = null;
+            return false;
         }
 
         void ThrowNullRef() => Interpreter.Activated.ThrowRuntime("Object reference not set to an instance of an object.", RuntimeException.NULL_REFERENCE, span);

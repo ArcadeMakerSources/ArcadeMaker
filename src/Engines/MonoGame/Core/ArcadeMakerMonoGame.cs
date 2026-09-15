@@ -506,13 +506,21 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             if (inst.Sprite == null)
                 return Exp.Void.Return;
 
+            double scaleX = inst.ImageXScale.Value!.Number, scaleY = inst.ImageYScale.Value!.Number;
+            //bool flipX = scaleX < 0, flipY = scaleY < 0;
+            SpriteEffects flip = (scaleX < 0 ? SpriteEffects.FlipHorizontally : SpriteEffects.None) | (scaleY < 0 ? SpriteEffects.FlipVertically : SpriteEffects.None);
             Vector2 position = new((float)inst.X.Value!.Number, (float)inst.Y.Value!.Number);
             Vector2 origin = new(inst.Sprite.OriginX, inst.Sprite.OriginY);
-            Vector2 scale = new((float)inst.ImageXScale.Value!.Number, (float)inst.ImageYScale.Value!.Number);
+            Vector2 scale = new((float)Math.Abs(scaleX), (float)Math.Abs(scaleY));
             TextureRegion? region = MainTextureAtlas.GetRegion(inst.Sprite, (int)inst.ImageIndex.Value!.Number);
 
             if (region == null)
                 return Exp.Void.Return;
+
+            if (scaleX < 0)
+                origin.X = region.Width - origin.X;
+            if (scaleY < 0)
+                origin.Y = region.Height - origin.Y;
 
             // validate visibilty as a condition for drawing, respecting scale
             var view = CurrentViewIndex >= 0 ? Cameras[CurrentViewIndex].camera.BoundingRectangle : roomBounds;
@@ -533,7 +541,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
                 (float)ArcadeMaker.Core.Math.Formulas.DegreesToRadians(inst.ImageAngle.Value!.Number),
                 origin,
                 scale,
-                SpriteEffects.None,
+                flip,
                 0
             );
 

@@ -577,19 +577,16 @@ namespace Exp
             return spansCursor < SourceSpans.Length && SourceSpans[spansCursor].text == T.Keyword;
         }
 
-        private Variable GetPointer(string name, IVarSystem from, out IVarSystem foundAt)
+        private Variable? GetPointer(string name, IVarSystem from, out IVarSystem? foundAt)
         {
-            Variable pointer = null;
+            Variable? pointer = null;
 
             // a function to scan a single VS
-            Variable Scan(IVarSystem vs)
+            Variable? Scan(IVarSystem vs)
             {
-                ArgumentNullException.ThrowIfNull(vs);
-                if (vs.Vars is null)
-                    throw new NullReferenceException(nameof(vs.Vars));
-                if (name is null)
-                    return null;
-                return vs.Vars.FirstOrDefault(v => name.Equals(v.Name)) ?? (vs is FuncDefSpan func && func.DefinedAt != null ? func.DefinedAt.Vars.FirstOrDefault(v => name.Equals(v.Name)) : null);
+                return vs.Vars.FirstOrDefault(v => name.Equals(v.Name)) ??
+                   //class static property:
+                   (vs is FuncDefSpan func && func.DefinedAt != null ? func.DefinedAt.Vars.FirstOrDefault(v => name.Equals(v.Name)) : null);
             }
 
             // scan the current VS inner, then in its outers, then outers' outers and so on
