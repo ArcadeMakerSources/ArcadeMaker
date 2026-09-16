@@ -123,7 +123,6 @@ public class Instance : Exp.Instance
         Hspeed = new CustomVariable("hspeed", () => hspeed, (value) => { hspeed = value?.Number; SetSpeedAndDir(); });
         Vspeed = new CustomVariable("vspeed", () => vspeed, (value) => { vspeed = value?.Number; SetSpeedAndDir(); });
         Direction = new CustomVariable("direction", () => direction, (value) => { direction = value?.Number; SetHVSpeeds(); });
-        Vars.AddRange([Speed, Hspeed, Vspeed, Direction]);
         ImageIndex = InitVar("imageIndex", zero, isNumChecker, ValueHelper.tnum);
         ImageSpeed = InitVar("imageSpeed", one, isNumChecker, ValueHelper.tnum);
         ImageAngle = InitVar("imageAngle", zero, isNumChecker, ValueHelper.tnum);
@@ -135,7 +134,10 @@ public class Instance : Exp.Instance
         Solid = InitVar("solid", model.InitValues.Solid.ToExp(), isBoolChecker, ValueHelper.tbool);
         OnPathStepFinished = InitVar("onPathStepFinished", null, val => val is null or FuncPntr, ValueHelper.tfunc);
         SpriteID = new("spriteID", GetSpriteID, SetSprite);
-        Vars.Add(SpriteID);
+
+        // InitVar(...) adds them to the instance's var list, but the ones that initialized without
+        // InitVar(...) must be added here manually
+        Vars.AddRange([Speed, Hspeed, Vspeed, Direction, SpriteID, Depth]);
 
         // init alarms
         for (int alarmIndex = 0; alarmIndex < NUMBER_OF_ALARMS; alarmIndex++)
