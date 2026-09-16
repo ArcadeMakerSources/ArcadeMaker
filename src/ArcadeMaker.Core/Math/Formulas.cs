@@ -9,6 +9,12 @@ namespace ArcadeMaker.Core.Math;
 
 public static class Formulas
 {
+    /// <summary>
+    /// Calculates the distance between 2 points.
+    /// </summary>
+    /// <param name="_"></param>
+    /// <param name="args"></param>
+    /// <returns></returns>
     [EngineFunc(4)]
     [Param("x1", ParamType.Number, "The x of point 1.")]
     [Param("y1", ParamType.Number, "The y of point 1.")]

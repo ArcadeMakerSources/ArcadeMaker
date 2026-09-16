@@ -473,6 +473,39 @@ public partial interface IGame
     }
 
     /// <summary>
+    /// Calculates the distance between the calling game object and the given one.
+    /// </summary>
+    /// <param name="expinst"></param>
+    /// <param name="args">(object)</param>
+    /// <returns></returns>
+    [EngineFunc(1, IsNonStaticFuncOfGameObjects = true)]
+    [Param("object", ParamType.GameObject, "The object to calculate the distance to.")]
+    IValue DistanceToObject(Exp.Instance expinst, IValue?[] args) => DistanceBetweenObjects(null, [expinst, args[0]]);
+
+    /// <summary>
+    /// Calculates the distance between 2 game objects.
+    /// </summary>
+    /// <param name="_"></param>
+    /// <param name="args">(object1, object2)</param>
+    /// <returns></returns>
+    /// <exception cref="EngineException"></exception>
+    [EngineFunc(2)]
+    [Param("object1", ParamType.GameObject, "The object to calculate the distance from.")]
+    [Param("object2", ParamType.GameObject, "The object to calculate the distance to.")]
+    IValue DistanceBetweenObjects(Exp.Instance? _, IValue?[] args)
+    {
+        if (args[0] is not Runtime.Instance obj1 || args[1] is not Runtime.Instance obj2)
+            throw new EngineException($"One or more of the arguments was not an instance of a game object.");
+
+        return Formulas.DistanceBetween(
+            obj1.X.Value!.Number,
+            obj1.Y.Value!.Number,
+            obj2.X.Value!.Number,
+            obj2.Y.Value!.Number)
+            .ToExp();
+    }
+
+    /// <summary>
     /// Counts the number of instances of a given type (or all instances if null) in the active room.
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
