@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Exp.Spans;
 
@@ -44,7 +45,7 @@ interface IExpItem
     }
 }
 
-public abstract class Span : ILocatableSourceSpan
+public abstract class Span : ILocatableSourceMark
 {
     public ScriptDocument Document { get; set; }
     public int DocumentLocation { get; set; }
@@ -1154,6 +1155,24 @@ public class FuncDefSpan : WordSpan, IContext, IDefination, IKeyword, IClassMemb
             s += $"{Keyword} {Name} ( {argsStr} )\n{{\n\t{InnerSource.ToString(" ")}\n}}";
             return s;
         }
+    }
+
+
+    public bool IsDeclaredInsideInstanceFunc([NotNullWhen(true)] out FuncDefSpan? instanceFunc)
+    {
+        IVarSystem? vs = Parent;
+        while (vs is not null)
+        {
+            if (vs is FuncDefSpan { DefinedAt: not null, Static: false } instFn)
+            {
+                instanceFunc = instFn;
+                return true;
+            }
+            vs = vs.Parent;
+        }
+
+        instanceFunc = null;
+        return false;
     }
 
     string IDefination.FullName => (DefinedAt != null ? (DefinedAt.GetExpTypeName(false) + ".") : (Namespace == null ? "" : (Namespace + NamespaceSpecificationSpan.Symbol))) + Name + (Args.Length == 0 ? "()" : ("(.." + Args.Length + ")"));

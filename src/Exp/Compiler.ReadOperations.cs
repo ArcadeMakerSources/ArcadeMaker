@@ -11,12 +11,12 @@ public partial class Interpreter
     internal Dictionary<IOperation, Span> OperationsSpanPair { get; } = [];
     private List<Span> readOps_codeRecord = null;
     
-    internal IOperation[] ReadOperations(Span[] spans, IVarSystem vs, out Span[] src, bool @throw = false, bool breakAfter1 = false)
+    internal IOperation[] ReadOperations(Span[]? spans, IVarSystem vs, out Span[] src, bool @throw = false, bool breakAfter1 = false)
     {
         bool deleteRecord = readOps_codeRecord == null;
         readOps_codeRecord ??= [];
 
-        IOperation prevOperation = null;
+        IOperation? prevOperation = null;
         List<IOperation> operations = [];
 
         void action()
@@ -85,7 +85,7 @@ public partial class Interpreter
                 {
                     // check if the next word is a loop's ID. find the right loop anyway
                     var next = Spoiler();
-                    ILoopContext chosenLoop = null;
+                    ILoopContext? chosenLoop = null;
                     var span = word.Container;
 
                     var id = next?.FullText;
@@ -214,10 +214,20 @@ public partial class Interpreter
                 {
                     // if a function is declared inside a context, create it as function pointer
                     func.Operations = ReadOperations(func.InnerSource, func);
-                    ValidateLocalNameLegallity(func.Name, vs, func.Args.Length);
-                    vs.Vars.Add(new Variable(func.Name, new FuncPntr(func, null), func, false, true));
-                    // it is readonly: func.Name = "localfunc." + func.Name;
-                    continue; // bc it's not an operation
+                    ValidateLocalNameLegallity(func.Name, vs, func.Args.Length, func);
+
+                    // this way we get FuncPntr with Instance property set:
+                    PointingOrFuncCall funcPntrReader = GetPointingOrFuncCallForLocalFunc(func);
+
+                    // functions are created with Static = true by default
+                    if (func.IsDeclaredInsideInstanceFunc(out var _))
+                        func.Static = false;
+
+                    // create a VariableDeclaration operation for the FuncPntr
+                    Variable pointer = new(func.Name, null, func, false, true);
+                    func.Name = $"localfunc{localFuncsCounter++}.{func.Name}";
+                    vs.Vars.Add(pointer);
+                    operation = new VariablesDeclaration(new() { [pointer] = funcPntrReader });
                 }
                 //else if (word.GetType().Name != "WordSpan") { operation = Operation.Custom(() => { }); }
                 else if (word is IDefination or NamespaceWordSpan or UsingWordSpan or ExternClassDefSpan)
@@ -285,9 +295,10 @@ public partial class Interpreter
         return operations.ToArray();
     }
 
-    internal IOperation[] ReadOperations(Span[] spans, IVarSystem vs, bool @throw = false) => ReadOperations(spans, vs, out var _, @throw);
+    internal IOperation[] ReadOperations(Span[]? spans, IVarSystem vs, bool @throw = false) =>
+        ReadOperations(spans, vs, out var _, @throw);
 
-    private IOperation ReadOperation(Span[] spans, IVarSystem vs, out Span[] src)
+    private IOperation ReadOperation(Span[]? spans, IVarSystem vs, out Span[] src)
     {
         var ops = ReadOperations(spans, vs, out src, breakAfter1: true);
 

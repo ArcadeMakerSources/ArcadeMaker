@@ -156,6 +156,8 @@ namespace Exp
             return def as T;
         }
 
+        private uint localFuncsCounter = 0;
+
         private readonly Dictionary<ClassStaticVar, IReadingOperation> staticPropsToInit = [];
 
         /// <summary>
@@ -829,30 +831,47 @@ namespace Exp
             }
         }
 
-        public void ValidateDefNameLegallity(string ns, string name, int @params = -1)
+        public bool ValidateDefNameLegallity(string? ns, string? name, int @params = -1, ILocatableSourceMark? errLocMark = null)
         {
             if (!name.IsLiterallyValidName())
-                Error(name == null ? "Item name was expected." : $"'{name}' is not a valid name.");
+            {
+                Error(string.IsNullOrWhiteSpace(name) ? "Item name was expected." : $"'{name}' is not a valid name.", errLocMark);
+                return false;
+            }
 
             // validate in definations
             else if (definations.Any(d => d != null && d.Namespace == ns && d.Name == name && (d is not FuncDefSpan func || func.Args.Length == @params)))
-                Error($"An item with the name '{(ns == null ? "" : ns + NamespaceSpecificationSpan.Symbol)}{name}' already exists.");
+            {
+                Error($"An item with the name '{(ns == null ? "" : ns + NamespaceSpecificationSpan.Symbol)}{name}' already exists.", errLocMark);
+                return false;
+            }
+
+            return true;
         }
 
-        public void ValidateLocalNameLegallity(string name, IVarSystem vs, int args = -1)
+        public bool ValidateLocalNameLegallity(string? name, IVarSystem vs, int args = -1, ILocatableSourceMark? errLocMark = null)
         {
-            ValidateDefNameLegallity(null, name);
+            if (!ValidateDefNameLegallity(null, name))
+                return false;
 
             // validate in given VS
-            if (GetPointer(name, vs) != null)
-                Error($"A variable with the name '{name}' already exists in this context / item.");
+            if (GetPointer(name!, vs) != null)
+            {
+                Error($"A variable with the name '{name}' already exists in this context / item.", errLocMark);
+                return false;
+            }
 
             // check funcs
             else if (vs is ClassDefSpan cls)
             {
                 if (cls.Funcs.Any(f => f.Name == name && args == f.Args.Length))
-                    Error($"A function with the name '{name}' already exists in this context / item.");
+                {
+                    Error($"A function with the name '{name}' already exists in this context / item.", errLocMark);
+                    return false;
+                }
             }
+
+            return true;
         }
 
         private Variable GetPointer(string name, IVarSystem from) => GetPointer(name, from, out IVarSystem _);

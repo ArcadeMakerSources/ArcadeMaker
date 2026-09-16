@@ -10,16 +10,16 @@ namespace Exp;
 
 public partial class Interpreter
 {
-    private IReadingOperation ReadReadingOperation(out Span[] src, Span firstSpan = null)
+    private IReadingOperation ReadReadingOperation(out Span[] src, Span? firstSpan = null)
     {
         bool deleteRecord = readValue_codeRecord == null;
         readValue_codeRecord ??= [];
 
-        IReadingOperation ReadSingle(out bool wasval, out bool bracketWasRead)
+        IReadingOperation? ReadSingle(out bool wasval, out bool bracketWasRead)
         {
             wasval = false;
             bracketWasRead = false;
-            IReadingOperation value = null;
+            IReadingOperation? value = null;
             Span span = firstSpan ?? ReadSpan();
             firstSpan = null;
             if (span is null)
@@ -47,7 +47,11 @@ public partial class Interpreter
                 func.Operations ??= ReadOperations(func.InnerSource, func);
                 //value = new ReadingOperation(new FuncPntr(func, null));
                 // this way we get FuncPntr with Instance property set:
-                value = new PointingOrFuncCall(false, "getting_func_pointer", [], null, func, func, false, true) { KnownFunc = func };
+                value = GetPointingOrFuncCallForLocalFunc(func);
+                
+                // functions are created with Static = true by default
+                if (func.IsDeclaredInsideInstanceFunc(out var _))
+                    func.Static = false;
             }
             else if (span is LenofWordSpan lenof)
                 value = new LenofReadingOperation(ReadReadingOperation(), lenof);
@@ -343,6 +347,9 @@ public partial class Interpreter
     }
 
     private IReadingOperation ReadReadingOperation() => ReadReadingOperation(out var _);
+
+    private PointingOrFuncCall GetPointingOrFuncCallForLocalFunc(FuncDefSpan func) =>
+        new(false, "getting_func_pointer", [], null, func, func, false, true) { KnownFunc = func };
 
     /*
         private object ReadInstInitSpan(InstInitSpan init)
