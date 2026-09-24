@@ -742,7 +742,7 @@ class PointingOrFuncCall(bool isOperationButNotReadingOperation, string name, IE
 
                 if (item is FuncDefSpan fn)
                 {
-                    FuncPntr funcPntr = new(fn, Interpreter.FindParentVarSystem<Instance>(fn));
+                    FuncPntr funcPntr = new(fn, Interpreter.FindParentVarSystem<Instance>(VS));
                     return funcPntr;
                 }
 
