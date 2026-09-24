@@ -2,22 +2,16 @@
 using Exp;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ArcadeMaker.IDE
 {
     public partial class RoomEditor : Form
     {
-        private GameRoom room = null;
-        private GameObject selectedObj = null;
-        private static Bitmap noSpriteIcon = null;
+        private readonly GameRoom room;
+        private GameObject? selectedObj = null;
+        private static readonly Bitmap noSpriteIcon = Global.NoSpriteIcon;
+
         public RoomEditor(GameRoom room)
         {
             InitializeComponent();
@@ -30,8 +24,6 @@ namespace ArcadeMaker.IDE
                 if (!renaming)
                     nameBox.Text = e.newName;
             };
-
-            noSpriteIcon = Global.NoSpriteIcon;
         }
 
         private Size GetBoardPanelMaxSize()
@@ -155,9 +147,14 @@ namespace ArcadeMaker.IDE
                     {
                         ContextMenuStrip menu = new();
                         ToolStripMenuItem editCreationCodeBtn = new("Creation Code...");
+
+                        // add special color if the creation code is modified 
+                        if (!string.IsNullOrWhiteSpace(obj.Script))
+                            editCreationCodeBtn.ForeColor = Color.Red;
+
                         editCreationCodeBtn.Click += (s, ea) =>
                         {
-                            ScriptEditor editor = new ScriptEditor(obj, obj.Script);
+                            ScriptEditor editor = new(obj, obj.Script);
                             editor.OKClicked += (ss, ee) => obj.Script = ee;
                             editor.ShowDialog();
                         };

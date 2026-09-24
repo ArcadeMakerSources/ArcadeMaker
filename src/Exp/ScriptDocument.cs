@@ -222,7 +222,7 @@ public class InstanceScriptDocument(string name, ClassDefSpan def, string script
     }
 }
 
-public interface ILocatableSourceSpan
+public interface ILocatableSourceMark
 {
     ScriptDocument Document { get; }
     int DocumentLocation { get; }

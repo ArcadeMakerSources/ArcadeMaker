@@ -554,7 +554,7 @@ public enum SpanType
     MultiLineComment,
 }
 
-public class TextSpan : IDisposable, ILocatableSourceSpan
+public class TextSpan : IDisposable, ILocatableSourceMark
 {
     private string _text = "";
     public string text

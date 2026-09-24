@@ -881,8 +881,12 @@ public partial class Interpreter
 
         // on non-static funcs, set parent VS to the instance we're calling on
         var prevParent = func.Parent;
-        if (func.DefinedAt != null)
-            func.Parent = (IVarSystem)inst ?? func.DefinedAt;
+        if (
+            //func.DefinedAt != null && // commented, because what about local function declard inside an instance function?
+            !func.Static && inst != null)
+        {
+            func.Parent = inst;
+        }
 
         try
         {

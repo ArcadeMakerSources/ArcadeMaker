@@ -4,12 +4,9 @@ using ArcadeMaker.Core.Models;
 using ArcadeMaker.Core.Resources;
 using ArcadeMaker.Core.Resources.Serializeables;
 using Exp;
-using Exp.Spans;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace ArcadeMaker.Core.Runtime;
 
@@ -126,7 +123,6 @@ public class Instance : Exp.Instance
         Hspeed = new CustomVariable("hspeed", () => hspeed, (value) => { hspeed = value?.Number; SetSpeedAndDir(); });
         Vspeed = new CustomVariable("vspeed", () => vspeed, (value) => { vspeed = value?.Number; SetSpeedAndDir(); });
         Direction = new CustomVariable("direction", () => direction, (value) => { direction = value?.Number; SetHVSpeeds(); });
-        Vars.AddRange([Speed, Hspeed, Vspeed, Direction]);
         ImageIndex = InitVar("imageIndex", zero, isNumChecker, ValueHelper.tnum);
         ImageSpeed = InitVar("imageSpeed", one, isNumChecker, ValueHelper.tnum);
         ImageAngle = InitVar("imageAngle", zero, isNumChecker, ValueHelper.tnum);
@@ -138,7 +134,10 @@ public class Instance : Exp.Instance
         Solid = InitVar("solid", model.InitValues.Solid.ToExp(), isBoolChecker, ValueHelper.tbool);
         OnPathStepFinished = InitVar("onPathStepFinished", null, val => val is null or FuncPntr, ValueHelper.tfunc);
         SpriteID = new("spriteID", GetSpriteID, SetSprite);
-        Vars.Add(SpriteID);
+
+        // InitVar(...) adds them to the instance's var list, but the ones that initialized without
+        // InitVar(...) must be added here manually
+        Vars.AddRange([Speed, Hspeed, Vspeed, Direction, SpriteID, Depth]);
 
         // init alarms
         for (int alarmIndex = 0; alarmIndex < NUMBER_OF_ALARMS; alarmIndex++)
@@ -167,11 +166,12 @@ public class Instance : Exp.Instance
         }
     }
 
-    public IValue GetSpriteID() => Sprite.ID.ToExp();
+    public IValue? GetSpriteID() => Sprite?.ID.ToExp();
     public void SetSprite(IValue? id)
     {
         ArgumentNullException.ThrowIfNull(id);
-        Sprite = Game.Sprites.FirstOrDefault(spr => spr.ID == id.Number) ?? throw new ArgumentException("Bad ID.");
+        Sprite = Game.Sprites.GetById((int)id.Number);
+        InitMask();
     }
 
     private void AssignExtraProperties()
@@ -261,7 +261,10 @@ public class Instance : Exp.Instance
         var instMask = Sprite?.Mask;
 
         if (instMask == null)
+        {
+            Mask = null;
             return;
+        }
 
         Mask = new MirrorRect(this)
         {
@@ -314,12 +317,14 @@ public class Instance : Exp.Instance
 
     public sealed class MirrorRect(Instance src) : Rect
     {
+        private readonly int _width, _height;
+
         public override double X { get => src.X.Value!.Number; set => src.X.Value = value.ToExp(); }
         public override double Y { get => src.Y.Value!.Number; set => src.Y.Value = value.ToExp(); }
-        public override int Width { get => (int)(field * src.ImageXScale.Value!.Number); init; }
-        public override int Height { get => (int)(field * src.ImageYScale.Value!.Number); init; }
+        public override int Width { get => (int)(_width * System.Math.Abs(src.ImageXScale.Value!.Number)); init => _width  = value; }
+        public override int Height { get => (int)(_height * System.Math.Abs(src.ImageYScale.Value!.Number)); init => _height = value; }
         public override double Angle { get => src.ImageAngle.Value!.Number; set => src.ImageAngle.Value = value.ToExp(); }
-        public override int OriginX { get => (int)(field * src.ImageXScale.Value!.Number); set; }
-        public override int OriginY { get => (int)(field * src.ImageYScale.Value!.Number); set; }
+        public override int OriginX { get => (int)((src.ImageXScale.Value!.Number < 0 ? _width - field : field) * System.Math.Abs(src.ImageXScale.Value!.Number)); set; }
+        public override int OriginY { get => (int)((src.ImageYScale.Value!.Number < 0 ? _height - field : field) * System.Math.Abs(src.ImageYScale.Value!.Number)); set; }
     }
 }

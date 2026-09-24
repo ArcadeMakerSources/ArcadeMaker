@@ -28,8 +28,38 @@ public class RoomModel(string name, string caption, int w, int h, Color backgrou
 
 public class RoomInitMap(RoomInitMap.Item[] items)
 {
-    public record struct Item(double X, double Y, int ImageIndex, ObjectModel Object);
+    public class Item
+    {
+        public double X { get; }
+        public double Y { get; }
+        public int ImageIndex { get; }
+        public ObjectModel Object { get; }
+        public string? CreationCode { get; }
+        public InstanceScriptDocument? CreationCodeDoc { get; }
+
+        public Item(double x, double y, int imageIndex, ObjectModel @object, string? creationCode, string roomName)
+        {
+            this.X = x;
+            this.Y = y;
+            this.ImageIndex = imageIndex;
+            this.Object = @object;
+
+            if (!string.IsNullOrWhiteSpace(creationCode))
+            {
+                this.CreationCode = creationCode;
+
+                // create the InstanceScriptDocument for the creation code
+                string docName = $"{roomName}.Instances({Object.Name}, X: {(int)X}, Y: {(int)Y}).CreationCode";
+                CreationCodeDoc = ExpSrc.ExpSrc.CreateInstanceScriptDocument(docName, Object.Class, CreationCode);
+
+                if (!CreationCodeDoc.ContainsCode)
+                    CreationCodeDoc = null;
+            }
+        }
+    }
     public Item[] Items => items;
+
+    public int NumberOfInstancesWithCreationCode { get; } = items.Count(i => i.CreationCodeDoc != null);
 }
 
 public class RoomView(double x, double y)

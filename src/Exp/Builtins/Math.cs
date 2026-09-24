@@ -11,6 +11,8 @@ static class Math
 {
     private const string ns = "math";
 
+    private static readonly Random _random = new();
+
     private static readonly NumberValue _pi  = Smath.PI.ToExp();
     private static readonly NumberValue _e   = Smath.E.ToExp();
     private static readonly NumberValue _tau = Smath.Tau.ToExp();
@@ -23,6 +25,16 @@ static class Math
 
     [ExpFunc(Namespace = ns)]
     public static IValue Tau(Instance? _, IValue?[] args) => _tau;
+
+    [ExpFunc(0, 1, 2, Namespace = ns)]
+    public static IValue Random(Instance? _, IValue?[] args)
+    {
+        if (args.Length == 0)
+            return _random.NextDouble().ToExp();
+        if (args.Length == 1)
+            return _random.Next((int)args[0].ThrowIfNull().Number).ToExp();
+        return _random.Next((int)args[0].ThrowIfNull().Number, (int)args[1].ThrowIfNull().Number).ToExp();
+    }
 
     [ExpFunc(1, Namespace = ns)]
     public static IValue Sqrt(Instance? _, IValue?[] args) => Smath.Sqrt(args[0].ThrowIfNull().Number).ToExp();

@@ -291,10 +291,15 @@ namespace ArcadeMaker.IDE
 
             SetMasks();
 
+            boundingLeftBox.Maximum = Mask.width - 1;
+            boundingRightBox.Maximum = Mask.width - 1;
+            boundingTopBox.Maximum = Mask.height - 1;
+            boundingBottomBox.Maximum = Mask.height - 1;
+
             if (sprite.maskBounding_manual)
             {
                 this.Top = sprite.maskTop;
-                this.right = sprite.maskRight;
+                this.Right = sprite.maskRight;
                 this.Left = sprite.maskLeft;
                 this.Bottom = sprite.maskBottom;
             }
@@ -302,11 +307,6 @@ namespace ArcadeMaker.IDE
                 boundingFullOpt_CheckedChanged(this, EventArgs.Empty);
             else if (sprite.maskBounding_auto)
                 SetBoundingAutomatic();
-
-            boundingLeftBox.Maximum = Mask.width - 1;
-            boundingRightBox.Maximum = Mask.width - 1;
-            boundingTopBox.Maximum = Mask.height - 1;
-            boundingBottomBox.Maximum = Mask.height - 1;
 
             boundingAutoOpt.Checked = Sprite.maskBounding_auto;
             boundingFullOpt.Checked = Sprite.maskBounding_fullImage;

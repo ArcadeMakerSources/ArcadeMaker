@@ -32,8 +32,18 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         // build
         ExpError[]? eventsErrors = null;
         Interpreter.Build(ScriptDocument.FromString("", "main.script"), game.Objects.Map(model => model.Class), game.Scripts.ToArray());
+
+        // build instance scripts (events & room-instances' creation-codes)
         if (removeEmptyEvents)
             game.Objects.ForEach(obj => obj.Events.ForEach(ev => ev.Docs!.ForEach(doc => doc.TryPrepare(Interpreter, out eventsErrors))));
+        foreach (RoomModel room in game.Rooms)
+        {
+            foreach (var item in room.InitMap.Items)
+            {
+                item.CreationCodeDoc?.TryPrepare(Interpreter, out eventsErrors);
+            }
+        }
+
         if (eventsErrors?.Length >= 1)
         {
             // TODO: do something...
@@ -323,7 +333,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         if (!Game.Rooms.Contains(room.Model))
             throw new Exception("The specified room is not part of the game.");
 
-        // if there's an existing room ( =it's not the beginning of the game), destroy all instances
+        // if there's an existing room (=it's not the beginning of the game), destroy all instances
         if (Game.CurrentRoom != null)
         {
             while (Game.CurrentRoom.Instances.Count >= 1)
@@ -357,6 +367,8 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         {
             instance.FireCreateEvent(Interpreter);
         }
+
+        room.Init(Interpreter);
     }
 
     public void GoToRoom(RoomModel roomModel)

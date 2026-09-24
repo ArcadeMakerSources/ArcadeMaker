@@ -12,7 +12,7 @@ namespace Exp
     public partial class Interpreter
     {
         internal HashSet<ExpError> Errors { get; } = [];
-        internal void Error(string msg, ILocatableSourceSpan? throwing = null, bool beforeCurrentSpan = true)
+        internal void Error(string msg, ILocatableSourceMark? throwing = null, bool beforeCurrentSpan = true)
         {
             GetLocLine(beforeCurrentSpan, out int line, out int col, out string sourceName, throwing);
             var err = new ExpError(sourceName, line, col, msg);
@@ -20,7 +20,7 @@ namespace Exp
             //throw err;
         }
 
-        private void GetLocLine(bool beforeCurrentSpan, out int line, out int col, out string sourceName, ILocatableSourceSpan? throwing = null)
+        private void GetLocLine(bool beforeCurrentSpan, out int line, out int col, out string sourceName, ILocatableSourceMark? throwing = null)
         {
             bool throwingAttached = throwing != null;
             throwing ??= lastSpan;

@@ -10,16 +10,16 @@ namespace Exp;
 
 public partial class Interpreter
 {
-    private IReadingOperation ReadReadingOperation(out Span[] src, Span firstSpan = null)
+    private IReadingOperation ReadReadingOperation(out Span[] src, Span? firstSpan = null)
     {
         bool deleteRecord = readValue_codeRecord == null;
         readValue_codeRecord ??= [];
 
-        IReadingOperation ReadSingle(out bool wasval, out bool bracketWasRead)
+        IReadingOperation? ReadSingle(out bool wasval, out bool bracketWasRead)
         {
             wasval = false;
             bracketWasRead = false;
-            IReadingOperation value = null;
+            IReadingOperation? value = null;
             Span span = firstSpan ?? ReadSpan();
             firstSpan = null;
             if (span is null)
@@ -42,10 +42,16 @@ public partial class Interpreter
             else if (span is FuncDefSpan func)
             {
                 if (func.Name != null)
-                    Error($"A {FuncDefSpan.ItemName} that is get readed as a value shouldn't have a name.");
+                    Error($"A {FuncDefSpan.ItemName} which is read as a value shouldn't have a name.");
                 func.SpanItselfIsReadedAsValue = true;
                 func.Operations ??= ReadOperations(func.InnerSource, func);
-                value = new ReadingOperation(new FuncPntr(func, null));
+                //value = new ReadingOperation(new FuncPntr(func, null));
+                // this way we get FuncPntr with Instance property set:
+                value = GetPointingOrFuncCallForLocalFunc(func);
+                
+                // functions are created with Static = true by default
+                if (func.IsDeclaredInsideInstanceFunc(out var _))
+                    func.Static = false;
             }
             else if (span is LenofWordSpan lenof)
                 value = new LenofReadingOperation(ReadReadingOperation(), lenof);
@@ -342,6 +348,9 @@ public partial class Interpreter
 
     private IReadingOperation ReadReadingOperation() => ReadReadingOperation(out var _);
 
+    private PointingOrFuncCall GetPointingOrFuncCallForLocalFunc(FuncDefSpan func) =>
+        new(false, "getting_func_pointer", [], null, func, func, false, true) { KnownFunc = func };
+
     /*
         private object ReadInstInitSpan(InstInitSpan init)
         {
@@ -396,7 +405,7 @@ public partial class Interpreter
         }
     */
 
-    internal INamedValue GetNamedValueItem(IVarSystem vs, string name, Span span, bool first, int argsNum, string nsSpec = null)
+    internal INamedValue GetNamedValueItem(IVarSystem vs, string name, Span span, bool first, int argsNum, string? nsSpec = null)
     {
         if (nsSpec == null)
         {
@@ -404,10 +413,10 @@ public partial class Interpreter
             var pntr = GetPointer(name, vs, out var foundAt);
 
             if (pntr != null)
+            {
                 ValidateAccess(pntr, foundAt, span.GetVS());
-
-            if (pntr != null)
                 return pntr;
+            }
 
             // if it's a function
             var funcLs = new List<FuncDefSpan>();
@@ -502,8 +511,24 @@ public partial class Interpreter
 
             // if it is the first in the raw, then the var / func is already known (unless it's a property, in which case it will be read later as a pointing)
             var funcCtx = FindParentContext<FuncDefSpan>(word);
-            if (newp == null && !(funcCtx != null && funcCtx.DefinedAt is ClassDefSpan cls && cls.Props.Any(p => p.Name == name))) // if it's not a property
+            if (newp == null && !(funcCtx?.DefinedAt is { } cls && cls.Props.Any(p => p.Name == name))) // if it's not a property
             {
+                // actually, it may still be a property, if it's a local function defined inside an instance function, and it references a property without the "this." prefix
+                if (funcCtx is not null)
+                {
+                    // search a parent instance function
+                    IVarSystem? _parentVs = funcCtx.Parent;
+                    while (_parentVs is not null)
+                    {
+                        if (_parentVs is FuncDefSpan { DefinedAt: not null, Static: false } parentInstanceFunc)
+                        {
+                            if (parentInstanceFunc.DefinedAt.Props.Any(p => p.Name == name))
+                                goto MightBeAnythingIncludingInstanceProperty;
+                        }
+                        _parentVs = _parentVs.Parent;
+                    }
+                }
+
                 if (first == null)
                 {
                     possibilities = GetNamedValueItem(vs, name, word, true, paramsCounter ?? argLists.FirstOrDefault()?.Length ?? -1, nsSpec)?.PackAsArray(false);
@@ -598,6 +623,8 @@ public partial class Interpreter
 
                 }
             }
+
+        MightBeAnythingIncludingInstanceProperty:
 
             // if there are multiple possibilities, try to find the right one by the num of arguments (if there are arg lists)
             INamedValue known = possibilities?.FirstOrDefault(p => p is not FuncDefSpan func || func.Args.Length == argLists.FirstOrDefault()?.Length);

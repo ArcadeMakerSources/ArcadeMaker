@@ -322,7 +322,7 @@ namespace ArcadeMaker.IDE
                 for (int i = 0; i < robjs.Length; i++)
                 {
                     robjs[i] = new SerializeableRoomObject { id = room.objects[i].id, obj = room.objects[i].obj.name, x = room.objects[i].x, y = room.objects[i].y, imageIndex = room.objects[i].imageIndex };
-                    if (room.objects[i].HasCustomCreationCode())
+                    if (!string.IsNullOrWhiteSpace(room.objects[i].Script))
                         robjs[i].creationCode = room.objects[i].Script;
                 }
                 List<SerializeableRoomView> views = new List<SerializeableRoomView>();

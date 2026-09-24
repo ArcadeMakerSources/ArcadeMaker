@@ -61,14 +61,28 @@ internal static class Debug
             futileGame.Sounds.AddRange(Environment.Project.items.OfType<GameSound>().Map(s => new Core.Resources.Sound(s.name, "", 0, 0, 0, Core.Resources.Sound.Types.SoundEffect)));
             futileGame.Scripts.AddRange(Environment.Project.items.OfType<GameScript>().Map(script => ScriptDocument.FromString(script.Script, script.name)));
             futileGame.Paths.AddRange(Environment.Project.items.OfType<GamePath>().Map(p => new Core.Resources.Path(p.name, 0, 0, [])));
-            futileGame.Rooms.AddRange(Environment.Project.items.OfType<GameRoom>().Map(r => new RoomModel(r.name, "", 0, 0, default, new([]))));
+            futileGame.Rooms.AddRange(Environment.Project.items.OfType<GameRoom>().Map(r =>
+            {
+                List<RoomInitMap.Item> roomInsts = [];
+                foreach (var inst in r.objects)
+                {
+                    roomInsts.Add(new(inst.x, inst.y, inst.imageIndex, futileGame.Objects.First(model => model.Name == inst.obj.name), inst.Script, r.name));
+                }
+                return new RoomModel(r.name, "", 0, 0, default, new([.. roomInsts]));
+            }));
 
             GameRunner = new(futileGame, removeEmptyEvents: false);
 
             // catch errors in event scripts
             futileGame.Objects.ForEach(model =>
             {
-                model.Events.ForEach(e => e.Docs?.ForEach(script => { ExpError[]? errors = null; script?.TryPrepare(GameRunner.Interpreter, out errors); CatchErrors(errors.Map(e => new ProjectError(e))); }));
+                model.Events.ForEach(e => e.Docs?.ForEach(script => { ExpError[] errors = null!; script?.TryPrepare(GameRunner.Interpreter, out errors); CatchErrors(errors?.Map(e => new ProjectError(e)) ?? []); }));
+            });
+
+            // catch errors in room-instances creation-codes
+            futileGame.Rooms.ForEach(room =>
+            {
+                room.InitMap.Items.ForEach(i => { ExpError[] errors = null!; i.CreationCodeDoc?.TryPrepare(GameRunner.Interpreter, out errors); CatchErrors(errors?.Map(e => new ProjectError(e)) ?? []); });
             });
 
             //Interpreter.Build(ScriptDocument.FromString("", "main.script"), defs, [..sources]);

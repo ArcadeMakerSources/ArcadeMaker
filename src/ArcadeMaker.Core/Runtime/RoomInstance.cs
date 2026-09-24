@@ -1,5 +1,6 @@
 ﻿using ArcadeMaker.Core.Models;
 using Exp;
+using Exp.Spans;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -13,6 +14,7 @@ namespace ArcadeMaker.Core.Runtime
 
         public List<RoomBackground> Backgrounds { get; } = [];
         private readonly List<Instance> instances = [];
+        private readonly (Instance inst, InstanceScriptDocument doc)[] instanceCreationCodes;
         public List<Instance> Instances => instances;
         public IEnumerable<Instance> SortedInstances
         {
@@ -32,8 +34,10 @@ namespace ArcadeMaker.Core.Runtime
         {
             this.Model = model;
             this.Game = game;
+            instanceCreationCodes = new (Instance, InstanceScriptDocument)[model.InitMap.NumberOfInstancesWithCreationCode];
 
             // add all instances from the init map
+            int indexOfInstWithCreationCode = 0;
             foreach (var item in model.InitMap.Items)
             {
                 var instance = new Instance(game, item.Object);
@@ -42,6 +46,11 @@ namespace ArcadeMaker.Core.Runtime
                 instance.ImageIndex.Value = item.ImageIndex.ToExp();
                 instance.DepthChanged += MarkDepthChanged;
                 AddInstance(instance);
+
+                if (item.CreationCodeDoc != null)
+                {
+                    instanceCreationCodes[indexOfInstWithCreationCode++] = (instance, item.CreationCodeDoc);
+                }
             }
 
             // copy all backgrounds from the model
@@ -96,6 +105,19 @@ namespace ArcadeMaker.Core.Runtime
         public void MarkDepthChanged(object? sender, double depth)
         {
             isSorted = false;
+        }
+
+        /// <summary>
+        /// Runs all room-instance-creation-codes for the instances of this room.
+        /// </summary>
+        /// <param name="interpreter">The interpreter to execute the scripts with.</param>
+        internal void Init(Interpreter interpreter)
+        {
+            // run all instance creation codes
+            foreach (var (inst, doc) in instanceCreationCodes)
+            {
+                doc.Run(interpreter, inst);
+            }
         }
     }
 }

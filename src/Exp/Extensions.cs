@@ -301,7 +301,7 @@ public static class Extensions
         throw new ArgumentException($"Argument {index} must be of type {typeof(T).FullName}.");
     }
 
-    public static bool IsLiterallyValidName(this string name)
+    public static bool IsLiterallyValidName(this string? name)
     {
         static bool IsAbcOr_(char c) => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_');
 
