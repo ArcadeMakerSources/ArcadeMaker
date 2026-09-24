@@ -58,6 +58,8 @@ public class RoomInitMap(RoomInitMap.Item[] items)
         }
     }
     public Item[] Items => items;
+
+    public int NumberOfInstancesWithCreationCode { get; } = items.Count(i => i.CreationCodeDoc != null);
 }
 
 public class RoomView(double x, double y)

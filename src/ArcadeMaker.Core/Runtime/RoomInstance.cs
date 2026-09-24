@@ -14,7 +14,7 @@ namespace ArcadeMaker.Core.Runtime
 
         public List<RoomBackground> Backgrounds { get; } = [];
         private readonly List<Instance> instances = [];
-        private readonly Dictionary<Instance, InstanceScriptDocument> instanceCreationCodes = [];
+        private readonly (Instance inst, InstanceScriptDocument doc)[] instanceCreationCodes;
         public List<Instance> Instances => instances;
         public IEnumerable<Instance> SortedInstances
         {
@@ -34,8 +34,10 @@ namespace ArcadeMaker.Core.Runtime
         {
             this.Model = model;
             this.Game = game;
+            instanceCreationCodes = new (Instance, InstanceScriptDocument)[model.InitMap.NumberOfInstancesWithCreationCode];
 
             // add all instances from the init map
+            int indexOfInstWithCreationCode = 0;
             foreach (var item in model.InitMap.Items)
             {
                 var instance = new Instance(game, item.Object);
@@ -47,7 +49,7 @@ namespace ArcadeMaker.Core.Runtime
 
                 if (item.CreationCodeDoc != null)
                 {
-                    instanceCreationCodes.Add(instance, item.CreationCodeDoc);
+                    instanceCreationCodes[indexOfInstWithCreationCode++] = (instance, item.CreationCodeDoc);
                 }
             }
 
@@ -112,9 +114,9 @@ namespace ArcadeMaker.Core.Runtime
         internal void Init(Interpreter interpreter)
         {
             // run all instance creation codes
-            foreach (var pair in instanceCreationCodes)
+            foreach (var (inst, doc) in instanceCreationCodes)
             {
-                pair.Value.Run(interpreter, pair.Key);
+                doc.Run(interpreter, inst);
             }
         }
     }
