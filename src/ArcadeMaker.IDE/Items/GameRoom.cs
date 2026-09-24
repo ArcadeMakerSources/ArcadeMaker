@@ -105,7 +105,7 @@ namespace ArcadeMaker.IDE.Items
     {
         public readonly string id;
         public int x, y, imageIndex;
-        public GameObject obj;
+        public readonly GameObject obj;
 
         public RoomObject(string id, int x, int y, int imageIndex, GameObject obj)
         {
@@ -114,25 +114,13 @@ namespace ArcadeMaker.IDE.Items
             this.y = y;
             this.imageIndex = imageIndex;
             this.obj = obj;
-
-            string[] use = new string[] { "System", "System.Collections.Generic", "System.Linq", "System.Threading.Tasks", "ArcadeMaker", "ArcadeMaker.Models", "ArcadeMaker.Controls", "ArcadeMaker.GameItems", "ArcadeMaker.Drawing" };
-            defaultCreationCode = "";
-            foreach (string ns in use)
-                defaultCreationCode += "using " + ns + ";\n";
-            defaultCreationCode += $"\nnamespace Game\n{{\tpublic static partial class CreationCodes\n\t{{\n\t\tpublic static void {id}_Create({obj.name} instance)\n\t\t{{\n\t\t\t\n\t\t}}\n\t}}\n}}";
-            //Script = defaultCreationCode;
         }
 
-        public readonly string defaultCreationCode = null;
-        public string Script { get; set; } = null;
-        public bool CompiledSyntaxTree { get; set; } = false;
 
-        public bool HasCustomCreationCode()
-        {
-            return defaultCreationCode != Script;
-        }
-
-        public string ScriptOrDefaultCreationCode => Script ?? defaultCreationCode;
+        /// <summary>
+        /// Creation code.
+        /// </summary>
+        public string Script { get; set; } = "";
     }
 
     public class RoomBackground

@@ -24,10 +24,10 @@ namespace ArcadeMaker.IDE
 
         private void resetCodeBtn_Click(object sender, EventArgs e)
         {
-            if (codeBox.Text != obj.defaultCreationCode)
+            if (!string.IsNullOrWhiteSpace(codeBox.Text))
             {
                 if (MessageBox.Show("Are you sure you want to reset creation code for this instance?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                    codeBox.Text = obj.defaultCreationCode;
+                    codeBox.Text = "";
             }
         }
 
@@ -41,7 +41,7 @@ namespace ArcadeMaker.IDE
 
         private void RoomInstanceCreationCodeEditor_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (!closedWithOkBtn && codeBox.Text != obj.defaultCreationCode)
+            if (!closedWithOkBtn && !string.IsNullOrWhiteSpace(codeBox.Text))
             {
                 DialogResult result = MessageBox.Show("Do you want to save changes?", "Close", MessageBoxButtons.YesNoCancel);
                 if (result == DialogResult.Cancel)

@@ -1,5 +1,6 @@
 ﻿using ArcadeMaker.Core.Models;
 using Exp;
+using Exp.Spans;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -13,6 +14,7 @@ namespace ArcadeMaker.Core.Runtime
 
         public List<RoomBackground> Backgrounds { get; } = [];
         private readonly List<Instance> instances = [];
+        private readonly Dictionary<Instance, InstanceScriptDocument> instanceCreationCodes = [];
         public List<Instance> Instances => instances;
         public IEnumerable<Instance> SortedInstances
         {
@@ -42,6 +44,11 @@ namespace ArcadeMaker.Core.Runtime
                 instance.ImageIndex.Value = item.ImageIndex.ToExp();
                 instance.DepthChanged += MarkDepthChanged;
                 AddInstance(instance);
+
+                if (item.CreationCodeDoc != null)
+                {
+                    instanceCreationCodes.Add(instance, item.CreationCodeDoc);
+                }
             }
 
             // copy all backgrounds from the model
@@ -96,6 +103,19 @@ namespace ArcadeMaker.Core.Runtime
         public void MarkDepthChanged(object? sender, double depth)
         {
             isSorted = false;
+        }
+
+        /// <summary>
+        /// Runs all room-instance-creation-codes for the instances of this room.
+        /// </summary>
+        /// <param name="interpreter">The interpreter to execute the scripts with.</param>
+        internal void Init(Interpreter interpreter)
+        {
+            // run all instance creation codes
+            foreach (var pair in instanceCreationCodes)
+            {
+                pair.Value.Run(interpreter, pair.Key);
+            }
         }
     }
 }

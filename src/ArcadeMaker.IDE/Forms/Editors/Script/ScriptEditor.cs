@@ -56,8 +56,6 @@ namespace ArcadeMaker.IDE
             scriptBox.Enabled = false;
 
             string script = obj.Script;
-            if (obj is RoomObject ro)
-                script = ro.ScriptOrDefaultCreationCode;
             if (string.IsNullOrEmpty(scriptBox.Text) && !string.IsNullOrEmpty(script))
                 scriptBox.Spans.AddRange(Global.GetScriptBoxSpans(script, SpansTextBox2.TabSpace));
             //await Task.Run(InitCompilation);
