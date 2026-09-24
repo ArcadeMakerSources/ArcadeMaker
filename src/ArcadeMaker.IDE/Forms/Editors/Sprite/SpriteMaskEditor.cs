@@ -299,7 +299,7 @@ namespace ArcadeMaker.IDE
             if (sprite.maskBounding_manual)
             {
                 this.Top = sprite.maskTop;
-                this.right = sprite.maskRight;
+                this.Right = sprite.maskRight;
                 this.Left = sprite.maskLeft;
                 this.Bottom = sprite.maskBottom;
             }

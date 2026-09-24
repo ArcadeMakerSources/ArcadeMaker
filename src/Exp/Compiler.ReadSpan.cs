@@ -686,7 +686,12 @@ public partial class Interpreter
                         if (next is ClosingBracketSpan)
                             break;
                         if (next is not CommaSpan)
-                            Error($"Unexpected span in attribute defination ('{next.FullText}').");
+                        {
+                            if (next == null)
+                                Error($"Unexpected end of code in attribute '{defnm}' declaration.");
+                            else
+                                Error($"Unexpected span in attribute defination ('{next.FullText}').");
+                        }
                     }
                 }
                 else

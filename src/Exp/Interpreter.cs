@@ -650,38 +650,44 @@ namespace Exp
                 if (spoiler == null || spoiler is not OpeningBracketSpan)
                 {
                     if (attr.Params.Length >= 1)
-                        Error("Expected '('" + (spoiler != null ? $", but '{spoiler.FullText}' was read" : "") + ".");
-                    else
-                        goto AfterReadingArgs;
+                        Error($"Argument list expected, as attribute {attr.GetExpTypeName(false)} takes {attr.Params.Length} parameters.", defName);
+                    goto AfterReadingArgs;
                 }
                 Read<OpeningBracketSpan>();
                 for (int i = 0; i < attr.Params.Length; i++)
                 {
                     var valop = ReadReadingOperation();
-                    if (valop is not ConstValueReadingOperation or ConstArrayReadingOperation)
-                        Error($"Argument {i} of attribute {((IDefination)attr).FullName} must be a constant value.");
-                    var val = valop.Read();
+                    bool argIsMissing = valop == null;
+                    if (argIsMissing)
+                        Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} is missing from tag declaration.", defName);
+                    else if (valop is not ConstValueReadingOperation or ConstArrayReadingOperation)
+                        Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} must be a constant value.", defName);
+                    var val = valop?.Read();
 
                     // check type match
-                    bool typeMismatch = false;
-                    if (attr.Params[i].ExpType != null)
-                        typeMismatch = val is not Instance inst || attr.Params[i].ExpType != inst.def.ExpType;
-                    else
-                        typeMismatch = attr.Params[i].Type != val?.GetType();
+                    if (!argIsMissing)
+                    {
+                        bool typeMismatch = false;
+                        if (attr.Params[i].ExpType != null)
+                            typeMismatch = val is not Instance inst || attr.Params[i].ExpType != inst.def.ExpType;
+                        else
+                            typeMismatch = attr.Params[i].Type != val?.GetType();
 
-                    if (typeMismatch)
-                        Error($"Argument {i} of attribute {((IDefination)attr).FullName} must be of type {attr.Params[i].ExpType?.Vars[1].Value.GetExpTypeName(true) ?? attr.Params[i].Type.GetExpTypeName()} (Type read: {Extensions.GetExpTypeName(val, true)}).");
+                        if (typeMismatch)
+                            // TODO: this error message sometimes mention wrong expected type (try expecting Array and passing string)
+                            Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} must be of type {attr.Params[i].ExpType?.Vars[1].Value.GetExpTypeName(true) ?? attr.Params[i].Type.GetExpTypeName(false)} (Type read: {Extensions.GetExpTypeName(val, true)}).", defName);
+                    }
 
                     args.Add(val);
 
                     // read , or )
                     var next = ReadSpan();
                     if (next == null)
-                        Error("Missing ).");
-                    if (next is ClosingBracketSpan)
+                        Error("Missing ).", defName);
+                    else if (next is ClosingBracketSpan)
                         break;
-                    if (next is not CommaSpan)
-                        Error($"Unexpected span '{next.FullText}'.");
+                    else if (next is not CommaSpan)
+                        Error($"Unexpected span '{next.FullText}'.", next);
                 }
             AfterReadingArgs:
 
