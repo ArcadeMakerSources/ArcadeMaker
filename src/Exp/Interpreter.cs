@@ -675,7 +675,7 @@ namespace Exp
 
                         if (typeMismatch)
                             // TODO: this error message sometimes mention wrong expected type (try expecting Array and passing string)
-                            Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} must be of type {attr.Params[i].ExpType?.Vars[1].Value.GetExpTypeName(true) ?? attr.Params[i].Type.GetExpTypeName(false)} (Type read: {Extensions.GetExpTypeName(val, true)}).", defName);
+                            Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} must be of type {attr.Params[i].ExpType?.Vars[1].Value?.GetExpTypeName(true) ?? attr.Params[i].Type.GetExpTypeName(false)} (Type read: {Extensions.GetExpTypeName(val, true)}).", defName);
                     }
 
                     args.Add(val);
