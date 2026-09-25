@@ -59,7 +59,7 @@ internal static class Debug
             futileGame.Sprites.AddRange(Environment.Project.items.OfType<GameSprite>().Map(s => new Core.Resources.Sprite(s.name, null, 0, 0, 0, null)));
             futileGame.FontsData.AddRange(Environment.Project.items.OfType<GameFont>().Map(r => new Core.Resources.Serializeables.GameFont() { Name = r.name }));
             futileGame.Sounds.AddRange(Environment.Project.items.OfType<GameSound>().Map(s => new Core.Resources.Sound(s.name, "", 0, 0, 0, Core.Resources.Sound.Types.SoundEffect)));
-            futileGame.Scripts.AddRange(Environment.Project.items.OfType<GameScript>().Map(script => ScriptDocument.FromString(script.Script, script.name)));
+            futileGame.Scripts.AddRange(Environment.Project.items.OfType<GameScript>().Map(script => { var doc = ScriptDocument.FromString(script.Script, script.name); doc.Namespace ??= ExpSrc.GameNamespace; doc.Usings.AddRange(ExpSrc.GlobalUsings); return doc; }));
             futileGame.Paths.AddRange(Environment.Project.items.OfType<GamePath>().Map(p => new Core.Resources.Path(p.name, 0, 0, [])));
             futileGame.Rooms.AddRange(Environment.Project.items.OfType<GameRoom>().Map(r =>
             {

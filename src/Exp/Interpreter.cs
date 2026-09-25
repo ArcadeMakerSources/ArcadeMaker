@@ -178,8 +178,6 @@ namespace Exp
         /// <summary>
         /// Creates and iniitializes a new interpreter.
         /// </summary>
-        /// <param name="source">Script to run.</param>
-        /// <param name="imports">Libraries codes.</param>
         public Interpreter()
         {
             this._currentVarSystem_ = this;
@@ -222,7 +220,7 @@ namespace Exp
 
             " OK".Println();
             CollectedDefs = true;
-            CollectDefsCompleted?.Invoke(this, null);
+            CollectDefsCompleted?.Invoke(this, EventArgs.Empty);
 
             ResolveAttributes();
 
