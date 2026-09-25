@@ -426,6 +426,12 @@ class ReturnStatement(FuncDefSpan func, IReadingOperation readingOperation, Retu
 
 class ReadingOperation(IValue value) : IReadingOperation
 {
+    internal static IReadingOperation Error => new CustomReadingOperation<IValue>(() =>
+    {
+        Interpreter.Activated.ThrowRuntime("Execution reached a build-time error expression.", RuntimeException.INVALID_SYNTAX);
+        return null;
+    });
+
     internal IValue Value => value;
 
     public IValue Read()

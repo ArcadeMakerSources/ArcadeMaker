@@ -660,7 +660,7 @@ namespace Exp
                     bool argIsMissing = valop == null;
                     if (argIsMissing)
                         Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} is missing from tag declaration.", defName);
-                    else if (valop is not ConstValueReadingOperation or ConstArrayReadingOperation)
+                    else if (valop is not ConstValueReadingOperation and not ConstArrayReadingOperation)
                         Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} must be a constant value.", defName);
                     var val = valop?.Read();
 
@@ -674,8 +674,7 @@ namespace Exp
                             typeMismatch = attr.Params[i].Type != val?.GetType();
 
                         if (typeMismatch)
-                            // TODO: this error message sometimes mention wrong expected type (try expecting Array and passing string)
-                            Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} must be of type {attr.Params[i].ExpType?.Vars[1].Value?.GetExpTypeName(true) ?? attr.Params[i].Type.GetExpTypeName(false)} (Type read: {Extensions.GetExpTypeName(val, true)}).", defName);
+                            Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} must be of type {attr.Params[i].ExpType?.Vars[1 /*std::Type.fullName*/].Value!.ToString() ?? attr.Params[i].Type.GetExpTypeName()} (Type read: {Extensions.GetExpTypeName(val, true)}).", defName);
                     }
 
                     args.Add(val);

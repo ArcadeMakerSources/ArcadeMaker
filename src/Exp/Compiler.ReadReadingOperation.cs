@@ -65,6 +65,7 @@ public partial class Interpreter
             else if (span is ArrayOpenerSpan)
             {
                 IReadingOperation[] readings = ReadParamListOps(true, true, false);
+                readings!.Replace(null, ReadingOperation.Error);
 
                 // if all of the items are constants, return a constant array
                 if (readings.All(r => r is ConstValueReadingOperation))
