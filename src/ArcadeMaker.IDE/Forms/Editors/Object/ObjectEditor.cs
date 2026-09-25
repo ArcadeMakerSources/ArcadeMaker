@@ -1,15 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Collections.Specialized;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using ArcadeMaker.IDE;
 using ArcadeMaker.IDE.Editors.Object.ObjectProperties;
 using ArcadeMaker.IDE.Items;
 using Exp;
@@ -135,53 +126,6 @@ namespace ArcadeMaker.IDE
             obj.solid = solidBox.Checked;
         }
 
-        bool firstEdit = true;
-        //private void fullCodeBtn_Click(object sender, EventArgs e)
-        //{
-        //    /*
-        //    Form editForm = new Form {  };
-        //    RichTextBox scriptBox = new RichTextBox { Text = obj.part2script.Replace("classname", obj.name), AcceptsTab = true,
-        //        Size = new Size(editForm.Size.Width, editForm.Size.Height - 20),
-        //        Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom };
-        //    Button okEditBtn = new Button { Text = "OK", Location = new Point(5, scriptBox.Size.Height + 5), Anchor = AnchorStyles.Bottom | AnchorStyles.Left };
-        //    okEditBtn.Click += (s, ea) =>
-        //    {
-        //        editForm.Close();
-        //    };
-        //    editForm.FormClosed += (s, ea) =>
-        //    {
-        //        obj.part2script = scriptBox.Text;
-        //    };
-        //    editForm.Controls.Add(scriptBox);
-        //    editForm.Controls.Add(okEditBtn);
-        //    editForm.ShowDialog();
-        //    */
-        //    if (eventsListView.SelectedItem == null)
-        //    {
-        //        MessageBox.Show("Select an event to edit its script.");
-        //        return;
-        //    }
-        //    if (firstEdit)
-        //    {
-        //        firstEdit = false;
-        //        //obj.Script = obj.Script;
-        //    }
-        //    ScriptEditor editor = new(eventsListView.SelectedItem as EventScript, classname: obj.name);
-        //    editor.Owner = this;
-        //    editor.OKClicked += (s, script) =>
-        //    {
-        //        if (eventsListView.SelectedItem?.ToString() == ObjectEvent.Create.ToString())
-        //            obj.createEventScripts.Script = script;
-        //        else if (eventsListView.SelectedItem?.ToString() == ObjectEvent.Step.ToString())
-        //            obj.stepEventScripts.Script = script;
-        //        else if (eventsListView.SelectedItem?.ToString() == ObjectEvent.Draw.ToString())
-        //            obj.drawEventScripts.Script = script;
-        //        else
-        //            throw new NotImplementedException();
-        //    };
-        //    editor.ShowDialog();
-        //}
-
         private void depthBox_ValueChanged(object sender, EventArgs e)
         {
             obj.depth = (int)depthBox.Value;
@@ -301,7 +245,6 @@ namespace ArcadeMaker.IDE
                 return;
 
             // load the scripts of the event to the scripts view
-            int i = 0;
             foreach (var script in ev.Scripts)
             {
                 scriptsListView.Items.Add(new EventScript(ev, script));

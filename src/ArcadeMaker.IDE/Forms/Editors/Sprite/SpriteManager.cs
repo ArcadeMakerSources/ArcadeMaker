@@ -42,7 +42,8 @@ namespace ArcadeMaker.IDE
             NumericUpDown heightBox = new NumericUpDown { Value = 32, Location = new Point(widthBox.Location.X + widthBox.Size.Width + 5, 5), Maximum = 2000 };
             Button okBtn = new Button { Text = "OK", Location = new Point(5, 30) };
             Button cancelBtn = new Button { Text = "Cancel", Location = new Point(okBtn.Location.X + okBtn.Size.Width + 5, 30) };
-            okBtn.Click += (s, ea) => {
+            okBtn.Click += (s, ea) =>
+            {
                 selectSizeFrm.Close();
                 AddImage(new Bitmap((int)widthBox.Value, (int)heightBox.Value));
             };
@@ -98,7 +99,7 @@ namespace ArcadeMaker.IDE
                 int index = imageListView.SelectedIndices[0];
 
                 using SpriteDesigner designer = new SpriteDesigner(bmp);
-                
+
                 if (designer.ShowDialog() == DialogResult.OK)
                 {
                     try
@@ -164,6 +165,11 @@ namespace ArcadeMaker.IDE
             {
                 images.Images.RemoveAt(imageListView.SelectedIndices[0]);
             }
+        }
+
+        private void strechBtn_Click(object sender, EventArgs e)
+        {
+            
         }
     }
 }
