@@ -553,22 +553,60 @@ public partial class Interpreter
                     name = ReadWord()?.FullText;
 
                     // read argument lists again
+                    CountSpan? argsCounter = null;
                     while (Spoiler() is OpeningBracketSpan)
+                    {
+                        // check args counter (like myFunc(..2))
+                        if (argLists.Count == 0 && Spoiler(1) is CountSpan _argsCounter)
+                        {
+                            argsCounter = _argsCounter;
+
+                            // read the opening bracket, the counter and the closing bracket
+                            ReadSpan();
+                            ReadSpan();
+                            Read<ClosingBracketSpan>();
+
+                            break;
+                        }
                         argLists.Add(ReadParamListOps());
+                    }
 
                     // normal class
                     if (defname.Class != null)
                     {
-                        possibilities = (IEnumerable<INamedValue>)defname?.Class?.Vars.FirstOrDefault(v => v.Name == name).PackAsArray(false) ?? defname?.Class?.Funcs.Where(f => f.Name == name);
-                        if (defname?.Class != null && (possibilities == null || !possibilities.Any()))
-                            Error($"'{Extensions.GetExpTypeName(defname.Class, false)}' does not contain a static variable or function named '{name}'.");
+                        int? numOfParams = argLists.FirstOrDefault()?.Length ?? argsCounter?.Count;
+
+                        // get the static member
+                        INamedValue[]? members = defname?.Class?.Vars.Where(v => v.Name == name).ToArray();
+                        if (members is not { Length: >= 1})
+                            members = defname?.Class?.Funcs.Where(f => f.Static && f.Name == name && (numOfParams == null || f.Args.Length == (argLists.FirstOrDefault()?.Length ?? argsCounter?.Count))).ToArray();
+
+                        if (members?.Length >= 2)
+                        {
+                            Error($"{defname.Class.GetExpTypeName(false)} contains more than 1 function with the name '{name}'.", word);
+                        }
+
+                        INamedValue? member = members?.FirstOrDefault();
+
+                        if (member != null)
+                        {
+                            possibilities = [member];
+                            newp = new(isOp, name, argLists, null, vs, word, readValue, true) { Known = member };
+                        }
+                        else
+                        {
+                            if (numOfParams == null)
+                                Error($"'{defname.Class.GetExpTypeName(false)}' does not contain a static property / function named '{name}'.", word);
+                            else
+                                Error($"'{defname.Class.GetExpTypeName(false)}' does not contain a static function named '{name}' that takes {numOfParams} parameters.", word);
+                        }
                     }
 
                     // extern class
                     else if (defname.Extern != null)
                     {
                         // if there are arg lists, point to the FuncDefSpan.ExternInvoker function, with the invocation data as arguments (type, static, methodName, instance, args)
-                        if (argLists.Any())
+                        if (argLists.Count != 0)
                             newp = new PointingOrFuncCall(isOp, name, [[ConstValueReadingOperation.For(SpecialValue.From(defname.Extern.Type)), ConstValueReadingOperation.For(true.ToExp()), ConstValueReadingOperation.For(SpecialValue.From(name)), ConstValueReadingOperation.For(null), ConstValueReadingOperation.For(SpecialValue.From(argLists.First()))]], null, null, word, true, true) { KnownFunc = FuncDefSpan.ExternInvoker };
                         else
                         {
@@ -632,7 +670,7 @@ public partial class Interpreter
 
             // create the pointing
             newp ??= new PointingOrFuncCall(isOp, name, argLists, paramsCounter, first == null ? vs : null, word, readValue, first == null) { Known = known };
-            if (pnt != null) pnt.Next = newp;
+            pnt?.Next = newp;
             pnt = newp;
             first ??= newp;
 

@@ -265,7 +265,8 @@ public static class Extensions
         return $"{type} (C#)";
     }
 
-    internal static IEnumerable<Instance> GetAttrInfoOf(this ICanSetAttr item, AttributeDefSpan attr) => item.AttrInfo.Where(i => i?.Vars[2].Value.ToString() == attr.Name);
+    internal static IEnumerable<Instance> GetAttrInfoOf(this ICanSetAttr item, AttributeDefSpan attr) =>
+        item.AttrInfo.Where(i => i?.Vars[2].Value.ToString() == attr.Name);
 
     internal static bool HasTag(this ICanSetAttr item, AttributeDefSpan attr, out Instance info)
     {
