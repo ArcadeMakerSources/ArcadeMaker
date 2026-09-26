@@ -426,6 +426,12 @@ class ReturnStatement(FuncDefSpan func, IReadingOperation readingOperation, Retu
 
 class ReadingOperation(IValue value) : IReadingOperation
 {
+    internal static IReadingOperation Error => new CustomReadingOperation<IValue>(() =>
+    {
+        Interpreter.Activated.ThrowRuntime("Execution reached a build-time error expression.", RuntimeException.INVALID_SYNTAX);
+        return null;
+    });
+
     internal IValue Value => value;
 
     public IValue Read()
@@ -870,6 +876,35 @@ class PointingOrFuncCall(bool isOperationButNotReadingOperation, string name, IE
 
         void ThrowNullRef() => Interpreter.Activated.ThrowRuntime("Object reference not set to an instance of an object.", RuntimeException.NULL_REFERENCE, span);
         void ThrowPremitiveRef() => Interpreter.Activated.ThrowRuntime($"The value of {item.Name} was a premitive type and it cannot be followed by a dot.", RuntimeException.INVALID_OPERATION, span);
+    }
+
+    /// <summary>
+    /// checks if a ReadingOperation is a pointing to a static const var with literal const value assigned to it
+    /// </summary>
+    /// <param name="interpreter">Needed because <see cref="Interpreter.staticPropsToInit"/> is required.</param>
+    /// <param name="value">The literal constant value that this pointing points to, or <c>null</c> if the method returns <c>false</c>.</param>
+    public bool IsPointingToLiteralConst(Interpreter interpreter, out IValue? value)
+    {
+        if (KnownPointer is ClassStaticVar { Const: true } property)
+        {
+            if (property.Value != null) // enum values are created with a value assigned
+            {
+                value = property.Value;
+                return true;
+            }
+
+            if (interpreter.staticPropsToInit.TryGetValue(property, out IReadingOperation? valueReadingOp))
+            {
+                if (valueReadingOp is ConstValueReadingOperation or ConstArrayReadingOperation)
+                {
+                    value = valueReadingOp.Read();
+                    return true;
+                }
+            }
+        }
+
+        value = null;
+        return false;
     }
 }
 

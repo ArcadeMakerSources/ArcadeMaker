@@ -220,6 +220,7 @@ namespace ArcadeMaker.IDE
             parentBox.Name = "parentBox";
             parentBox.Size = new Size(173, 38);
             parentBox.TabIndex = 23;
+            parentBox.Visible = false;
             parentBox.SelectionChanged += parentBox_SelectionChanged;
             // 
             // spriteBox

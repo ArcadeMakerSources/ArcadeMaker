@@ -158,7 +158,7 @@ namespace Exp
 
         private uint localFuncsCounter = 0;
 
-        private readonly Dictionary<ClassStaticVar, IReadingOperation> staticPropsToInit = [];
+        internal readonly Dictionary<ClassStaticVar, IReadingOperation> staticPropsToInit = [];
 
         /// <summary>
         /// The currently activated <see cref="Interpreter"/> instance.
@@ -178,8 +178,6 @@ namespace Exp
         /// <summary>
         /// Creates and iniitializes a new interpreter.
         /// </summary>
-        /// <param name="source">Script to run.</param>
-        /// <param name="imports">Libraries codes.</param>
         public Interpreter()
         {
             this._currentVarSystem_ = this;
@@ -222,9 +220,9 @@ namespace Exp
 
             " OK".Println();
             CollectedDefs = true;
-            CollectDefsCompleted?.Invoke(this, null);
+            CollectDefsCompleted?.Invoke(this, EventArgs.Empty);
 
-            ResolveAttributes();
+            //ResolveAttributes();
 
             void OperateFunc(FuncDefSpan func)
             {
@@ -242,6 +240,8 @@ namespace Exp
                         staticPropsToInit.Add(staticProp, ReadReadingOperation(staticProp.InitValueCode));
                 }
             }
+
+            ResolveAttributes();
 
             // overrides
             Builtins.OverridesAttribute.ApplyForAll(this);
@@ -658,14 +658,25 @@ namespace Exp
                 {
                     var valop = ReadReadingOperation();
                     bool argIsMissing = valop == null;
+
+                    bool isPointingToLiteralConst = false;
+                    IValue? constValueFromPointer = null;
+                    if (valop is PointingOrFuncCall pointing)
+                         isPointingToLiteralConst = pointing.IsPointingToLiteralConst(this, out constValueFromPointer);
+
+                    bool isConst = true;
+
                     if (argIsMissing)
                         Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} is missing from tag declaration.", defName);
-                    else if (valop is not ConstValueReadingOperation or ConstArrayReadingOperation)
+                    else if (valop is not ConstValueReadingOperation and not ConstArrayReadingOperation && !isPointingToLiteralConst)
+                    {
                         Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} must be a constant value.", defName);
-                    var val = valop?.Read();
+                        isConst = false;
+                    }
+                    var val = isPointingToLiteralConst ? constValueFromPointer : valop?.Read();
 
                     // check type match
-                    if (!argIsMissing)
+                    if (!argIsMissing && isConst)
                     {
                         bool typeMismatch = false;
                         if (attr.Params[i].ExpType != null)
@@ -674,8 +685,7 @@ namespace Exp
                             typeMismatch = attr.Params[i].Type != val?.GetType();
 
                         if (typeMismatch)
-                            // TODO: this error message sometimes mention wrong expected type (try expecting Array and passing string)
-                            Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} must be of type {attr.Params[i].ExpType?.Vars[1].Value?.GetExpTypeName(true) ?? attr.Params[i].Type.GetExpTypeName(false)} (Type read: {Extensions.GetExpTypeName(val, true)}).", defName);
+                            Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} must be of type {attr.Params[i].ExpType?.Vars[1 /*std::Type.fullName*/].Value!.ToString() ?? attr.Params[i].Type.GetExpTypeName()} (Type read: {Extensions.GetExpTypeName(val, true)}).", defName);
                     }
 
                     args.Add(val);
@@ -731,12 +741,24 @@ namespace Exp
                         Error($"Function {fn} must take {attr.Func_ParamsCountRequirement} parameters because it has tag of attribute {attr.GetExpTypeName(false)}.");
                 }
 
+                // if it's an attribute with @ExpectFunc tag(s), validate that the func name & parameters count are valid
+                if (attr is { Name: "ExpectFunc", Namespace: STD_NAMESPACE }) // AttributeDefSpan.ExpeftFuncAttr is not assigned yet!
+                {
+                    string? funcName = args[0]?.ToString();
+                    if (!funcName.IsLiterallyValidName())
+                        Error($"'{funcName}' is not a valid function name.", code.FirstOrDefault());
+
+                    double? paramsCount = args[1]?.Number;
+                    if (paramsCount == null || paramsCount < 0 || paramsCount % 1 != paramsCount)
+                        Error($"{paramsCount?.ToString() ?? "NULL"} is not a valid count. Must be an absolute number without floating point.");
+                }
+
                 // validate expects
                 if (taggedItem is ClassDefSpan cls)
                 {
                     foreach (var info in attr.GetAttrInfoOf(AttributeDefSpan.ExpectFuncAttr))
                     {
-                        var infoVals = info.Vars.First(v => v.Name == "values").Value.Inst;
+                        var infoVals = info.Vars.First(v => v.Name == "values").Value!.Inst;
                         string func1 = infoVals.ArrayValues[0].Inst.ToString();
                         int paramsc = (int)infoVals.ArrayValues[1].Number;
                         bool stat = infoVals.ArrayValues[2].Bool;

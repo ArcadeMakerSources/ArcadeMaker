@@ -11,20 +11,15 @@ using Exp;
 
 namespace ArcadeMaker.IDE.Items
 {
-    public class GameObject : GameItem, ISetsIcon //, IContainsScript
+    public class GameObject : GameItem, ISetsIcon
     {
         public static Bitmap Icon => Properties.Resources.object32;
 
         public List<IDEObjectProperty> ExtraProperties { get; } = [];
         public List<ObjectEvent> Events { get; } = [];
 
-        public bool CompiledSyntaxTree { get; set; } = false;
-
-        public bool compiledModelsTree = false;
-
-        private string _part2script = null;
-        private GameSprite _sprite = null;
-        public GameSprite sprite
+        private GameSprite? _sprite;
+        public GameSprite? sprite
         {
             get
             {
@@ -42,7 +37,7 @@ namespace ArcadeMaker.IDE.Items
                     }
                     else
                     {
-                        Global.form1.treeImages.Images[treeImageIndex] = new System.Drawing.Bitmap(1, 1);
+                        Global.form1.treeImages.Images[treeImageIndex] = new Bitmap(1, 1);
                         treeNode.ImageIndex = treeImageIndex;
                         treeNode.SelectedImageIndex = treeImageIndex;
                     }
@@ -108,15 +103,11 @@ namespace ArcadeMaker.IDE.Items
                 e = this.editor;
             };
             editor = new ObjectEditor(this);
-            base.NameChanged += (s, e) =>
-            {
-                compiledModelsTree = false;
-            };
         }
 
-        public bool solid = false;
+        public bool solid;
         public int depth;
-        public GameObject parent;
+        public GameObject? parent;
 
         //internal EventScripts? GetEventScripts(ObjectEvent ev)
         //{
