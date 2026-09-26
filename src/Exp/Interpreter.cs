@@ -749,7 +749,7 @@ namespace Exp
                         Error($"'{funcName}' is not a valid function name.", code.FirstOrDefault());
 
                     double? paramsCount = args[1]?.Number;
-                    if (paramsCount == null || paramsCount < 0 || paramsCount % 1 != paramsCount)
+                    if (paramsCount == null || paramsCount < 0 /*|| paramsCount % 1 != paramsCount TODO: fix*/)
                         Error($"{paramsCount?.ToString() ?? "NULL"} is not a valid count. Must be an absolute number without floating point.");
                 }
 
