@@ -1547,13 +1547,12 @@ class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
         ])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false };
 
-    internal static AttributeDefSpan ExpectFuncAttr;
-    /*= new("ExpectFunc",
-        [new(ClassDefSpan.ExpStringDef, "name"),
+    internal static AttributeDefSpan ExpectFuncAttr { get; } = new("ExpectFunc",
+        [new((Interpreter.STD_NAMESPACE, "string"), "name"),
         new(typeof(NumberValue), "paramsCount"),
         new(typeof(BoolValue), "static")])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false, AllowMultiple = true };
-    */
+    
 
     internal static AttributeDefSpan ReadOnlyAttr { get; } = new("ReadOnly", [])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = true, AllowFor_Property = false, AllowFor_Attr = false };
@@ -1607,11 +1606,13 @@ class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
 
 class AttributeParamSpan : WordSpan, IExpItem
 {
-    public static string ItemName { get; } = "attribute parameter";
+    public static string ItemName => "attribute parameter";
     internal string Name { get; }
-    internal Instance ExpType { get; private set; }
-    internal DefNameSpan ExpTypeName { get; }
-    internal Type Type { get; }
+    internal Instance? ExpType { get; private set; }
+    internal DefNameSpan? ExpTypeName { get; }
+    internal (string? ns, string? defName)? TypeName { get; }
+    internal Type? Type { get; }
+
     private AttributeParamSpan(string name) : base(name)
     {
         this.Name = name;
@@ -1634,16 +1635,42 @@ class AttributeParamSpan : WordSpan, IExpItem
         this.ExpTypeName = defName;
     }
 
-    internal bool ResolveTypeName(IEnumerable<IDefination> defs)
+    internal AttributeParamSpan((string?, string?) defName, string name) : this(name)
+    {
+        TypeName = defName;
+    }
+
+    internal bool ResolveTypeName(Interpreter interpreter)
     {
         if (ExpTypeName != null)
         {
-            if (ExpTypeName.Class == null)
-                Interpreter.Activated.ThrowRuntime<Instance>("Attribute parameter must be of premitive / non-extern class type.", RuntimeException.INVALID_SYNTAX, this);
-            else
+            if (ExpTypeName.Class != null)
+            {
                 ExpType = ExpTypeName.Class.ExpType;
+                return true;
+            }
         }
-        return true;
+        else if (TypeName != null)
+        {
+            if (interpreter.definations.FirstOrDefault(d => d.Namespace == TypeName.Value.ns && d.Name == TypeName.Value.defName) is { } def)
+            {
+                if (def is ClassDefSpan cls)
+                {
+                    ExpType = cls.ExpType;
+                    return true;
+                }
+                else
+                {
+                    interpreter.Error($"Class name was expected, but {((IExpItem?)def)?.GetItemName()} was passed.", this);
+                    return false;
+                }
+            }
+        }
+        else
+            return true;
+
+        interpreter.Error("Attribute parameter must be of premitive / non-extern class type.", this);
+        return false;
     }
 }
 

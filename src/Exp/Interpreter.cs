@@ -207,6 +207,7 @@ namespace Exp
             definations.Add(AttributeDefSpan.AllowMultipleAttr);
             definations.Add(AttributeDefSpan.LimitTo1InClsAttr);
             definations.Add(AttributeDefSpan.FuncRequirementsAttr);
+            definations.Add(AttributeDefSpan.ExpectFuncAttr);
             definations.Add(AttributeDefSpan.ReadOnlyAttr);
             definations.AddRange(defsToImport ?? []);
             AddAllExternFuncsInAssembly(typeof(Interpreter).Assembly);
@@ -292,7 +293,6 @@ namespace Exp
             FuncDefSpan.ArrayIndexSetter.Name = "array.set";
 
             // attributes (use ??=)
-            AttributeDefSpan.ExpectFuncAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "ExpectFunc");
             AttributeDefSpan.IteratableAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "Iteratable");
 
             ClassDefSpan CatchClass(string? ns, string name) => Catch<ClassDefSpan>(ns, name);
@@ -742,15 +742,16 @@ namespace Exp
                 }
 
                 // if it's an attribute with @ExpectFunc tag(s), validate that the func name & parameters count are valid
-                if (attr is { Name: "ExpectFunc", Namespace: STD_NAMESPACE }) // AttributeDefSpan.ExpeftFuncAttr is not assigned yet!
+                if (attr == AttributeDefSpan.ExpectFuncAttr)
                 {
                     string? funcName = args[0]?.ToString();
                     if (!funcName.IsLiterallyValidName())
                         Error($"'{funcName}' is not a valid function name.", code.FirstOrDefault());
 
+                    // make sure that paramsCount >= 0 and does not have a floating point
                     double? paramsCount = args[1]?.Number;
-                    if (paramsCount == null || paramsCount < 0 /*|| paramsCount % 1 != paramsCount TODO: fix*/)
-                        Error($"{paramsCount?.ToString() ?? "NULL"} is not a valid count. Must be an absolute number without floating point.");
+                    if (paramsCount == null || paramsCount < 0 || paramsCount % 1 != 0)
+                        Error($"{paramsCount?.ToString() ?? "NULL"} is not a valid parameters count. Must be an absolute number without floating point.");
                 }
 
                 // validate expects
@@ -763,7 +764,7 @@ namespace Exp
                         int paramsc = (int)infoVals.ArrayValues[1].Number;
                         bool stat = infoVals.ArrayValues[2].Bool;
                         if (!cls.Funcs.Any(f => f.Name == func1 && f.Args.Length == paramsc && !f.Private && f.Static == stat))
-                            Error($"'{cls.GetExpTypeName(false)}' must contain a public {(stat ? "" : "non-")}static function named '{func1}' taking {paramsc} arguments, because it contains tag of attribute '{attr.GetExpTypeName(false)}'.");
+                            Error($"'{cls.GetExpTypeName(false)}' must contain a public {(stat ? "" : "non-")}static function named '{func1}' taking {paramsc} arguments, because it contains tag of attribute '{attr.GetExpTypeName(false)}'.", taggedItem as Span);
                     }
                 }
 

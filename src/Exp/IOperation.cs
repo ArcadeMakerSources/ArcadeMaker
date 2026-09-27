@@ -885,7 +885,7 @@ class PointingOrFuncCall(bool isOperationButNotReadingOperation, string name, IE
     /// <param name="value">The literal constant value that this pointing points to, or <c>null</c> if the method returns <c>false</c>.</param>
     public bool IsPointingToLiteralConst(Interpreter interpreter, out IValue? value)
     {
-        if (KnownPointer is ClassStaticVar { Const: true } property)
+        if (Next == null && KnownPointer is ClassStaticVar { Const: true } property)
         {
             if (property.Value != null) // enum values are created with a value assigned
             {

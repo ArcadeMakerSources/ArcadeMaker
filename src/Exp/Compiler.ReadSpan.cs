@@ -69,7 +69,12 @@ public partial class Interpreter
         else if (textSpan.type == SpanType.EscapedString)
             span = new StringSpan(text[2..^1], escaped: true);
         else if (textSpan.type == SpanType.Char)
-            span = new CharSpan(text[1..^1].Replace("\\n", "\n").Replace("\\t", "\t").Replace("\\\"", "\"").Replace("\\\\", "\\").FirstOrDefault());
+        {
+            string row = text[1..^1].Replace("\\n", "\n").Replace("\\t", "\t").Replace("\\\"", "\"").Replace("\\\\", "\\");
+            if (row.Length != 1)
+                Error("Invalid char format: must contain a single char.", textSpan);
+            span = new CharSpan(row.FirstOrDefault());
+        }
         else if (textSpan.type == SpanType.Tag)
         {
             if (text == "@")
@@ -634,7 +639,7 @@ public partial class Interpreter
                     if (ev.CustomValue)
                         continue;
                     else while (evalues.FirstOrDefault(ev1 => ev1 != ev && ev1.Value == ev.Value) != null)
-                            ev.Value++;
+                        ev.Value++;
                 }
 
                 span = new EnumDefSpan(ename, evalues.ToArray());
