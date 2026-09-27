@@ -1,9 +1,5 @@
 ﻿namespace std:
 
-@AllowFor(false, false, false, false, true)
-@AllowMultiple
-attribute ExpectFunc(string name, number paramsCount, bool stat)
-
 @AllowFor(true, false, false, false, false)
 @ExpectFunc("it_hasNext", 0, false)
 @ExpectFunc("it_next"   , 0, false)

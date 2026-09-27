@@ -837,10 +837,11 @@ public partial class Interpreter
         definations.OfType<AttributeDefSpan>().ForEach(attr =>
         {
             attr.Params.ForEach(p =>
-        {
-            if (!p.ResolveTypeName(definations))
-                Error($"Unknown type '{p.ExpTypeName}'.");
-        }); LoadAttributes(attr);
+            {
+                if (!p.ResolveTypeName(this))
+                    Error($"Unknown type '{p.ExpTypeName}'.");
+            });
+            LoadAttributes(attr);
         });
 
         // all attributes tag should now be resolved

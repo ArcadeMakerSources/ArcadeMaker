@@ -266,11 +266,11 @@ public static class Extensions
     }
 
     internal static IEnumerable<Instance> GetAttrInfoOf(this ICanSetAttr item, AttributeDefSpan attr) =>
-        item.AttrInfo.Where(i => i?.Vars[2].Value.ToString() == attr.Name);
+        item.AttrInfo.Where(i => i != null && i.Vars[1].Value?.ToString() == attr.Namespace && i?.Vars[2].Value!.ToString() == attr.Name);
 
-    internal static bool HasTag(this ICanSetAttr item, AttributeDefSpan attr, out Instance info)
+    internal static bool HasTag(this ICanSetAttr item, AttributeDefSpan attr, out Instance? info)
     {
-        info = item?.AttrInfo?.FirstOrDefault(i => i != null && i.Vars[2].Value.ToString() == attr.Name);
+        info = item?.AttrInfo?.FirstOrDefault(i => i != null && i.Vars[1].Value?.ToString() == attr.Namespace && i.Vars[2].Value!.ToString() == attr.Name);
         return info != null;
     }
 
