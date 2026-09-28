@@ -126,6 +126,9 @@ public static class Spanner
                         case '!':
                             span.type = SpanType.Symbol;
                             break;
+                        case '#':
+                            span.type = SpanType.PreprocessorDirective;
+                            break;
                         default:
                             bool minusNumber = c == '-' && i + 1 < text.Length && text[i + 1] >= '0' && text[i + 1] <= '9';
                             if ((c >= '0' && c <= '9') || minusNumber)
@@ -309,6 +312,7 @@ public static class Spanner
                         nextSpan = true;
                         break;
                     case SpanType.Comment:
+                    case SpanType.PreprocessorDirective:
                         isSep = c == '\n';
                         nextSpan = true;
                         break;
@@ -425,6 +429,9 @@ public static class Spanner
                 case SpanType.MultiLineComment:
                     checkLink = true;
                     sp.color = Color.LimeGreen;
+                    break;
+                case SpanType.PreprocessorDirective:
+                    sp.color = Color.Gray;
                     break;
             }
 
@@ -552,6 +559,7 @@ public enum SpanType
     Tag,
     Comment,
     MultiLineComment,
+    PreprocessorDirective
 }
 
 public class TextSpan : IDisposable, ILocatableSourceMark

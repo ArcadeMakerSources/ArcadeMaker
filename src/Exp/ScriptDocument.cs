@@ -8,6 +8,8 @@ namespace Exp;
 
 public class ScriptDocument
 {
+    public static HashSet<string> ProjectConstants { get; } = ["DEBUG", "1", "2", "3"];
+
     public HashSet<ExpError> SettingsErrors { get; } = [];
     public string? Description { get; set; }
     public string Name { get; set; }
@@ -28,6 +30,10 @@ public class ScriptDocument
         this.Script = script;
 
         TextSpans = Spanner.GetTextSpans(this.Script);
+        var (updated, errors) = RemoveDisabledCode();
+        TextSpans = updated;
+        SettingsErrors.AddRange(errors);
+
         ReadDocSettings();
         foreach (var span in TextSpans)
             span.Document = this;
@@ -138,6 +144,201 @@ public class ScriptDocument
             updatedTextSpans = TextSpans[(spanIndex - 1)..];
     }
 
+    private (TextSpan[] updated, ExpError[] errors) RemoveDisabledCode()
+    {
+        List<TextSpan> code = [];
+        List<ExpError> errors = [];
+        bool enabled = true, insideElse = false;
+        Stack<bool> openedConditions = [];
+        int line = 1, col = 1;
+
+        foreach (TextSpan span in TextSpans)
+        {
+            if (span.type == SpanType.PreprocessorDirective)
+            {
+                bool isInElseIfCheck = false;
+                var keyword = ReadKeyword(span.text);
+                if (keyword == null)
+                {
+                    Error($"Invalid or missing preprocessor keyword");
+                }
+                else
+                {
+                IfKeyword:
+                    if (enabled && (keyword == PreprocessorKeywords.If || isInElseIfCheck))
+                    {
+                        PreprocessorConditionNode? condition = ReadCondition(span.text);
+                        if (condition == null)
+                            Error($"constant expected");
+                        else
+                        {
+                            enabled = false;
+
+                            while (condition != null)
+                            {
+                                bool contains = ProjectConstants.Contains(condition.Value);
+                                if (condition.Not)
+                                    contains = !contains;
+
+                                if (contains)
+                                {
+                                    if (condition.Operator == PreprocessorKeywords.Or || condition.Next == null)
+                                    {
+                                        enabled = true;
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    if (condition.Operator == PreprocessorKeywords.And || condition.Next == null)
+                                    {
+                                        break;
+                                    }
+                                }
+                                condition = condition.Next;
+                            }
+
+                            if (!isInElseIfCheck)
+                                openedConditions.Push(enabled);
+                        }
+                    }
+                    else if (keyword == PreprocessorKeywords.Else || keyword == PreprocessorKeywords.ElseIf)
+                    {
+                        if (openedConditions.Count >= 1)
+                        {
+                            enabled = !enabled;
+                            if (keyword == PreprocessorKeywords.ElseIf)
+                            {
+                                if (enabled) // note: we just had enabled = !enabled
+                                {
+                                    isInElseIfCheck = true;
+                                    goto IfKeyword;
+                                }
+                            }
+                        }
+                        else
+                            Error($"unexpected {nameof(PreprocessorKeywords.Else)}");
+                    }
+                    else if (keyword == PreprocessorKeywords.EndIf)
+                    {
+                        if (openedConditions.Count >= 1)
+                        {
+                            openedConditions.Pop();
+                            enabled = openedConditions.Count == 0 || openedConditions.Last();
+                        }
+                        else
+                            Error($"unexpected {nameof(PreprocessorKeywords.EndIf)}");
+                    }
+                }
+            }
+            else if (enabled)
+            {
+                code.Add(span);
+            }
+
+            int lines = span.text.CountOf('\n');
+            if (lines >= 1)
+            {
+                line += lines;
+                col = 1;
+            }
+            else
+                col += span.text.Length;
+        }
+
+        foreach (bool _ in openedConditions)
+            Error($"missing #{PreprocessorKeywords.EndIf}");
+
+        return ([.. code], [.. errors]);
+
+        static PreprocessorKeywords? ReadKeyword(string directive)
+        {
+            if (directive.Length < 2)
+                return null;
+
+            string keyword = directive.Contains(' ') ? directive.Substring(1, directive.IndexOf(' ') - 1) : directive.Substring(1);
+
+            string[] allKeywords = Enum.GetNames<PreprocessorKeywords>();
+            int keywordIndex = allKeywords.IndexOf(keyword);
+            return keywordIndex < 0 ? null : Enum.GetValues<PreprocessorKeywords>()[keywordIndex];
+        }
+
+        PreprocessorConditionNode? ReadCondition(string directive)
+        {
+            PreprocessorConditionNode? first = null, current = null;
+            int startIndex = directive.IndexOf(' ');
+            if (startIndex < 0)
+                return null;
+
+            int i = startIndex + 1;
+            bool not = false, operatorExpected = false;
+        ReadWord:
+            string word = "";
+            for (; i < directive.Length; i++)
+            {
+                if (directive[i] == ' ')
+                {
+                    if (word.Length > 0)
+                        break;
+                    continue;
+                }
+
+                word += directive[i];
+            }
+
+            if (word.Length == 0)
+            {
+                if (not)
+                    Error("constant expected");
+                return first;
+            }
+            if (operatorExpected)
+            {
+                if (word == nameof(PreprocessorKeywords.And))
+                    current!.Operator = PreprocessorKeywords.And;
+                else if (word == nameof(PreprocessorKeywords.Or))
+                    current!.Operator = PreprocessorKeywords.Or;
+                else
+                {
+                    Error($"operator keyword ({nameof(PreprocessorKeywords.And)}/{nameof(PreprocessorKeywords.Or)} expected");
+                    return first;
+                }
+                operatorExpected = false;
+                goto ReadWord;
+            }
+            if (word == nameof(PreprocessorConditionNode.Not))
+            {
+                if (not)
+                    Error($"duplicate {nameof(PreprocessorConditionNode.Not)} keyword.");
+                not = true;
+                goto ReadWord;
+            }
+
+            if (current == null)
+                first = current = new(word, not);
+            else
+            {
+                current.Next = new(word, not);
+                current = current.Next;
+            }
+
+            operatorExpected = true;
+            not = false;
+            goto ReadWord;
+        }
+
+        void Error(string msg)
+        {
+            errors.Add(new(Name, line, col, $"Invalid preprocessor directive ({msg})."));
+        }
+    }
+
+    private record PreprocessorConditionNode(string Value, bool Not)
+    {
+        public PreprocessorConditionNode? Next { get; set; }
+        public PreprocessorKeywords Operator { get; set; }
+    }
+
     public virtual bool TryPrepare(Interpreter compiler, out ExpError[] errors)
     {
         ArgumentNullException.ThrowIfNull(compiler);
@@ -226,4 +427,16 @@ public interface ILocatableSourceMark
 {
     ScriptDocument Document { get; }
     int DocumentLocation { get; }
+}
+
+enum PreprocessorKeywords
+{
+    If,
+    Else,
+    ElseIf,
+    EndIf,
+
+    Not,
+    And,
+    Or
 }
