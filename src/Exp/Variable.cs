@@ -36,7 +36,7 @@ public class Variable : IExpItem, INamedValue
             firstSet = false;
         }
     }
-    public void SetSkippingConstant(IValue value)
+    public void SetSkippingConstant(IValue? value)
     {
         firstSet = true;
         this.Value = value;

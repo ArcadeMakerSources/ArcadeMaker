@@ -674,6 +674,20 @@ class Date (year, month, day, hour, minute, sec, millis, nanos)
     }
 }
 
+class OS ()
+{
+    // the following constants are initialized at build-time in Exp.Builtins.STD.OSInit class
+    static const isWindows
+    static const isMacOS
+    static const isMacCatalyst
+    static const isLinux
+    static const isAndroid
+    static const isIOS
+    static const isBrowser
+
+    private constructor() {}
+}
+
 class cs ()
 {
     private constructor() {}

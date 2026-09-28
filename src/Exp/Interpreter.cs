@@ -68,10 +68,10 @@ namespace Exp
             Namespace = @namespace;
             Func = func;
         }
-        
+
         public ExternFunc(Func<Instance?, IValue?[], IValue?> func, int paramsCount, string? name = null, string? @namespace = null) : this(func, [paramsCount], name, @namespace)
         {
-            
+
         }
 
         public string Name { get; }
@@ -223,7 +223,7 @@ namespace Exp
             CollectedDefs = true;
             CollectDefsCompleted?.Invoke(this, EventArgs.Empty);
 
-            //ResolveAttributes();
+            Builtins.InitializesAttribute.InitAll(this, typeof(Interpreter).Assembly);
 
             void OperateFunc(FuncDefSpan func)
             {
@@ -334,7 +334,7 @@ namespace Exp
         }
 
         private void RunStaticCtors()
-        { 
+        {
             // run all static properties initalizers
             foreach (var init in staticPropsToInit)
             {
@@ -474,9 +474,9 @@ namespace Exp
         private class FutileContext : IContext
         {
             public IVarSystem Parent { get; set; }
-            public List<Variable> Vars { get; } = []; 
+            public List<Variable> Vars { get; } = [];
             public Span[] InnerSource { get; set; }
-            public IOperation[] Operations { get; set;}
+            public IOperation[] Operations { get; set; }
         }
 
         private Span[] ReadInnerSource(bool readOpener = true, bool allowSingleCmd = false, bool singleCmd = false)
@@ -662,7 +662,7 @@ namespace Exp
                     bool isPointingToLiteralConst = false;
                     IValue? constValueFromPointer = null;
                     if (valop is PointingOrFuncCall pointing)
-                         isPointingToLiteralConst = pointing.IsPointingToLiteralConst(this, out constValueFromPointer);
+                        isPointingToLiteralConst = pointing.IsPointingToLiteralConst(this, out constValueFromPointer);
 
                     bool isConst = true;
 
