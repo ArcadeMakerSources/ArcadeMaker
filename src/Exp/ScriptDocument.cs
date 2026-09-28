@@ -151,11 +151,14 @@ public class ScriptDocument
         bool enabled = true, insideElse = false;
         Stack<bool> openedConditions = [];
         int line = 1, col = 1;
-
+        bool lineContainsVisibleText = false;
         foreach (TextSpan span in TextSpans)
         {
             if (span.type == SpanType.PreprocessorDirective)
             {
+                if (lineContainsVisibleText)
+                    Error("preprocessor directives must appear as the first non-whitespace character on a line", false);
+
                 bool isInElseIfCheck = false;
                 var keyword = ReadKeyword(span.text);
                 if (keyword == null)
@@ -231,16 +234,24 @@ public class ScriptDocument
                     }
                 }
             }
-            else if (enabled)
+            else
             {
-                code.Add(span);
+                if (span.type != SpanType.Space)
+                    lineContainsVisibleText = true;
+
+                if (enabled)
+                {
+                    code.Add(span);
+                }
             }
 
             int lines = span.text.CountOf('\n');
             if (lines >= 1)
             {
                 line += lines;
-                col = 1;
+                col = span.text.Length - span.text.LastIndexOf('\n');
+                if (col == 1 || string.IsNullOrWhiteSpace(span.text.Substring(span.text.LastIndexOf('\n'))))
+                    lineContainsVisibleText = false;
             }
             else
                 col += span.text.Length;
@@ -327,9 +338,10 @@ public class ScriptDocument
             goto ReadWord;
         }
 
-        void Error(string msg)
+        void Error(string msg, bool extendedMsg = true)
         {
-            errors.Add(new(Name, line, col, $"Invalid preprocessor directive ({msg})."));
+            string err = extendedMsg ? $"Invalid preprocessor directive ({msg})." : msg;
+            errors.Add(new(Name, line, col, err));
         }
     }
 
