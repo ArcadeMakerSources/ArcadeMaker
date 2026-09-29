@@ -431,7 +431,7 @@ public static class Spanner
                     sp.color = Color.LimeGreen;
                     break;
                 case SpanType.PreprocessorDirective:
-                    sp.color = Color.Gray;
+                    sp.color = Color.LightGray;
                     break;
             }
 

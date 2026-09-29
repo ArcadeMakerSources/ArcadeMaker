@@ -123,7 +123,8 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             }
             catch (Exception ex)
             {
-                Exit();
+                // TODO: load failed, do something :(
+                throw;
             }
 
             bundledProjectFileStream.Position = 0;
@@ -141,7 +142,8 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             }
             catch (Exception ex)
             {
-                Exit();
+                // TODO: load failed, do something :(
+                throw;
             }
         }
 

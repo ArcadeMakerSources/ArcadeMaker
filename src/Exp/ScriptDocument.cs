@@ -339,7 +339,7 @@ public class ScriptDocument
                     current!.Operator = PreprocessorKeywords.Or;
                 else
                 {
-                    Error($"operator keyword ({nameof(PreprocessorKeywords.And)}/{nameof(PreprocessorKeywords.Or)} expected");
+                    Error($"operator keyword ({nameof(PreprocessorKeywords.And)}/{nameof(PreprocessorKeywords.Or)}) expected");
                     return first;
                 }
                 operatorExpected = false;

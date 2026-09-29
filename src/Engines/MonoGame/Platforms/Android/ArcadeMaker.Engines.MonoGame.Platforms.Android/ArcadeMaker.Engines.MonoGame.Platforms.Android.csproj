@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
+    <OutputType>Exe</OutputType>
+    <ApplicationId>com.ArcadeMaker.demo</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <!-- these two lines bypass the content builder completely -->
+	<MonoGameMGCBAdditionalArguments>/v</MonoGameMGCBAdditionalArguments>
+	<MGCBBuildSkip>true</MGCBBuildSkip>
+	<!--
+    <AndroidLinkMode>SdkOnly</AndroidLinkMode>
+    <TrimMode>partial</TrimMode>
+	-->
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Remove="Resources\raw\GameData.resx" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Content\Content.mgcb" />
+  </ItemGroup>
+  <ItemGroup>
+    <!--<PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.*" />-->
+    <PackageReference Include="MonoGame.Framework.Android" Version="3.8.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Core\ArcadeMaker.Engines.MonoGame.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Resources\raw\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Content\Content.mgcb" />
+  </ItemGroup>
+  <Target Name="RestoreDotnetTools" BeforeTargets="CollectPackageReferences">
+    <Message Text="Restoring dotnet tools (this might take a while depending on your internet speed and should only happen upon building your project for the first time, or after upgrading MonoGame, or clearing your nuget cache)" Importance="High" />
+    <Exec Command="dotnet tool restore" />
+  </Target>
+</Project>
