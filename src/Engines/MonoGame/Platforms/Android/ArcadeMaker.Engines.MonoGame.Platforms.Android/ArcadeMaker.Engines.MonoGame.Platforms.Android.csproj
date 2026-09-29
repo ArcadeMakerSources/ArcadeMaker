@@ -6,6 +6,7 @@
     <ApplicationId>com.ArcadeMaker.demo</ApplicationId>
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+	  
     <!-- these two lines bypass the content builder completely -->
 	<MonoGameMGCBAdditionalArguments>/v</MonoGameMGCBAdditionalArguments>
 	<MGCBBuildSkip>true</MGCBBuildSkip>
@@ -13,6 +14,13 @@
     <AndroidLinkMode>SdkOnly</AndroidLinkMode>
     <TrimMode>partial</TrimMode>
 	-->
+    <!-- Disable the AOT precompiler that is crashing -->
+    <RunAOTCompilation>false</RunAOTCompilation>
+    
+    <!-- Disable trimming/linking which alters your assembly metadata -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <TrimMode>None</TrimMode>
+    <AndroidLinkMode>None</AndroidLinkMode>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Remove="Resources\raw\GameData.resx" />
