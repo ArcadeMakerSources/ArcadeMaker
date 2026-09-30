@@ -3,6 +3,13 @@ using System.Diagnostics;
 
 namespace ArcadeMaker.IDE.Debugging.Deployment;
 
+/// <summary>
+/// Allows deploying to Android devices, as long as "Developer Mode" is enabled in the Android device and it's connected to the PC,
+/// and the adb tool is correctly installed in the IDE, and the debugger app is installed in the device.
+/// </summary>
+/// <param name="deviceName">The name of the device.</param>
+/// <param name="serial">The serial string that specifies the device.</param>
+/// <param name="debuggerAppPackageName">The app package name of the debugger app.</param>
 class AndroidAdbDeployer(string deviceName, string serial, string debuggerAppPackageName) : IDeployer
 {
     private readonly string _remoteTargetGameDataFilePath = $"/storage/emulated/0/Android/data/{debuggerAppPackageName}/gamedata.ampb";

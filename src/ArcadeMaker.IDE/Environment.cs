@@ -72,8 +72,21 @@ namespace ArcadeMaker.IDE
 
             if (deployer != null)
             {
-                deployer.SetGameDataFileContent(debugPath);
-                deployer.LaunchDebugger();
+                try
+                {
+                    deployer.SetGameDataFileContent(debugPath);
+                    deployer.LaunchDebugger();
+                }
+                catch (Exception ex)
+                {
+                    const bool debug =
+#if DEBUG
+                        true;
+#else
+                        false;
+#endif
+                    MessageBox.Show("An error occoured while trying to run the game.\n\n" + (debug ? ex.ToString() : ex.Message), "Deployment Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             else
             {

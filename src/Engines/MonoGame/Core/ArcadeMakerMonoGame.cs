@@ -14,6 +14,7 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Input.Touch;
 using Microsoft.Xna.Framework.Media;
 using MonoGame.Extended;
 using MonoGame.Extended.ViewportAdapters;
@@ -672,6 +673,16 @@ namespace ArcadeMaker.Engines.MonoGame.Core
                 2d => MouseState.RightButton  == ButtonState.Released && PrevMouseState.RightButton  == ButtonState.Pressed,
                 _ => throw new ArgumentException($"{args[0]!.Number} is not a valid mouse button input. Use '{ExpSrc.EngineNamespace}{Exp.Spans.NamespaceSpecificationSpan.Symbol}MouseButton' enum to pass valid values.")
             };
+        }
+
+        public ArrayInstance GetTouchCollection(Exp.Instance? _, IValue?[] args)
+        {
+            var locs =
+                TouchPanel.
+                GetState().
+                Select(loc => new ArcadeMaker.Core.ExpSrc.General.TouchLocation(loc.Position.X, loc.Position.Y, (double)loc.State)).
+                ToArray();
+            return new(ClassDefSpan.ExpArrayDef, locs);
         }
 
         public Exp.Void DrawSprite(Exp.Instance? _, IValue?[] args)

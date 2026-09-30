@@ -9,16 +9,17 @@ static class DeviceManager
 
     public static string AdbExePath => Path.Combine(AppContext.BaseDirectory, "adb\\adb.exe");
 
-    public static IDeployer[] GetDevices()
+    public static async Task<IDeployer[]> GetDevicesAsync(List<string> errorLs)
     {
         List<IDeployer> deployers = [_windowsDeployer];
 
-        deployers.AddRange(GetAndroidDevices());
+        if (File.Exists(AdbExePath))
+            deployers.AddRange(await GetAndroidDevicesAsync(errorLs));
 
         return deployers.ToArray();
     }
 
-    private static AndroidAdbDeployer[] GetAndroidDevices()
+    private static async Task<AndroidAdbDeployer[]> GetAndroidDevicesAsync(List<string> errorLs)
     {
         List<AndroidAdbDeployer> deviceSerials = [];
 
@@ -32,13 +33,15 @@ static class DeviceManager
             CreateNoWindow = true
         };
 
-        using (Process process = Process.Start(startInfo) ?? throw new Exception("No process resource is started"))
+        try
         {
+            using Process process = Process.Start(startInfo) ?? throw new Exception("No process resource is started.");
+
             // read the output line by line
             using (StreamReader reader = process.StandardOutput)
             {
                 string? line;
-                while ((line = reader.ReadLine()) != null)
+                while ((line = await reader.ReadLineAsync()) != null)
                 {
                     if (string.IsNullOrWhiteSpace(line) || line.StartsWith("List of devices"))
                         continue;
@@ -54,8 +57,8 @@ static class DeviceManager
                         // only add the device if it is fully authorized and ready
                         if (status == "device")
                         {
-                            string name = GetAndroidDeviceModelName(serial);
-                            deviceSerials.Add(new(name, serial, "com.arcademaker.debugger"));
+                            string name = await GetAndroidDeviceMarketNameAsync(serial, errorLs);
+                            deviceSerials.Add(new(name + " (Android)", serial, "com.arcademaker.debugger"));
                         }
                         else if (status == "unauthorized")
                         {
@@ -68,27 +71,37 @@ static class DeviceManager
             }
             process.WaitForExit();
         }
+        catch (Exception ex)
+        {
+            errorLs.Add("[Android: Get devices] " + ex.Message);
+        }
 
         return deviceSerials.ToArray();
     }
 
-    private static string GetAndroidDeviceModelName(string serial)
+    private static async Task<string> GetAndroidDeviceMarketNameAsync(string serial, List<string> errorLs)
     {
         ProcessStartInfo startInfo = new()
         {
             FileName = AdbExePath,
-            Arguments = $"-s {serial} shell getprop ro.product.model",
+            Arguments = $"-s {serial} shell getprop ro.product.marketname",
             RedirectStandardOutput = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
 
-        using (Process process = Process.Start(startInfo) ?? throw new Exception("No process resource is started."))
+        try
         {
-            string modelName = process.StandardOutput.ReadToEnd();
-            process.WaitForExit();
+            Process process = Process.Start(startInfo) ?? throw new Exception("No process resource is started.");
+            string marketName = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
 
-            return modelName.Trim();
+            return marketName.Trim();
+        }
+        catch (Exception ex)
+        {
+            errorLs.Add("[Android: Get device name] " + ex.Message);
+            return "[Unknown Device Name]";
         }
     }
 }

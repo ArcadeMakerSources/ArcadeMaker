@@ -17,6 +17,9 @@ namespace ArcadeMaker.IDE
         public ImageList treeImages = new ImageList();
         private const string folderKey = "folder";
 
+        private readonly string refreshDevicesListBtn = "<Refresh Devices List>";
+        private readonly string whyAndroidNotShowingUpBtn = "Why isn't my Android device showing up?";
+
         private void DefaultInit()
         {
             Type[] types = new Type[] { typeof(GameSprite), typeof(GameSound), typeof(GameBackground), typeof(GamePath), typeof(GameScript), typeof(GameFont), typeof(GameObject), typeof(GameRoom) };
@@ -503,7 +506,7 @@ namespace ArcadeMaker.IDE
             }
         }
 
-        public void Form1_Load(object sender, EventArgs e)
+        public async void Form1_Load(object sender, EventArgs e)
         {
 #if DEBUG
             bool show = false;
@@ -535,7 +538,7 @@ namespace ArcadeMaker.IDE
             Core.Runtime.DebugConsole.OnDebugOutput += (s, output) => DebugConsoleWriteLine(output, false);
             debugInputErrorProvider.SetIconPadding(debugInputBox, -20); // make the icon appear INSIDE the text box
 
-            LoadDevicesList();
+            await LoadDevicesList(false);
         }
 
         private void LoadRecentProjectsMenu()
@@ -594,11 +597,27 @@ namespace ArcadeMaker.IDE
                 e.Cancel = false;
         }
 
-        private void LoadDevicesList()
+        private async Task LoadDevicesList(bool showErrors)
         {
-            IDeployer[] deployers = DeviceManager.GetDevices();
+            deployTargetBox.Items.Clear();
+
+            List<string> errors = [];
+            IDeployer[] deployers = await DeviceManager.GetDevicesAsync(errors); // pass a reference to an error list,
+                                                                                 // bc async methods can't have "out" params
             deployTargetBox.Items.AddRange(deployers);
-            deployTargetBox.SelectedIndex = 0;
+            deployTargetBox.SelectedIndex = deployTargetBox.Items.Count >= 1 ? 0 : -1;
+
+            // add custom buttons
+            deployTargetBox.Items.Add(refreshDevicesListBtn);
+            if (!File.Exists(DeviceManager.AdbExePath))
+                deployTargetBox.Items.Add(whyAndroidNotShowingUpBtn);
+
+            toolStrip1.Focus();
+
+            if (errors.Count >= 1 && showErrors)
+            {
+                MessageBox.Show($"An error occoured while loading devices list.\n\n{string.Join("\n\n", errors)}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private async void saveExeBtn_Click(object sender, EventArgs e)
@@ -606,9 +625,7 @@ namespace ArcadeMaker.IDE
             ProgressForm frm = new();
             frm.Show();
 
-            IDeployer? deployer = deployTargetBox.SelectedItem as IDeployer;
-
-            if (deployer is not null)
+            if (deployTargetBox.SelectedItem is IDeployer deployer)
             {
                 await Task.Run(() =>
                 {
@@ -618,7 +635,7 @@ namespace ArcadeMaker.IDE
             }
             else
             {
-                MessageBox.Show("No deploy target was selected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("No device was selected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -1059,6 +1076,57 @@ namespace ArcadeMaker.IDE
                 debugInputBtn.PerformClick();
                 e.Handled = true;
                 e.SuppressKeyPress = true;
+            }
+        }
+
+        private int lastDeployTargetBtnIndex = -1;
+        private bool skip_deployTargetBox_SelectedIndexChanged = false;
+        private async void deployTargetBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (skip_deployTargetBox_SelectedIndexChanged)
+                return;
+
+            skip_deployTargetBox_SelectedIndexChanged = true;
+
+            if (ReferenceEquals(deployTargetBox.SelectedItem, refreshDevicesListBtn))
+                await LoadDevicesList(true);
+            else if (ReferenceEquals(deployTargetBox.SelectedItem, whyAndroidNotShowingUpBtn))
+            {
+                deployTargetBox.SelectedIndex = lastDeployTargetBtnIndex;
+                AlertAdbFileNotFound();
+            }
+
+            skip_deployTargetBox_SelectedIndexChanged = false;
+            lastDeployTargetBtnIndex = deployTargetBox.SelectedIndex;
+        }
+
+        private void deployTargetBox_DropDownClosed(object sender, EventArgs e)
+        {
+            toolStrip1.Focus();
+        }
+
+        private void AlertAdbFileNotFound()
+        {
+            const string url = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
+            string adbDirPath = Path.GetDirectoryName(DeviceManager.AdbExePath)!;
+            string msg =
+@$"Android devices currently cannot be detected because the Android Debug Bridge (adb) command-line tool was not found in the expected path.
+To enable debugging on Android devices, you must download the .zip file containing the ADB tool from {url} and extract the 'adb.exe', 'AdbWinApi.dll' and 'AdbWinUsbApi.dll' files to {adbDirPath}.
+
+Do you want to copy this message to the clipboard?";
+
+            var result = MessageBox.Show(msg, "adb driver was not found", MessageBoxButtons.YesNo);
+
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    Clipboard.SetText(msg);
+                }
+                catch
+                {
+                    MessageBox.Show("Could not copy to clipboard.");
+                }
             }
         }
     }

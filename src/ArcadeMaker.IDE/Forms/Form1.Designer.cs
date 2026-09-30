@@ -240,7 +240,9 @@ namespace ArcadeMaker.IDE
             // 
             deployTargetBox.DropDownStyle = ComboBoxStyle.DropDownList;
             deployTargetBox.Name = "deployTargetBox";
-            deployTargetBox.Size = new Size(121, 25);
+            deployTargetBox.Size = new Size(200, 25);
+            deployTargetBox.DropDownClosed += deployTargetBox_DropDownClosed;
+            deployTargetBox.SelectedIndexChanged += deployTargetBox_SelectedIndexChanged;
             // 
             // debugBtn
             // 
