@@ -8,7 +8,35 @@ namespace Exp;
 
 public class ScriptDocument
 {
-    public static HashSet<string> ProjectConstants { get; } = ["DEBUG", "1", "2", "3"];
+    public static HashSet<string> BuildConstants { get; } = ["DEBUG"];
+
+    static ScriptDocument()
+    {
+        DefinePlatformBuildConstants();
+    }
+
+    private static void DefinePlatformBuildConstants()
+    {
+        if (OperatingSystem.IsWindows())
+            BuildConstants.Add("WINDOWS");
+        else if (OperatingSystem.IsMacOS())
+            BuildConstants.Add("MACOS");
+        else if (OperatingSystem.IsMacCatalyst())
+            BuildConstants.Add("MACCATALYST");
+        else if (OperatingSystem.IsLinux())
+            BuildConstants.Add("LINUX");
+        else if (OperatingSystem.IsAndroid())
+            BuildConstants.Add("ANDROID");
+        else if (OperatingSystem.IsIOS())
+            BuildConstants.Add("IOS");
+        else if (OperatingSystem.IsBrowser())
+            BuildConstants.Add("BROWSER");
+
+        if (OperatingSystem.IsWindows() || OperatingSystem.IsMacCatalyst() || OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+            BuildConstants.Add("DESKTOP");
+        else if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())
+            BuildConstants.Add("MOBILE");
+    }
 
     public HashSet<ExpError> SettingsErrors { get; } = [];
     public string? Description { get; set; }
@@ -179,7 +207,7 @@ public class ScriptDocument
 
                             while (condition != null)
                             {
-                                bool contains = ProjectConstants.Contains(condition.Value);
+                                bool contains = BuildConstants.Contains(condition.Value);
                                 if (condition.Not)
                                     contains = !contains;
 
@@ -311,7 +339,7 @@ public class ScriptDocument
                     current!.Operator = PreprocessorKeywords.Or;
                 else
                 {
-                    Error($"operator keyword ({nameof(PreprocessorKeywords.And)}/{nameof(PreprocessorKeywords.Or)} expected");
+                    Error($"operator keyword ({nameof(PreprocessorKeywords.And)}/{nameof(PreprocessorKeywords.Or)}) expected");
                     return first;
                 }
                 operatorExpected = false;

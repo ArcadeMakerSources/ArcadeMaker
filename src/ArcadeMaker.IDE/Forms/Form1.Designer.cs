@@ -53,6 +53,8 @@ namespace ArcadeMaker.IDE
             createObjectBtn = new ToolStripButton();
             createRoomBtn = new ToolStripButton();
             toolStripSeparator2 = new ToolStripSeparator();
+            toolStripLabel1 = new ToolStripLabel();
+            deployTargetBox = new ToolStripComboBox();
             debugBtn = new ToolStripButton();
             toolStripSeparator1 = new ToolStripSeparator();
             saveGameBtn = new ToolStripButton();
@@ -136,7 +138,7 @@ namespace ArcadeMaker.IDE
             // 
             // toolStrip1
             // 
-            toolStrip1.Items.AddRange(new ToolStripItem[] { createSpriteBtn, createBackgroundBtn, createMusicBtn, createPathBtn, createScriptBtn, createFontBtn, createObjectBtn, createRoomBtn, toolStripSeparator2, debugBtn, toolStripSeparator1, saveGameBtn });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { createSpriteBtn, createBackgroundBtn, createMusicBtn, createPathBtn, createScriptBtn, createFontBtn, createObjectBtn, createRoomBtn, toolStripSeparator2, toolStripLabel1, deployTargetBox, debugBtn, toolStripSeparator1, saveGameBtn });
             toolStrip1.Location = new Point(0, 24);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(933, 25);
@@ -227,6 +229,20 @@ namespace ArcadeMaker.IDE
             // 
             toolStripSeparator2.Name = "toolStripSeparator2";
             toolStripSeparator2.Size = new Size(6, 25);
+            // 
+            // toolStripLabel1
+            // 
+            toolStripLabel1.Name = "toolStripLabel1";
+            toolStripLabel1.Size = new Size(45, 22);
+            toolStripLabel1.Text = "Device:";
+            // 
+            // deployTargetBox
+            // 
+            deployTargetBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            deployTargetBox.Name = "deployTargetBox";
+            deployTargetBox.Size = new Size(200, 25);
+            deployTargetBox.DropDownClosed += deployTargetBox_DropDownClosed;
+            deployTargetBox.SelectedIndexChanged += deployTargetBox_SelectedIndexChanged;
             // 
             // debugBtn
             // 
@@ -588,6 +604,8 @@ namespace ArcadeMaker.IDE
         private Button clearDebugConsoleBtn;
         private ToolTip debugInputBoxBalloon;
         private ErrorProvider debugInputErrorProvider;
+        private ToolStripLabel toolStripLabel1;
+        private ToolStripComboBox deployTargetBox;
     }
 }
 

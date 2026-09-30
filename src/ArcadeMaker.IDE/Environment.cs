@@ -1,4 +1,5 @@
 ﻿using ArcadeMaker.Engines.MonoGame.Core;
+using ArcadeMaker.IDE.Debugging.Deployment;
 using ArcadeMaker.IDE.Items;
 using Microsoft.CSharp;
 using Mono.Cecil;
@@ -32,7 +33,7 @@ namespace ArcadeMaker.IDE
         }
 
         internal static bool isGameRunning = false;
-        public static void GenerateExe(string? savePath = null, bool run = false, bool console = true)
+        internal static void GenerateExe(string? savePath = null, IDeployer? deployer = null, bool console = true)
         {
             if (Project == null)
             {
@@ -47,7 +48,7 @@ namespace ArcadeMaker.IDE
                 return;
             }
 
-            if (!run && savePath == null)
+            if (deployer == null && savePath == null)
             {
 #if DEBUG
                 ArgumentNullException.ThrowIfNull(savePath);
@@ -69,9 +70,23 @@ namespace ArcadeMaker.IDE
             Progress = 50;
             isGameRunning = true;
 
-            if (run)
+            if (deployer != null)
             {
-                Engines.MonoGame.Platforms.WindowsDX.Program.Main([debugPath]);
+                try
+                {
+                    deployer.SetGameDataFileContent(debugPath);
+                    deployer.LaunchDebugger();
+                }
+                catch (Exception ex)
+                {
+                    const bool debug =
+#if DEBUG
+                        true;
+#else
+                        false;
+#endif
+                    MessageBox.Show("An error occoured while trying to run the game.\n\n" + (debug ? ex.ToString() : ex.Message), "Deployment Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             else
             {

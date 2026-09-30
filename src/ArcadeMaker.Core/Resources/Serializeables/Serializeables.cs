@@ -43,27 +43,34 @@ public class SerializeableGameProject
 
         if (bundled)
         {
-            // create resource reader
-            using System.Resources.NetStandard.ResXResourceReader resReader = new(projectFileStream);
-
-            // search the key
-            var dictionary = resReader.GetEnumerator();
-            while (dictionary.MoveNext())
+            try
             {
-                if (key.Equals(dictionary.Key))
+                // create resource reader
+                using System.Resources.NetStandard.ResXResourceReader resReader = new(projectFileStream);
+
+                // search the key
+                var dictionary = resReader.GetEnumerator();
+                while (dictionary.MoveNext())
                 {
-                    // create a stream
-                    if (dictionary.Value is string str)
-                        return new MemoryStream(isText ? Encoding.Unicode.GetBytes(str) : Convert.FromBase64String(str));
+                    if (key.Equals(dictionary.Key))
+                    {
+                        // create a stream
+                        if (dictionary.Value is string str)
+                            return new MemoryStream(isText ? Encoding.Unicode.GetBytes(str) : Convert.FromBase64String(str));
 
-                    if (dictionary.Value == null)
-                        return null;
+                        if (dictionary.Value == null)
+                            return null;
 
-                    throw new Exception($"The value in the given key was not a byte array or string, but " + dictionary.Value.GetType());
+                        throw new Exception($"The value in the given key was not a byte array or string, but " + dictionary.Value.GetType());
+                    }
                 }
-            }
 
-            throw new KeyNotFoundException("Key '" + key + "' was not found in resources file.");
+                throw new KeyNotFoundException("Key '" + key + "' was not found in resources file.");
+            }
+            finally
+            {
+                projectFileStream.Position = 0;
+            }
         }
         else
         {

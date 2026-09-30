@@ -235,6 +235,9 @@ public partial interface IGame
     [Param("button", ParamType.GamepadButton, "The button to test its state.")]
     BoolValue GamepadButtonDown(Exp.Instance? _, IValue?[] args);
 
+    [EngineFunc]
+    ArrayInstance GetTouchCollection(Exp.Instance? _, IValue?[] args);
+
     /// <summary>
     /// Tests whether a given point lies within the bounding rectangle of the calling instance.
     /// </summary>

@@ -13,6 +13,9 @@
     <Project Path="src/Engines/MonoGame/Core/ArcadeMaker.Engines.MonoGame.Core.csproj" />
   </Folder>
   <Folder Name="/src/Engines/MonoGame/Platforms/">
+    <Project Path="src/Engines/MonoGame/Platforms/Android/ArcadeMaker.Engines.MonoGame.Platforms.Android/ArcadeMaker.Engines.MonoGame.Platforms.Android.csproj" Id="4513d914-c216-442c-8d66-b0a7a1041ae8">
+      <Deploy Solution="Release|*" />
+    </Project>
     <Project Path="src/Engines/MonoGame/Platforms/WindowsDX/ArcadeMaker.Engines.MonoGame.Platforms.WindowsDX.csproj" />
   </Folder>
 </Solution>
