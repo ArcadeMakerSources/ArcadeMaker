@@ -1,5 +1,6 @@
 ﻿using ArcadeMaker.Core.Runtime;
 using ArcadeMaker.IDE.Debugging;
+using ArcadeMaker.IDE.Debugging.Deployment;
 using ArcadeMaker.IDE.Items;
 using ArcadeMaker.IDE.Properties;
 using System;
@@ -533,6 +534,8 @@ namespace ArcadeMaker.IDE
 
             Core.Runtime.DebugConsole.OnDebugOutput += (s, output) => DebugConsoleWriteLine(output, false);
             debugInputErrorProvider.SetIconPadding(debugInputBox, -20); // make the icon appear INSIDE the text box
+
+            LoadDevicesList();
         }
 
         private void LoadRecentProjectsMenu()
@@ -591,16 +594,32 @@ namespace ArcadeMaker.IDE
                 e.Cancel = false;
         }
 
+        private void LoadDevicesList()
+        {
+            IDeployer[] deployers = DeviceManager.GetDevices();
+            deployTargetBox.Items.AddRange(deployers);
+            deployTargetBox.SelectedIndex = 0;
+        }
+
         private async void saveExeBtn_Click(object sender, EventArgs e)
         {
             ProgressForm frm = new();
             frm.Show();
 
-            await Task.Run(() =>
+            IDeployer? deployer = deployTargetBox.SelectedItem as IDeployer;
+
+            if (deployer is not null)
             {
-                Environment.GenerateExe(run: true);
-                frm.Close();
-            });
+                await Task.Run(() =>
+                {
+                    Environment.GenerateExe(deployer: deployer);
+                    frm.Close();
+                });
+            }
+            else
+            {
+                MessageBox.Show("No deploy target was selected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private async void saveGameBtn_Click(object sender, EventArgs e)
@@ -627,7 +646,7 @@ namespace ArcadeMaker.IDE
             {
                 await Task.Run(() =>
                 {
-                    Environment.GenerateExe(savePath: saveFileDialog.FileName, run: false, console: false);
+                    Environment.GenerateExe(savePath: saveFileDialog.FileName, deployer: null, console: false);
                     MessageBox.Show("Game saved.", ".exe File Saved", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 });
             }

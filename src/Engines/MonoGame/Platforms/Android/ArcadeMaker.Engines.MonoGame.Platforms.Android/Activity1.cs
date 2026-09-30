@@ -10,6 +10,7 @@ using System.IO;
 namespace ArcadeMaker.Engines.MonoGame.Platforms.Android
 {
     [Activity(
+        Name = "com.arcademaker.debugger.MainActivity",
         Label = "@string/app_name",
         MainLauncher = true,
         Icon = "@drawable/icon",
@@ -20,28 +21,29 @@ namespace ArcadeMaker.Engines.MonoGame.Platforms.Android
     )]
     public class Activity1 : AndroidGameActivity
     {
+        public const string GameDataFilePath = $"/storage/emulated/0/Android/data/com.arcademaker.debugger/gamedata.ampb";
+
         private ArcadeMaker.Engines.MonoGame.Core.ArcadeMakerMonoGame _game;
         private View _view;
-        private MemoryStream _gameFileStream = new();
+        private MemoryStream _streamRef;
 
         protected override void OnCreate(Bundle bundle)
         {
             try
             {
                 base.OnCreate(bundle);
-
-                using (Stream unseekableStream = Application.Context.Assets.Open("game.ampb") ?? throw new Exception("game stream was null"))
+                MemoryStream memoryStream = new();
+                _streamRef = memoryStream;
+                using (Stream unseekableStream = File.OpenRead(GameDataFilePath))
                 {
-                    unseekableStream.CopyTo(_gameFileStream);
+                    unseekableStream.CopyTo(memoryStream);
                 }
-                {
-                    _gameFileStream.Position = 0;
-                    _game = new(_gameFileStream);
-                    _view = _game.Services.GetService(typeof(View)) as View;
+                memoryStream.Position = 0;
+                _game = new(memoryStream);
+                _view = _game.Services.GetService(typeof(View)) as View;
 
-                    SetContentView(_view);
-                    _game.Run();
-                }
+                SetContentView(_view);
+                _game.Run();
             }
             catch (Exception ex)
             {

@@ -3,7 +3,7 @@
     <TargetFramework>net10.0-android</TargetFramework>
     <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
     <OutputType>Exe</OutputType>
-    <ApplicationId>com.ArcadeMaker.demo</ApplicationId>
+    <ApplicationId>com.arcademaker.debugger</ApplicationId>
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 	  
@@ -16,11 +16,6 @@
 	-->
     <!-- Disable the AOT precompiler that is crashing -->
     <RunAOTCompilation>false</RunAOTCompilation>
-    
-    <!-- Disable trimming/linking which alters your assembly metadata -->
-    <PublishTrimmed>false</PublishTrimmed>
-    <TrimMode>None</TrimMode>
-    <AndroidLinkMode>None</AndroidLinkMode>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Remove="Resources\raw\GameData.resx" />
