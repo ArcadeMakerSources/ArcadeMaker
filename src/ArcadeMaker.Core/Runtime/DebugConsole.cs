@@ -9,7 +9,7 @@ public static class DebugConsole
     internal static readonly ManualResetEventSlim waitForDebugInput = new(false);
     private static string? lastDebugInput;
     public static Func<string?, string?>? InputValidator { get; private set; }
-    internal static void WriteLine(IGame game, object? output) => OnDebugOutput?.Invoke(game, output);
+    internal static void WriteLine(IGame? game, object? output) => OnDebugOutput?.Invoke(game, output);
     internal static string ReadLine(Func<string?, string?>? inputValidator = null)
     {
         DebugConsole.InputValidator = inputValidator;
@@ -23,5 +23,10 @@ public static class DebugConsole
     {
         lastDebugInput = input;
         waitForDebugInput.Set();
+    }
+
+    public static void SendDebugOutput(string? output)
+    {
+        WriteLine(null, output);
     }
 }

@@ -31,7 +31,7 @@ internal sealed class FutileGame : ArcadeMaker.Core.IGame
     public void DrawLine(double x1, double y1, double x2, double y2, double thickness) { }
     public Exp.Void DrawRect(Exp.Instance? _, IValue?[] args) => null!;
     public Exp.Void DrawEllipse(Exp.Instance? _, IValue?[] args) => null!;
-    public void SetWindowsSize(int w, int h) { }
+    public void SetWindowSize(int w, int h) { }
     public void SetCaption(string caption) { }
     public Color BackColor { get; set; }
 
@@ -78,4 +78,8 @@ internal sealed class FutileGame : ArcadeMaker.Core.IGame
     public Exp.Void ResumeAllSounds(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
 
     public Exp.Void TakeScreenshot(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
+
+    public IValue GetWindowWidth(Exp.Instance? _, IValue?[] args) => null!;
+
+    public IValue GetWindowHeight(Exp.Instance? _, IValue?[] args) => null!;
 }

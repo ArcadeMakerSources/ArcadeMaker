@@ -360,7 +360,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
                 winHeight = System.Math.Max(winHeight, view.PortY + view.PortHeight);
             }
         }
-        Game.SetWindowsSize(winWidth, winHeight);
+        Game.SetWindowSize(winWidth, winHeight);
 
         // run all create events for the new room
         foreach (var instance in room.Instances.ToArray()) // ToArray() to prevent collection modification while iterating

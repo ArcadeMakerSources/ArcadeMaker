@@ -42,10 +42,32 @@ public partial interface IGame
     void Init();
     Exp.Void DrawInstance(Runtime.Instance inst);
     void DrawLine(double x1, double y1, double x2, double y2, double thickness);
-    void SetWindowsSize(int w, int h);
+    void SetWindowSize(int w, int h);
     void SetCaption(string caption);
     Color BackColor { get; set; }
     (int x, int y) MousePositionInWindow { get; }
+
+    (double x, double y) PositionInRoom((double x, double y) positionInWindow)
+    {
+        // if views enabled, return in room
+        foreach (var view in CurrentRoom!.Model.Views)
+        {
+            if (!view.Visible)
+                continue;
+
+            // if it's within the view's port, return in room position
+            if (positionInWindow.x >= view.PortX && positionInWindow.y <= view.PortX + view.PortWidth && positionInWindow.x >= view.PortY && positionInWindow.y <= view.PortY + view.PortHeight)
+            {
+                // calculate room position
+                return
+                    (view.X + ((positionInWindow.x - view.PortX) * (view.Width / view.PortWidth)),
+                    (view.Y + ((positionInWindow.y - view.PortY) * (view.Height / view.PortHeight))));
+            }
+        }
+
+        // if views disabled or mouse is not inside any view port, return window-relative x
+        return positionInWindow;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal RoomInstance GetActivatedRoom() => CurrentRoom ?? throw new NoActivatedRoomException(); // TODO: skip this method...
@@ -220,15 +242,9 @@ public partial interface IGame
                     {
                         foreach (var sview in sroom.views)
                         {
-                            RoomView view = new(sview.x, sview.y)
+                            RoomView view = new(sview.x, sview.y, sview.width, sview.height, sview.portX, sview.portY, sview.portWidth, sview.portHeight)
                             {
                                 Visible = sview.visible,
-                                Width = sview.width,
-                                Height = sview.height,
-                                PortX = sview.portX,
-                                PortY = sview.portY,
-                                PortWidth = sview.portWidth,
-                                PortHeight = sview.portHeight,
                                 Follow_HBorder = sview.followHBor,
                                 Follow_VBorder = sview.followVBor,
                                 Follow_HSpeed = sview.followHSp,

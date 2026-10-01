@@ -43,6 +43,8 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         public event EventHandler<RuntimeException>? OnExpRuntimeError;
         public event EventHandler<Exception>? OnCsError;
 
+        private bool isTouchPanelConnected;
+
         // resources
         private GraphicsDeviceManager graphicsDeviceManager = null!;
         private SpriteBatch SpriteBatch { get; set; } = null!;
@@ -73,13 +75,52 @@ namespace ArcadeMaker.Engines.MonoGame.Core
                 {
                     foreach (var view in value.Model.Views)
                     {
-                        BoxingViewportAdapter viewportAdapter = new(Window, GraphicsDevice, (int)view.Width, (int)view.Height);
-                        var camera = new OrthographicCamera(viewportAdapter);
-                        view.PositionChanged += (s, e) =>
+                        Cameras.Add(InitCamera(view, out var _,out var _));
+
+                        (Viewport, OrthographicCamera) InitCamera(RoomView view, out Viewport usedPort, out BoxingViewportAdapter usedViewportAdapter)
                         {
-                            camera.Position = new Vector2((float)view.X, (float)view.Y);
-                        };
-                        Cameras.Add((new(view.PortX, view.PortY, view.PortWidth, view.PortHeight), camera));
+                            // set view port
+                            Viewport port = new(view.PortX, view.PortY, view.PortWidth, view.PortHeight);
+                            //if (IsMobile) for debugging
+                            //    port = new(0, 0, Window.ClientBounds.Width, Window.ClientBounds.Height);
+                            usedPort = port;
+
+                            // set view camera
+                            BoxingViewportAdapter viewportAdapter = new(Window, GraphicsDevice, (int)view.Width, (int)view.Height);
+                            usedViewportAdapter = viewportAdapter;
+                            var camera = new OrthographicCamera(viewportAdapter);
+                            view.Modified = (bool OnlyPositionWasChanged) =>
+                            {
+                                // the size of an existing camera cannot be modified,
+                                // so we must create a new one and replace the old one with it
+                                if (OnlyPositionWasChanged)
+                                    camera.Position = new Vector2((float)view.X, (float)view.Y);
+                                else
+                                {
+                                    // get camera index
+                                    int i = 0, cameraIndex = -1;
+                                    foreach (var pair in Cameras)
+                                    {
+                                        if (camera == pair.camera)
+                                        {
+                                            cameraIndex = i;
+                                            break;
+                                        }
+                                        i++;
+                                    }
+
+                                    // set new camera
+                                    if (cameraIndex >= 0)
+                                    {
+                                        Cameras[cameraIndex] = InitCamera(view, out var newPort, out var newAdapter);
+                                        viewportAdapter = newAdapter; // for next time it's modified
+                                        port = newPort; // same
+                                    }
+                                }
+                            };
+
+                            return (port, camera);
+                        }
                     }
                 }
             }
@@ -176,6 +217,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         {
             base.Initialize();
             IsMouseVisible = true;
+            isTouchPanelConnected = TouchPanel.GetCapabilities().IsConnected;
 
             // Load supported languages and set the default language.
             List<CultureInfo> cultures = LocalizationManager.GetSupportedCultures();
@@ -349,6 +391,8 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             Gamepad3State = GamePad.GetState(PlayerIndex.Three);
             Gamepad4State = GamePad.GetState(PlayerIndex.Four);
             MouseState    = Mouse.GetState();
+            if (isTouchPanelConnected)
+                TouchCollection = TouchPanel.GetState();
 
             try
             {
@@ -408,7 +452,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
             // if views are defined, we need to draw the room for each view, applying the corresponding camera transformations.
             // otherwise, we can just draw the room once without any transformations
-            if (CurrentRoom.Model.Views.Count > 0) // views are defined
+            if (CurrentRoom!.Model.Views.Count > 0) // views are defined
             {
                 CurrentViewIndex = 0;
                 try
@@ -551,11 +595,18 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             return Exp.Void.Return;
         }
 
-        public void SetWindowsSize(int w, int h)
+        public IValue GetWindowWidth(Exp.Instance? _, IValue?[] args) => Window.ClientBounds.Width.ToExp();
+
+        public IValue GetWindowHeight(Exp.Instance? _, IValue?[] args) => Window.ClientBounds.Height.ToExp();
+
+        public void SetWindowSize(int w, int h)
         {
-            graphicsDeviceManager.PreferredBackBufferWidth = w;
-            graphicsDeviceManager.PreferredBackBufferHeight = h;
-            graphicsDeviceManager.ApplyChanges();
+            if (!IsMobile)
+            {
+                graphicsDeviceManager.PreferredBackBufferWidth = w;
+                graphicsDeviceManager.PreferredBackBufferHeight = h;
+                graphicsDeviceManager.ApplyChanges();
+            }
         }
 
         public void SetCaption(string caption)
@@ -582,6 +633,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             return Exp.Void.Return;
         }
 
+        private TouchCollection TouchCollection { get; set; }
         private KeyboardState KeyboardState { get; set; }
         private GamePadState Gamepad1State { get; set; }
         private GamePadState Gamepad2State { get; set; }
@@ -677,11 +729,19 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
         public ArrayInstance GetTouchCollection(Exp.Instance? _, IValue?[] args)
         {
+            bool inRoom = args.Length >= 1 && args[0].ThrowIfNull().Bool;
+
             var locs =
-                TouchPanel.
-                GetState().
-                Select(loc => new ArcadeMaker.Core.ExpSrc.General.TouchLocation(loc.Position.X, loc.Position.Y, (double)loc.State)).
+                TouchCollection.
+                Select(loc =>
+                {
+                    double x = loc.Position.X, y = loc.Position.Y;
+                    if (inRoom)
+                        (x, y) = ((IGame)this).PositionInRoom((x, y));
+                    return new ArcadeMaker.Core.ExpSrc.General.TouchLocation(loc.Id, x, y, (double)loc.State);
+                }).
                 ToArray();
+
             return new(ClassDefSpan.ExpArrayDef, locs);
         }
 

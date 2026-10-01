@@ -196,7 +196,16 @@ internal static class Debug
     internal static void InvokeIfRequired(this Control control, Action action)
     {
         if (control.InvokeRequired)
-            control.Invoke(action);
+        {
+            try
+            {
+                control.Invoke(action);
+            }
+            catch (System.ComponentModel.InvalidAsynchronousStateException ex)
+            {
+                _ = ex;
+            }
+        }
         else
             action();
     }

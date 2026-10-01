@@ -15,7 +15,7 @@ namespace ArcadeMaker.Engines.MonoGame.Platforms.Android
         Icon = "@drawable/icon",
         AlwaysRetainTaskState = true,
         LaunchMode = LaunchMode.SingleInstance,
-        ScreenOrientation = ScreenOrientation.FullUser,
+        ScreenOrientation = ScreenOrientation.Landscape,
         ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.Keyboard | ConfigChanges.KeyboardHidden | ConfigChanges.ScreenSize
     )]
     public class Activity1 : AndroidGameActivity
@@ -39,6 +39,14 @@ namespace ArcadeMaker.Engines.MonoGame.Platforms.Android
                 }
                 memoryStream.Position = 0;
                 _game = new(memoryStream);
+
+                void OnError(object? sender, Exception ex)
+                {
+                    _game.ShowMessage(null, [Exp.Extensions.ToExpString(ex.ToString())]);
+                }
+                _game.OnCsError += OnError;
+                _game.OnExpRuntimeError += OnError;
+
                 _view = _game.Services.GetService(typeof(View)) as View;
 
                 SetContentView(_view);
