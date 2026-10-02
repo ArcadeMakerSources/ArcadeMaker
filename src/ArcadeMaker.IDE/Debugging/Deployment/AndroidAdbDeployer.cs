@@ -60,7 +60,7 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
         ProcessStartInfo startInfo = new()
         {
             FileName = DeviceManager.AdbExePath,
-            Arguments = $"logcat -s mono-stdout:V DOTNET:V", //"logcat | grep \"[ArcadeMaker]\""
+            Arguments = "logcat -s mono-stdout:V DOTNET:V", // "logcat | grep \"[ArcadeMaker]\"",
             RedirectStandardOutput = true,
             UseShellExecute = false,
             CreateNoWindow = true
@@ -72,7 +72,8 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
 
             void OnOutput(object? s, DataReceivedEventArgs e)
             {
-                DebugConsole.SendDebugOutput(e.Data);
+                //if (e.Data?.StartsWith(DebugConsole.ANDROID_DEBUG_MESSAGE_PREFIX) == true)
+                    DebugConsole.SendDebugOutput(e.Data/*.Substring(DebugConsole.ANDROID_DEBUG_MESSAGE_PREFIX.Length)*/);
             }
             void OnDispose(object? s, EventArgs e)
             {

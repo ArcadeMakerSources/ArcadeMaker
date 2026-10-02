@@ -23,7 +23,7 @@ public partial interface IGame
     public Exp.Void DebugLog(Exp.Instance? _, IValue?[] args)
     {
         if (OperatingSystem.IsAndroid())
-            Console.WriteLine("[ArcadeMaker]" + args[0]); // console output is redirected to the adb logcat
+            Console.WriteLine(DebugConsole.ANDROID_DEBUG_MESSAGE_PREFIX + args[0]); // console output is redirected to the adb logcat
         else
             DebugConsole.WriteLine(this, args[0]);
         return Exp.Void.Return;

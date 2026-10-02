@@ -5,6 +5,8 @@ namespace ArcadeMaker.Core.Runtime;
 
 public static class DebugConsole
 {
+    public const string ANDROID_DEBUG_MESSAGE_PREFIX = "[ArcadeMaker]";
+
     public static event EventHandler<object?>? OnDebugOutput;
     internal static readonly ManualResetEventSlim waitForDebugInput = new(false);
     private static string? lastDebugInput;
