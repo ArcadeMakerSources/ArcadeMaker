@@ -1,16 +1,13 @@
-﻿using ArcadeMaker.Core.Exceptions;
+﻿using System;
+using System.Collections.Generic;
+using ArcadeMaker.Core.Exceptions;
 using ArcadeMaker.Core.ExpSrc;
 using ArcadeMaker.Core.Math;
-using ArcadeMaker.Core.Math.Shapes;
 using ArcadeMaker.Core.Models;
 using ArcadeMaker.Core.Resources;
 using ArcadeMaker.Core.Runtime;
 using Exp;
 using Exp.Spans;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Text;
 
 namespace ArcadeMaker.Core;
 
@@ -25,7 +22,10 @@ public partial interface IGame
     [Param("output", ParamType.Any, "The output to print to the debug console.")]
     public Exp.Void DebugLog(Exp.Instance? _, IValue?[] args)
     {
-        DebugConsole.WriteLine(this, args[0]);
+        if (OperatingSystem.IsAndroid())
+            Console.WriteLine(DebugConsole.ANDROID_DEBUG_MESSAGE_PREFIX + args[0]); // console output is redirected to the adb logcat
+        else
+            DebugConsole.WriteLine(this, args[0]);
         return Exp.Void.Return;
     }
 
@@ -153,28 +153,7 @@ public partial interface IGame
     /// <param name="args">Unused.</param>
     /// <returns>The mouse X position as a <see cref="Exp.NumberValue"/>.</returns>
     [EngineFunc]
-    IValue GetMouseX(Exp.Instance? _, IValue?[] args)
-    {
-        var room = GetActivatedRoom();
-        var (wx, wy) = MousePositionInWindow;
-
-        // if views enabled, return x in room
-        foreach (var view in room.Model.Views)
-        {
-            if (!view.Visible)
-                continue;
-
-            // if it's within the view's port, return in room position
-            if (wx >= view.PortX && wx <= view.PortX + view.PortWidth && wy >= view.PortY && wy <= view.PortY + view.PortHeight)
-            {
-                // calculate room position
-                return (view.X + ((wx - view.PortX) * (view.Width / view.PortWidth))).ToExp();
-            }
-        }
-
-        // if views disabled or mouse is not inside any view port, return window-relative x
-        return wx.ToExp();
-    }
+    IValue GetMouseX(Exp.Instance? _, IValue?[] args) => PositionInRoom(MousePositionInWindow).x.ToExp();
 
     /// <summary>
     /// Gets the Y-coordinate of the mouse in room coordinates.
@@ -183,28 +162,7 @@ public partial interface IGame
     /// <param name="args">Unused.</param>
     /// <returns>The mouse Y position as a <see cref="Exp.NumberValue"/>.</returns>
     [EngineFunc]
-    IValue GetMouseY(Exp.Instance? _, IValue?[] args)
-    {
-        var room = GetActivatedRoom();
-        var (wx, wy) = MousePositionInWindow;
-
-        // if views enabled, return x in room
-        foreach (var view in room.Model.Views)
-        {
-            if (!view.Visible)
-                continue;
-
-            // if it's within the view's port, return in room position
-            if (wx >= view.PortX && wx <= view.PortX + view.PortWidth && wy >= view.PortY && wy <= view.PortY + view.PortHeight)
-            {
-                // calculate room position
-                return (view.Y + ((wy - view.PortY) * (view.Height / view.PortHeight))).ToExp();
-            }
-        }
-
-        // if views disabled or mouse is not inside any view port, return window-relative x
-        return wy.ToExp();
-    }
+    IValue GetMouseY(Exp.Instance? _, IValue?[] args) => PositionInRoom(MousePositionInWindow).y.ToExp();
 
     /// <summary>
     /// Gets the mouse X-coordinate relative to the application window (not affected by views).
@@ -235,7 +193,14 @@ public partial interface IGame
     [Param("button", ParamType.GamepadButton, "The button to test its state.")]
     BoolValue GamepadButtonDown(Exp.Instance? _, IValue?[] args);
 
-    [EngineFunc]
+    /// <summary>
+    /// When called on a device with a touch panel, returns an array of all the current touch locations.
+    /// </summary>
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">([inRoom]).</param>
+    /// <returns></returns>
+    [EngineFunc(0, 1)]
+    [Param("inRoom", ParamType.Bool, "Whether the positions should be relative to the room transformation rather than the game window. Default is false.", Optional = true)]
     ArrayInstance GetTouchCollection(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
@@ -961,6 +926,216 @@ public partial interface IGame
     IValue GetViewPortX(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortX.ToExp();
 
     /// <summary>
+    /// Gets the port Y position of the specified view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">Arguments where args[0] is the view index.</param>
+    /// <returns>The view port Y position as a <see cref="NumberValue"/>.</returns>
+    [EngineFunc(1)]
+    [Param("index", ParamType.Number, "The index of view to get its port y.")]
+    IValue GetViewPortY(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortY.ToExp();
+
+    /// <summary>
+    /// Gets the port width of the specified view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">Arguments where args[0] is the view index.</param>
+    /// <returns>The view port width as a <see cref="NumberValue"/>.</returns>
+    [EngineFunc(1)]
+    [Param("index", ParamType.Number, "The index of view to get its port width.")]
+    IValue GetViewPortWidth(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortWidth.ToExp();
+
+    /// <summary>
+    /// Gets the port height of the specified view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">Arguments where args[0] is the view index.</param>
+    /// <returns>The view port height as a <see cref="NumberValue"/>.</returns>
+    [EngineFunc(1)]
+    [Param("index", ParamType.Number, "The index of view to get its port height.")]
+    IValue GetViewPortHeight(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortHeight.ToExp();
+
+    /// <summary>
+    /// Sets the X position of the specified view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(index, value).</param>
+    /// <returns></returns>
+    [EngineFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its x.")]
+    [Param("value", ParamType.Number)]
+    Exp.Void SetViewX(Exp.Instance? _, IValue?[] args)
+    {
+        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        view.SetPosition((int)args[1].ThrowIfNull().Number, view.Y);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Sets the Y position of the specified view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(index, value).</param>
+    /// <returns></returns>
+    [EngineFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its y.")]
+    [Param("value", ParamType.Number)]
+    Exp.Void SetViewY(Exp.Instance? _, IValue?[] args)
+    {
+        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        view.SetPosition(view.X, (int)args[1].ThrowIfNull().Number);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Sets the width of the specified view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(index, value).</param>
+    /// <returns></returns>
+    [EngineFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its width.")]
+    [Param("value", ParamType.Number)]
+    Exp.Void SetViewWidth(Exp.Instance? _, IValue?[] args)
+    {
+        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        view.SetSize((int)args[1].ThrowIfNull().Number, view.Height);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Sets the height position of the specified view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(index, value).</param>
+    /// <returns></returns>
+    [EngineFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its height.")]
+    [Param("value", ParamType.Number)]
+    Exp.Void SetViewHeight(Exp.Instance? _, IValue?[] args)
+    {
+        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        view.SetSize(view.Width, (int)args[1].ThrowIfNull().Number);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Sets the port X position of the specified view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(index, value).</param>
+    /// <returns></returns>
+    [EngineFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its port x.")]
+    [Param("value", ParamType.Number)]
+    Exp.Void SetViewPortX(Exp.Instance? _, IValue?[] args)
+    {
+        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        view.SetPortPosition((int)args[1].ThrowIfNull().Number, view.PortY);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Sets the port Y position of the specified view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(index, value).</param>
+    /// <returns></returns>
+    [EngineFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its port y.")]
+    [Param("value", ParamType.Number)]
+    Exp.Void SetViewPortY(Exp.Instance? _, IValue?[] args)
+    {
+        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        view.SetPortPosition(view.PortX, (int)args[1].ThrowIfNull().Number);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Sets the port width of the specified view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(index, value).</param>
+    /// <returns></returns>
+    [EngineFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its port width.")]
+    [Param("value", ParamType.Number)]
+    Exp.Void SetViewPortWidth(Exp.Instance? _, IValue?[] args)
+    {
+        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        view.SetPortSize((int)args[1].ThrowIfNull().Number, view.PortHeight);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Sets the port height of the specified view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(index, value).</param>
+    /// <returns></returns>
+    [EngineFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its port height.")]
+    [Param("value", ParamType.Number)]
+    Exp.Void SetViewPortHeight(Exp.Instance? _, IValue?[] args)
+    {
+        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        view.SetPortSize(view.PortWidth, (int)args[1].ThrowIfNull().Number);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Gets the horizontal border for a following view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">Arguments where args[0] is the view index.</param>
+    /// <returns>The view port width as a <see cref="NumberValue"/>.</returns>
+    [EngineFunc(1)]
+    [Param("index", ParamType.Number, "The index of view to get its port width.")]
+    IValue GetViewFollowingHBor(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].Follow_HBorder.ToExp();
+
+    /// <summary>
+    /// Gets the vertical border for a following view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(viewIndex).</param>
+    /// <returns>The view port width as a <see cref="NumberValue"/>.</returns>
+    [EngineFunc(1)]
+    [Param("index", ParamType.Number, "The index of view to get its VBor.")]
+    IValue GetViewFollowingVBor(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].Follow_VBorder.ToExp();
+
+    /// <summary>
+    /// Sets the horizontal border for a following view in the active room.
+    /// </summary>
+    /// <param name="_">(unused).</param>
+    /// <param name="args">(index, value).</param>
+    /// <returns></returns>
+    [EngineFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its following HBor.")]
+    [Param("value", ParamType.Number)]
+    Exp.Void SetViewFollowingHBor(Exp.Instance? _, IValue?[] args)
+    {
+        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        view.Follow_HBorder = args[1].ThrowIfNull().Number;
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Sets the vertical border for a following view in the active room.
+    /// </summary>
+    /// <param name="_">(unused).</param>
+    /// <param name="args">(index, value).</param>
+    /// <returns></returns>
+    [EngineFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its following VBor.")]
+    [Param("value", ParamType.Number)]
+    Exp.Void SetViewFollowingVBor(Exp.Instance? _, IValue?[] args)
+    {
+        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        view.Follow_VBorder = args[1].ThrowIfNull().Number;
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
     /// Sets the specific instance that the given view should follow.
     /// </summary>
     /// <param name="_">(Unused).</param>
@@ -994,34 +1169,22 @@ public partial interface IGame
     }
 
     /// <summary>
-    /// Gets the port Y position of the specified view in the active room.
+    /// Returns the width of the game window.
     /// </summary>
-    /// <param name="_">The calling EXP instance (unused).</param>
-    /// <param name="args">Arguments where args[0] is the view index.</param>
-    /// <returns>The view port Y position as a <see cref="NumberValue"/>.</returns>
-    [EngineFunc(1)]
-    [Param("index", ParamType.Number, "The index of view to get its port y.")]
-    IValue GetViewPortY(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortY.ToExp();
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">None.</param>
+    /// <returns></returns>
+    [EngineFunc]
+    IValue GetWindowWidth(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
-    /// Gets the port width of the specified view in the active room.
+    /// Returns the height of the game window.
     /// </summary>
-    /// <param name="_">The calling EXP instance (unused).</param>
-    /// <param name="args">Arguments where args[0] is the view index.</param>
-    /// <returns>The view port width as a <see cref="NumberValue"/>.</returns>
-    [EngineFunc(1)]
-    [Param("index", ParamType.Number, "The index of view to get its port width.")]
-    IValue GetViewPortWidth(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortWidth.ToExp();
-
-    /// <summary>
-    /// Gets the port height of the specified view in the active room.
-    /// </summary>
-    /// <param name="_">The calling EXP instance (unused).</param>
-    /// <param name="args">Arguments where args[0] is the view index.</param>
-    /// <returns>The view port height as a <see cref="NumberValue"/>.</returns>
-    [EngineFunc(1)]
-    [Param("index", ParamType.Number, "The index of view to get its port height.")]
-    IValue GetViewPortHeight(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortHeight.ToExp();
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">None.</param>
+    /// <returns></returns>
+    [EngineFunc]
+    IValue GetWindowHeight(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
     /// Gets the ID of the resource (sprite, path, etc.) with the given name.

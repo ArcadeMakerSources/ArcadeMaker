@@ -7,7 +7,7 @@ static class DeviceManager
 {
     private static readonly WindowsDeployer _windowsDeployer = new();
 
-    public static string AdbExePath => Path.Combine(AppContext.BaseDirectory, "adb\\adb.exe");
+    public static string AdbExePath => Path.Combine(AppContext.BaseDirectory, $@"{nameof(Debugging)}\{nameof(Deployment)}", "adb\\adb.exe");
 
     public static async Task<IDeployer[]> GetDevicesAsync(List<string> errorLs)
     {
@@ -58,7 +58,7 @@ static class DeviceManager
                         if (status == "device")
                         {
                             string name = await GetAndroidDeviceMarketNameAsync(serial, errorLs);
-                            deviceSerials.Add(new(name + " (Android)", serial, "com.arcademaker.debugger"));
+                            deviceSerials.Add(new(name + " (Android)", serial));
                         }
                         else if (status == "unauthorized")
                         {
@@ -92,7 +92,7 @@ static class DeviceManager
 
         try
         {
-            Process process = Process.Start(startInfo) ?? throw new Exception("No process resource is started.");
+            using Process process = Process.Start(startInfo) ?? throw new Exception("No process resource is started.");
             string marketName = await process.StandardOutput.ReadToEndAsync();
             await process.WaitForExitAsync();
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using ArcadeMaker.Core.Runtime;
 using System.Diagnostics;
 
 namespace ArcadeMaker.IDE.Debugging.Deployment;
@@ -9,17 +10,18 @@ namespace ArcadeMaker.IDE.Debugging.Deployment;
 /// </summary>
 /// <param name="deviceName">The name of the device.</param>
 /// <param name="serial">The serial string that specifies the device.</param>
-/// <param name="debuggerAppPackageName">The app package name of the debugger app.</param>
-class AndroidAdbDeployer(string deviceName, string serial, string debuggerAppPackageName) : IDeployer
+class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
 {
-    private readonly string _remoteTargetGameDataFilePath = $"/storage/emulated/0/Android/data/{debuggerAppPackageName}/gamedata.ampb";
-    public string DebuggerAppPackageName { get; } = debuggerAppPackageName;
+    private const string DEBUGGER_APP_PACKAGE_NAME = "com.arcademaker.debugger";
+    private const string REMOTE_TARGET_GAME_DATA_FILE_PATH = $"/storage/emulated/0/Android/data/{DEBUGGER_APP_PACKAGE_NAME}/gamedata.ampb";
+
+    private Process? _logcatProcess;
 
     public void LaunchDebugger()
     {
         const string activityName = "com.arcademaker.debugger.MainActivity";
 
-        string adbArguments = $"-s {serial} shell am start -n {DebuggerAppPackageName}/{activityName}";
+        string adbArguments = $"-s {serial} shell am start -n {DEBUGGER_APP_PACKAGE_NAME}/{activityName}";
 
         ProcessStartInfo startInfo = new()
         {
@@ -32,6 +34,7 @@ class AndroidAdbDeployer(string deviceName, string serial, string debuggerAppPac
         };
 
         ExecuteCommand(startInfo);
+        InterceptDebugLogs();
     }
 
     public void SetGameDataFileContent(string localFilePath)
@@ -39,7 +42,7 @@ class AndroidAdbDeployer(string deviceName, string serial, string debuggerAppPac
         ProcessStartInfo startInfo = new()
         {
             FileName = DeviceManager.AdbExePath,
-            Arguments = $"push \"{localFilePath}\" \"{_remoteTargetGameDataFilePath}\"",
+            Arguments = $"push \"{localFilePath}\" \"{REMOTE_TARGET_GAME_DATA_FILE_PATH}\"",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -47,6 +50,47 @@ class AndroidAdbDeployer(string deviceName, string serial, string debuggerAppPac
         };
 
         ExecuteCommand(startInfo);
+    }
+
+    private void InterceptDebugLogs()
+    {
+        if (_logcatProcess?.HasExited == false)
+            return;
+
+        ProcessStartInfo startInfo = new()
+        {
+            FileName = DeviceManager.AdbExePath,
+            Arguments = "logcat -s mono-stdout:V DOTNET:V", // "logcat | grep \"[ArcadeMaker]\"",
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        try
+        {
+            using Process process = _logcatProcess = new() { StartInfo = startInfo };
+
+            void OnOutput(object? s, DataReceivedEventArgs e)
+            {
+                //if (e.Data?.StartsWith(DebugConsole.ANDROID_DEBUG_MESSAGE_PREFIX) == true)
+                    DebugConsole.SendDebugOutput(e.Data/*.Substring(DebugConsole.ANDROID_DEBUG_MESSAGE_PREFIX.Length)*/);
+            }
+            void OnDispose(object? s, EventArgs e)
+            {
+                process.OutputDataReceived -= OnOutput;
+                process.Disposed -= OnDispose;
+            }
+
+            process.OutputDataReceived += OnOutput;
+            process.Disposed += OnDispose;
+            process.Start();
+            process.BeginOutputReadLine();
+            process.WaitForExit();
+        }
+        catch (Exception ex)
+        {
+            DebugConsole.SendDebugOutput($"--- An {ex.GetType().Name} was thrown from Android's debug logcat process, debug logs might not being shown ---");
+        }
     }
 
     private static void ExecuteCommand(ProcessStartInfo startInfo)

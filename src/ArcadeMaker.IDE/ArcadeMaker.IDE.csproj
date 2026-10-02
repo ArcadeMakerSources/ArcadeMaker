@@ -13,6 +13,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Debugging\Deployment\adb\adb.exe" />
+    <None Remove="Debugging\Deployment\adb\AdbWinApi.dll" />
+    <None Remove="Debugging\Deployment\adb\AdbWinUsbApi.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Debugging\Deployment\adb\adb.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Debugging\Deployment\adb\AdbWinApi.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Debugging\Deployment\adb\AdbWinUsbApi.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
 	<!-- Added to resolve Windows.Media library -->
 	<PackageReference Include="Microsoft.Windows.SDK.NET" Version="10.0.18362.6-preview" />
 	  
