@@ -1007,6 +1007,9 @@ namespace ArcadeMaker.IDE
             // print
             Debugging.Debug.InvokeIfRequired(debugConsoleBox, () =>
             {
+                if (debugConsoleBox.IsDisposed)
+                    return;
+
                 if (!firstDebugConsoleLine)
                 {
                     // add new line and set its font to normal, so next line will be in regular format when added

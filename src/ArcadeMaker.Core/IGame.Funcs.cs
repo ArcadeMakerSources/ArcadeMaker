@@ -1,16 +1,13 @@
-﻿using ArcadeMaker.Core.Exceptions;
+﻿using System;
+using System.Collections.Generic;
+using ArcadeMaker.Core.Exceptions;
 using ArcadeMaker.Core.ExpSrc;
 using ArcadeMaker.Core.Math;
-using ArcadeMaker.Core.Math.Shapes;
 using ArcadeMaker.Core.Models;
 using ArcadeMaker.Core.Resources;
 using ArcadeMaker.Core.Runtime;
 using Exp;
 using Exp.Spans;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Text;
 
 namespace ArcadeMaker.Core;
 
@@ -26,7 +23,7 @@ public partial interface IGame
     public Exp.Void DebugLog(Exp.Instance? _, IValue?[] args)
     {
         if (OperatingSystem.IsAndroid())
-            System.Diagnostics.Debug.WriteLine(args[0]);
+            Console.WriteLine("[ArcadeMaker]" + args[0]); // console output is redirected to the adb logcat
         else
             DebugConsole.WriteLine(this, args[0]);
         return Exp.Void.Return;
@@ -929,39 +926,6 @@ public partial interface IGame
     IValue GetViewPortX(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortX.ToExp();
 
     /// <summary>
-    /// Sets the specific instance that the given view should follow.
-    /// </summary>
-    /// <param name="_">(Unused).</param>
-    /// <param name="args">(viewIndex, instance?)</param>
-    /// <returns>Void.</returns>
-    /// <exception cref="Exceptions.EngineException"></exception>
-    [EngineFunc(2)]
-    [Param("viewIndex", ParamType.Number, "The index of view to set its following target.")]
-    [Param("instance?", ParamType.GameObject, "The target instance to follow.")]
-    IValue SetViewFollowingTarget(Exp.Instance? _, IValue?[] args)
-    {
-        // get target argument
-        Runtime.Instance? target;
-        if (args[1] == null)
-            target = null;
-        else
-        {
-            if (args[1] is not { Inst: Runtime.Instance runtimeInst })
-                throw new Exceptions.EngineException("An instance of a game object was expected.");
-            else
-                target = runtimeInst;
-        }
-
-        // get view
-        RoomView view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
-
-        // set view's target
-        view.SpecificInstanceToFollow = target;
-
-        return Exp.Void.Return;
-    }
-
-    /// <summary>
     /// Gets the port Y position of the specified view in the active room.
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>
@@ -1116,6 +1080,91 @@ public partial interface IGame
     {
         var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
         view.SetPortSize(view.PortWidth, (int)args[1].ThrowIfNull().Number);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Gets the horizontal border for a following view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">Arguments where args[0] is the view index.</param>
+    /// <returns>The view port width as a <see cref="NumberValue"/>.</returns>
+    [EngineFunc(1)]
+    [Param("index", ParamType.Number, "The index of view to get its port width.")]
+    IValue GetViewFollowingHBor(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].Follow_HBorder.ToExp();
+
+    /// <summary>
+    /// Gets the vertical border for a following view in the active room.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(viewIndex).</param>
+    /// <returns>The view port width as a <see cref="NumberValue"/>.</returns>
+    [EngineFunc(1)]
+    [Param("index", ParamType.Number, "The index of view to get its VBor.")]
+    IValue GetViewFollowingVBor(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].Follow_VBorder.ToExp();
+
+    /// <summary>
+    /// Sets the horizontal border for a following view in the active room.
+    /// </summary>
+    /// <param name="_">(unused).</param>
+    /// <param name="args">(index, value).</param>
+    /// <returns></returns>
+    [EngineFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its following HBor.")]
+    [Param("value", ParamType.Number)]
+    Exp.Void SetViewFollowingHBor(Exp.Instance? _, IValue?[] args)
+    {
+        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        view.Follow_HBorder = args[1].ThrowIfNull().Number;
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Sets the vertical border for a following view in the active room.
+    /// </summary>
+    /// <param name="_">(unused).</param>
+    /// <param name="args">(index, value).</param>
+    /// <returns></returns>
+    [EngineFunc(2)]
+    [Param("index", ParamType.Number, "The index of view to set its following VBor.")]
+    [Param("value", ParamType.Number)]
+    Exp.Void SetViewFollowingVBor(Exp.Instance? _, IValue?[] args)
+    {
+        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        view.Follow_VBorder = args[1].ThrowIfNull().Number;
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Sets the specific instance that the given view should follow.
+    /// </summary>
+    /// <param name="_">(Unused).</param>
+    /// <param name="args">(viewIndex, instance?)</param>
+    /// <returns>Void.</returns>
+    /// <exception cref="Exceptions.EngineException"></exception>
+    [EngineFunc(2)]
+    [Param("viewIndex", ParamType.Number, "The index of view to set its following target.")]
+    [Param("instance?", ParamType.GameObject, "The target instance to follow.")]
+    IValue SetViewFollowingTarget(Exp.Instance? _, IValue?[] args)
+    {
+        // get target argument
+        Runtime.Instance? target;
+        if (args[1] == null)
+            target = null;
+        else
+        {
+            if (args[1] is not { Inst: Runtime.Instance runtimeInst })
+                throw new Exceptions.EngineException("An instance of a game object was expected.");
+            else
+                target = runtimeInst;
+        }
+
+        // get view
+        RoomView view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+
+        // set view's target
+        view.SpecificInstanceToFollow = target;
+
         return Exp.Void.Return;
     }
 

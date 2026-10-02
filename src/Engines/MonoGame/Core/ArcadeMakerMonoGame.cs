@@ -113,6 +113,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
                                     if (cameraIndex >= 0)
                                     {
                                         Cameras[cameraIndex] = InitCamera(view, out var newPort, out var newAdapter);
+                                        viewportAdapter.Dispose(); // TODO: consider Task.Run() without awaiting this
                                         viewportAdapter = newAdapter; // for next time it's modified
                                         port = newPort; // same
                                     }

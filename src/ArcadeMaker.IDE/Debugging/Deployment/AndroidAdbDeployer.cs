@@ -15,6 +15,8 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
     private const string DEBUGGER_APP_PACKAGE_NAME = "com.arcademaker.debugger";
     private const string REMOTE_TARGET_GAME_DATA_FILE_PATH = $"/storage/emulated/0/Android/data/{DEBUGGER_APP_PACKAGE_NAME}/gamedata.ampb";
 
+    private Process? _logcatProcess;
+
     public void LaunchDebugger()
     {
         const string activityName = "com.arcademaker.debugger.MainActivity";
@@ -52,10 +54,13 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
 
     private void InterceptDebugLogs()
     {
+        if (_logcatProcess?.HasExited == false)
+            return;
+
         ProcessStartInfo startInfo = new()
         {
             FileName = DeviceManager.AdbExePath,
-            Arguments = $"logcat --pid=$(adb shell pidof -s {DEBUGGER_APP_PACKAGE_NAME})",
+            Arguments = $"logcat -s mono-stdout:V DOTNET:V", //"logcat | grep \"[ArcadeMaker]\""
             RedirectStandardOutput = true,
             UseShellExecute = false,
             CreateNoWindow = true
@@ -63,9 +68,7 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
 
         try
         {
-            using Process? process = new() { StartInfo = startInfo };
-            if (process is null)
-                return;
+            using Process process = _logcatProcess = new() { StartInfo = startInfo };
 
             void OnOutput(object? s, DataReceivedEventArgs e)
             {
@@ -85,7 +88,7 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
         }
         catch (Exception ex)
         {
-            _ = 0;
+            DebugConsole.SendDebugOutput($"--- An {ex.GetType().Name} was thrown from Android's debug logcat process, debug logs might not being shown ---");
         }
     }
 
