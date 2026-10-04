@@ -535,7 +535,7 @@ namespace ArcadeMaker.IDE
             Debugging.Debug.OnDebugBuild += OnDebugBuild;
             errorsBox.AttachMenu();
 
-            Core.Runtime.DebugConsole.OnDebugOutput += (s, output) => DebugConsoleWriteLine(output, false);
+            Core.Runtime.DebugConsole.OnDebugOutput += (s, output) => DebugConsoleWriteLine(output.text, false, output.time);
             debugInputErrorProvider.SetIconPadding(debugInputBox, -20); // make the icon appear INSIDE the text box
 
             await LoadDevicesList(false);
@@ -999,8 +999,8 @@ namespace ArcadeMaker.IDE
 
         private Font debugConsoleInputFont;
         private bool firstDebugConsoleLine = true;
-        private void DebugConsoleWriteLine(bool input) => DebugConsoleWriteLine("", input);
-        private void DebugConsoleWriteLine(object? text, bool input)
+        private void DebugConsoleWriteLine(bool input, TimeSpan time) => DebugConsoleWriteLine("", input, time);
+        private void DebugConsoleWriteLine(object? text, bool input, TimeSpan time)
         {
             debugConsoleInputFont ??= new(debugConsoleBox.Font, FontStyle.Bold);
 
@@ -1018,9 +1018,14 @@ namespace ArcadeMaker.IDE
                     debugConsoleBox.SelectionLength = 1;
                     debugConsoleBox.SelectionFont = debugConsoleBox.Font;
                 }
+                
+                string prefix = (debugConsoleTimestampBox.Checked ? time.ToString(@"hh\:mm\:ss\.fff") : "") + "> ";
 
-                string newLine = text?.ToString() ?? "NULL";
-                debugConsoleBox.AppendText((debugConsoleTimestampBox.Checked ? DateTime.Now.ToString("HH:mm:ss.fff") : "") + "> " + newLine);
+                // we want all the lines of the debug message to start in the same x, so we'll insert
+                // prefix.Length spaces after each endline (TODO: set the font to a one with a fixed char width or calculate
+                // the width of the prefix, becuase otherwise it won't work)
+                string newLine = text?.ToString()?.Replace("\n", "\n" + (" " * (1 + prefix.Length))) ?? "NULL";
+                debugConsoleBox.AppendText(prefix + newLine);
 
                 // set input text style to bold
                 if (input && newLine.Length > 0)
@@ -1046,7 +1051,7 @@ namespace ArcadeMaker.IDE
         private void debugInputBtn_Click(object sender, EventArgs e)
         {
             string input = debugInputBox.Text;
-            DebugConsoleWriteLine(input, true);
+            DebugConsoleWriteLine(input, true, DateTime.Now.TimeOfDay);
             debugInputBox.Text = "";
 
             DebugConsole.SendDebugInput(input);

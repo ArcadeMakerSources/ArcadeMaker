@@ -731,5 +731,22 @@ namespace ArcadeMaker.IDE
             var pi = assembly.GetType().GetMethod("GetRawBytes", BindingFlags.Instance | BindingFlags.NonPublic);
             return (byte[])pi.Invoke(assembly, null);
         }
+
+        extension (string)
+        {
+            public static string operator *(string left, int right)
+            {
+                ArgumentNullException.ThrowIfNull(left);
+                ArgumentOutOfRangeException.ThrowIfLessThan(right, 0);
+
+                string result = "";
+                for (int i = 0; i < right; i++)
+                {
+                    result += left;
+                }
+
+                return result;
+            }
+        }
     }
 }

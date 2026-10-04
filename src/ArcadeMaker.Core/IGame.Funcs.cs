@@ -23,6 +23,8 @@ public partial interface IGame
     public Exp.Void DebugLog(Exp.Instance? _, IValue?[] args)
     {
         if (OperatingSystem.IsAndroid())
+            // TODO: replace '\n' with some other char, and then replace it back in the logcat handle; it seems the logcat
+            // splits the messages when reaching an endl
             Console.WriteLine(DebugConsole.ANDROID_DEBUG_MESSAGE_PREFIX + args[0]); // console output is redirected to the adb logcat
         else
             DebugConsole.WriteLine(this, args[0]);
