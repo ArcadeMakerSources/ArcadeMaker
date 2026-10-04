@@ -64,20 +64,20 @@ namespace ArcadeMaker.IDE.Items
         public string? GetTTF()
         {
             var fontNameToFiles = new Dictionary<string, List<string>>();
+            string[] allTtfs = Directory.GetFiles(System.Environment.GetFolderPath(System.Environment.SpecialFolder.Fonts));
 
-            foreach (var fontFile in Directory.GetFiles(System.Environment.GetFolderPath(System.Environment.SpecialFolder.Fonts)))
+            foreach (var fontFile in allTtfs)
             {
-                var fc = new PrivateFontCollection();
+                using var fc = new PrivateFontCollection();
 
-                if (File.Exists(fontFile))
-                    fc.AddFontFile(fontFile);
+                fc.AddFontFile(fontFile);
 
                 if (fc.Families.Length == 0)
                     continue;
 
                 var name = fc.Families[0].Name;
 
-                if (!fontNameToFiles.TryGetValue(name + (bold ? " Bold" : "") + (italic ? " Italic" : ""), out var files))
+                if (!fontNameToFiles.TryGetValue(name, out var files))
                 {
                     files = [];
                     fontNameToFiles[name] = files;
@@ -91,6 +91,5 @@ namespace ArcadeMaker.IDE.Items
 
             return result[0];
         }
-
     }
 }

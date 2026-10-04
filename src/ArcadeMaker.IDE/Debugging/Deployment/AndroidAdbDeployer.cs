@@ -19,7 +19,7 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
 
     public void LaunchDebugger()
     {
-        const string activityName = "com.arcademaker.debugger.MainActivity";
+        const string activityName = $"{DEBUGGER_APP_PACKAGE_NAME}.MainActivity";
 
         string adbArguments = $"-s {serial} shell am start -n {DEBUGGER_APP_PACKAGE_NAME}/{activityName}";
 
@@ -60,7 +60,7 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
         ProcessStartInfo startInfo = new()
         {
             FileName = DeviceManager.AdbExePath,
-            Arguments = "logcat -s mono-stdout:V DOTNET:V", // "logcat | grep \"[ArcadeMaker]\"",
+            Arguments = "logcat -s mono-stdout:V DOTNET:V",
             RedirectStandardOutput = true,
             UseShellExecute = false,
             CreateNoWindow = true
@@ -72,8 +72,12 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
 
             void OnOutput(object? s, DataReceivedEventArgs e)
             {
-                //if (e.Data?.StartsWith(DebugConsole.ANDROID_DEBUG_MESSAGE_PREFIX) == true)
-                    DebugConsole.SendDebugOutput(e.Data/*.Substring(DebugConsole.ANDROID_DEBUG_MESSAGE_PREFIX.Length)*/);
+                if (e.Data is null)
+                    return;
+                
+                int prefixIndex = e.Data.IndexOf(DebugConsole.ANDROID_DEBUG_MESSAGE_PREFIX);
+                if (prefixIndex >= 0)
+                    DebugConsole.SendDebugOutput(e.Data.Substring(prefixIndex + DebugConsole.ANDROID_DEBUG_MESSAGE_PREFIX.Length));
             }
             void OnDispose(object? s, EventArgs e)
             {

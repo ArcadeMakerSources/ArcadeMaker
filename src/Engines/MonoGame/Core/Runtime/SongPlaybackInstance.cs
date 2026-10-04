@@ -1,14 +1,14 @@
 ﻿using ArcadeMaker.Core.Resources;
-using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Media;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Reflection;
 
 namespace ArcadeMaker.Engines.MonoGame.Core.Runtime;
 
-internal class SongPlaybackInstance : ArcadeMaker.Core.Runtime.SoundPlaybackInstance<Song>
+public class SongPlaybackInstance : ArcadeMaker.Core.Runtime.SoundPlaybackInstance<Song>
 {
+    public static Type? Android_Net_Uri { get; set; }
+
     public override float Volume
     {
         get => ArcadeMakerMonoGame.CurrentlyPlayedBackgroundMusic == Instance ? MediaPlayer.Volume : Sound.StartVolume;
@@ -33,9 +33,17 @@ internal class SongPlaybackInstance : ArcadeMaker.Core.Runtime.SoundPlaybackInst
         set => throw new NotImplementedException("Cannot set pitch for background music.");
     }
 
-
     internal SongPlaybackInstance(Sound sound, Song instance) : base(sound, instance)
     {
 
+    }
+
+    internal static object GetAndroidUri(string file)
+    {
+        if (Android_Net_Uri is null)
+            throw new Exception(typeof(SongPlaybackInstance).FullName + "." + nameof(Android_Net_Uri) + " must be assigned.");
+
+        MethodInfo parser = Android_Net_Uri.GetMethod("Parse", BindingFlags.Static | BindingFlags.Public)!;
+        return parser.Invoke(null, [file])!;
     }
 }

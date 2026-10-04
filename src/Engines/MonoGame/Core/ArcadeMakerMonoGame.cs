@@ -11,7 +11,6 @@ using Exp;
 using Exp.Spans;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
-using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Input.Touch;
@@ -20,15 +19,12 @@ using MonoGame.Extended;
 using MonoGame.Extended.ViewportAdapters;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using TextCopy;
-using static System.Net.Mime.MediaTypeNames;
+using FilePath = System.IO.Path;
 
 namespace ArcadeMaker.Engines.MonoGame.Core
 {
@@ -43,6 +39,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
         public event EventHandler<RuntimeException>? OnExpRuntimeError;
         public event EventHandler<Exception>? OnCsError;
 
+        public string? AndroidAppPackageName { get; init; } // when running on android, must be assigned by the android platform code
         private bool isTouchPanelConnected;
 
         // resources
@@ -303,27 +300,40 @@ namespace ArcadeMaker.Engines.MonoGame.Core
                         else if (sound.Type == Sound.Types.BackgroundMusic)
                         {
                             string relativeUri = sound.FilePath;
-                            string tmpDir = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+                            string tmpDir = OperatingSystem.IsAndroid() ?
+                                $"/storage/emulated/0/Android/media/{AndroidAppPackageName}" :
+                                FilePath.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
                             bool bundled = BundledProjectFileStream != null || ProjectFilePath!.EndsWith(SerializeableGameProject.FileFormat_AMPB);
 
                             // if it's a bundled project file, we must save the sound to the file system
+                            string? absPath = null;
                             if (bundled)
                             {
-                                relativeUri = "." + System.IO.Path.GetFileName(sound.FilePath);
-
-                                // make sure this name is free
-                                while (File.Exists(tmpDir + '\\' + relativeUri))
-                                    relativeUri = "." + relativeUri;
+                                relativeUri = FilePath.GetFileName(sound.FilePath).Replace('\\', FilePath.DirectorySeparatorChar);
+                                if (!relativeUri.StartsWith(FilePath.DirectorySeparatorChar))
+                                    relativeUri = FilePath.DirectorySeparatorChar + relativeUri;
 
                                 // save the sound file with FileOptions.DeleteOnClose, which is an OS-level approach that ensures that
-                                // the file is been deleted when closing the stream. this means we need to allow multiple file handles,
+                                // the file is being deleted when closing the stream. this means we need to allow multiple file handles,
                                 // so MonoGame's Song.FromUri(...) method will open the file BEFORE we close it, and we'll only close
-                                // it when closing the game (if we won't close it manually, the OS will close it for us, so it's OK
+                                // it when closing the game (if we won't close it manually, the OS will close it for us, so it's OK)
                                 try
                                 {
-                                    string absPath = tmpDir + '\\' + relativeUri;
+                                    absPath = tmpDir + relativeUri;
+                                    string absPath_dir = FilePath.GetDirectoryName(absPath)!;
+                                    if (!Directory.Exists(absPath_dir))
+                                        Directory.CreateDirectory(absPath_dir);
+
+                                    // make sure this name is free. on android skip it and just override existing files,
+                                    // bc FileMode.DeleteOnClose doesn't seem to work there
+                                    else if (!OperatingSystem.IsAndroid()) while (File.Exists(absPath))
+                                    {
+                                        relativeUri = relativeUri.Insert(relativeUri.LastIndexOf(FilePath.DirectorySeparatorChar) + 1, "_");
+                                        absPath = tmpDir + relativeUri;
+                                    }
+                                    
                                     using Stream soundMemoryStream = OpenStream(sound.FilePath)!;
-                                    FileStream soundFileStream = new FileStream(absPath, FileMode.CreateNew, FileAccess.Write, FileShare.Read, 4096, FileOptions.DeleteOnClose); // 4096 is default buffer size
+                                    FileStream soundFileStream = new(absPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.DeleteOnClose); // 4096 is the default buffer size
                                     openedSongFilesStreams.Add(soundFileStream);
                                     File.SetAttributes(absPath, FileAttributes.Hidden); // mark the file as hidden
                                     soundMemoryStream.CopyTo(soundFileStream);
@@ -334,8 +344,17 @@ namespace ArcadeMaker.Engines.MonoGame.Core
                                 }
                             }
 
-                            string finalUri = (bundled ? tmpDir : ProjectFileDir) + (relativeUri.StartsWith('\\') ? "" : "\\") + relativeUri;
+                            string finalUri = absPath ?? ((bundled ? tmpDir : ProjectFileDir) + (relativeUri.StartsWith(FilePath.DirectorySeparatorChar) ? "" : FilePath.DirectorySeparatorChar) + relativeUri);
+                            finalUri = finalUri.Replace('\\', FilePath.DirectorySeparatorChar);
                             Song song = Song.FromUri(sound.Name, new Uri(finalUri, UriKind.Absolute));
+
+                            // on android, we must do a little hack here.
+                            // see https://community.monogame.net/t/solved-how-can-i-play-a-mp3-file-from-file-outside-of-the-content-folder/2687/11
+                            if (OperatingSystem.IsAndroid())
+                            {
+                                FieldInfo field = song.GetType().GetField("assetUri", BindingFlags.NonPublic | BindingFlags.Instance)!;
+                                field.SetValue(song, Runtime.SongPlaybackInstance.GetAndroidUri(finalUri));
+                            }
 
                             backgroundMusics.Add(sound, song);
                         }

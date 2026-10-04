@@ -270,9 +270,17 @@ namespace ArcadeMaker.IDE
                 var sfont = new SerializeableGameFont(font);
 
                 // create font to get its height property
-                Font _font = new Font(font.family, font.size, font.bold && font.italic ? FontStyle.Bold | FontStyle.Italic : font.bold ? FontStyle.Bold : font.italic ? FontStyle.Italic : FontStyle.Regular);
+                FontStyle fontStyle = FontStyle.Regular;
+                if (font.bold && font.italic)
+                    fontStyle = FontStyle.Bold | FontStyle.Italic;
+                else if (font.bold)
+                    fontStyle = FontStyle.Bold;
+                else if (font.italic)
+                    fontStyle = FontStyle.Italic;
+                Font _font = new(font.family, font.size, fontStyle);
                 sfont.heightInPixels = _font.GetHeight();
 
+                // try saving the font
                 if (string.IsNullOrWhiteSpace(sfont.ttf))
                     MessageBox.Show($"Couldn't find .ttf file for font '{font.name}'.");
                 else
