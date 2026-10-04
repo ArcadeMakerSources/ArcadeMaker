@@ -15,7 +15,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core.Graphics
         internal static SpriteFont FromRaw(byte[] raw, float size, GraphicsDevice graphicsDevice)
         {
             // bake the font into a SpriteFont
-            var fontBakeResult = TtfFontBaker.Bake(raw, size, 1024, 1024, [CharacterRange.BasicLatin]);
+            var fontBakeResult = TtfFontBaker.Bake(raw, size * (96 / 72), 1024, 1024, [CharacterRange.BasicLatin]);
             return fontBakeResult.CreateSpriteFont(graphicsDevice);
         }
 

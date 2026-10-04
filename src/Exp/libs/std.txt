@@ -684,6 +684,8 @@ class OS ()
     static const isAndroid
     static const isIOS
     static const isBrowser
+    static const dirSepChar
+    static const altDirSepChar
 
     private constructor() {}
 }

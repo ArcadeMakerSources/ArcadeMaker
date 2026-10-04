@@ -19,7 +19,7 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
 
     public void LaunchDebugger()
     {
-        const string activityName = "com.arcademaker.debugger.MainActivity";
+        const string activityName = $"{DEBUGGER_APP_PACKAGE_NAME}.MainActivity";
 
         string adbArguments = $"-s {serial} shell am start -n {DEBUGGER_APP_PACKAGE_NAME}/{activityName}";
 

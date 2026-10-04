@@ -5,6 +5,7 @@ using Android.Views;
 using Microsoft.Xna.Framework;
 using System;
 using System.IO;
+using Uri = Android.Net.Uri;
 
 namespace ArcadeMaker.Engines.MonoGame.Platforms.Android
 {
@@ -28,6 +29,8 @@ namespace ArcadeMaker.Engines.MonoGame.Platforms.Android
 
         protected override void OnCreate(Bundle bundle)
         {
+            Core.Runtime.SongPlaybackInstance.Android_Net_Uri = typeof(Uri);
+
             try
             {
                 base.OnCreate(bundle);
@@ -38,9 +41,9 @@ namespace ArcadeMaker.Engines.MonoGame.Platforms.Android
                     unseekableStream.CopyTo(memoryStream);
                 }
                 memoryStream.Position = 0;
-                _game = new(memoryStream);
+                _game = new(memoryStream) { AndroidAppPackageName = PackageName };
 
-                void OnError(object? sender, Exception ex)
+                void OnError(object sender, Exception ex)
                 {
                     _game.ShowMessage(null, [Exp.Extensions.ToExpString(ex.ToString())]);
                 }
