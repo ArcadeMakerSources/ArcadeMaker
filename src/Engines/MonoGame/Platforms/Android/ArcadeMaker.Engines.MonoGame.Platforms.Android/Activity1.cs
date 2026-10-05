@@ -5,7 +5,6 @@ using Android.Views;
 using Microsoft.Xna.Framework;
 using System;
 using System.IO;
-using Uri = Android.Net.Uri;
 
 namespace ArcadeMaker.Engines.MonoGame.Platforms.Android
 {
@@ -29,7 +28,7 @@ namespace ArcadeMaker.Engines.MonoGame.Platforms.Android
 
         protected override void OnCreate(Bundle bundle)
         {
-            Core.Runtime.SongPlaybackInstance.Android_Net_Uri = typeof(Uri);
+            Core.Runtime.SongPlaybackInstance.Android_Net_Uri_Parse = global::Android.Net.Uri.Parse;
 
             try
             {

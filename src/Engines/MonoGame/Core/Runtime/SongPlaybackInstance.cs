@@ -7,7 +7,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core.Runtime;
 
 public class SongPlaybackInstance : ArcadeMaker.Core.Runtime.SoundPlaybackInstance<Song>
 {
-    public static Type? Android_Net_Uri { get; set; }
+    public static Func<string, object>? Android_Net_Uri_Parse { get; set; }
 
     public override float Volume
     {
@@ -36,14 +36,5 @@ public class SongPlaybackInstance : ArcadeMaker.Core.Runtime.SoundPlaybackInstan
     internal SongPlaybackInstance(Sound sound, Song instance) : base(sound, instance)
     {
 
-    }
-
-    internal static object GetAndroidUri(string file)
-    {
-        if (Android_Net_Uri is null)
-            throw new Exception(typeof(SongPlaybackInstance).FullName + "." + nameof(Android_Net_Uri) + " must be assigned.");
-
-        MethodInfo parser = Android_Net_Uri.GetMethod("Parse", BindingFlags.Static | BindingFlags.Public)!;
-        return parser.Invoke(null, [file])!;
     }
 }

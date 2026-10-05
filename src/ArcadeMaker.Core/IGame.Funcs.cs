@@ -1228,4 +1228,115 @@ public partial interface IGame
     [EngineFunc(1)]
     [Param("fileName", ParamType.String, "The full path of the file to save the screenshot to. Must end with .png or .jpeg.")]
     Exp.Void TakeScreenshot(Exp.Instance? _, IValue?[] args);
+
+    /// <summary>
+    /// Deactivates the calling instance.
+    /// </summary>
+    [EngineFunc(IsNonStaticFuncOfGameObjects = true)]
+    public Exp.Void Deactivate(Exp.Instance? expinst, IValue?[] args)
+    {
+        CurrentRoom!.Deactivate((Runtime.Instance)expinst!);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Re-activates the calling instance, if it was previously deactivated.
+    /// </summary>
+    [EngineFunc(IsNonStaticFuncOfGameObjects = true)]
+    public Exp.Void Activate(Exp.Instance? expinst, IValue?[] args)
+    {
+        CurrentRoom!.Activate((Runtime.Instance)expinst!);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Deactivates all of the instances in the current room.
+    /// </summary>
+    [EngineFunc]
+    public Exp.Void DeactivateAllInstances(Exp.Instance? _, IValue?[] args)
+    {
+        RoomInstance room = CurrentRoom!;
+        while (room.Instances.Count >= 1)
+            room.Deactivate(room.Instances[0]);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Re-activates all of the previously-deactivated instances in the current room.
+    /// </summary>
+    [EngineFunc]
+    public Exp.Void ActivateAllInstances(Exp.Instance? _, IValue?[] args)
+    {
+        RoomInstance room = CurrentRoom!;
+        while (room.DeactivatedInstances.Count >= 1)
+            room.Activate(room.DeactivatedInstances[0]);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Deactivates all of the instances in the given region.
+    /// </summary>
+    [EngineFunc(4, 5, 6)]
+    [Param("regionX", ParamType.Number, "The x of the region rectangle")]
+    [Param("regionY", ParamType.Number, "The Y of the region rectangle")]
+    [Param("regionWidth", ParamType.Number, "The width of the region rectangle")]
+    [Param("regionHeight", ParamType.Number, "The height of the region rectangle")]
+    [Param("outside", ParamType.Bool, "Whether to only deactivate the instances OUTSIDE the given region, instead of the instances inside it", Optional = true)]
+    [Param("ignoreMasks", ParamType.Bool, "If true, the collision detection only respects the x/y values of the instances, ignoring visual parameters, causing a better-performant operation.", Optional = true)]
+    public Exp.Void DeactivateInstancesInRegion(Exp.Instance? _, IValue?[] args)
+    {
+        SetActivationInRegion(args, false);
+        return Exp.Void.Return;
+    }
+
+    /// <summary>
+    /// Re-activates all of the previously-deactivated instances in the given region.
+    /// </summary>
+    [EngineFunc(4, 5, 6)]
+    [Param("regionX", ParamType.Number, "The x of the region rectangle")]
+    [Param("regionY", ParamType.Number, "The Y of the region rectangle")]
+    [Param("regionWidth", ParamType.Number, "The width of the region rectangle")]
+    [Param("regionHeight", ParamType.Number, "The height of the region rectangle")]
+    [Param("outside", ParamType.Bool, "Whether to only activate the instances OUTSIDE the given region, instead of the instances inside it", Optional = true)]
+    [Param("ignoreMasks", ParamType.Bool, "If true, the collision detection only respects the x/y values of the instances, ignoring visual parameters, causing a better-performant operation.", Optional = true)]
+    public Exp.Void ActivateInstancesInRegion(Exp.Instance? _, IValue?[] args)
+    {
+        SetActivationInRegion(args, true);
+        return Exp.Void.Return;
+    }
+
+    private void SetActivationInRegion(IValue?[] args, bool setActive)
+    {
+        bool outside = args.Length >= 5 && args[4].ThrowIfNull().Bool;
+        bool ignoreMasks = args.Length >= 6 && args[5].ThrowIfNull().Bool;
+
+        Math.Shapes.Rect region = new()
+        {
+            X = args[0].ThrowIfNull().Number,
+            Y = args[1].ThrowIfNull().Number,
+            Width = (int)args[2].ThrowIfNull().Number,
+            Height = (int)args[3].ThrowIfNull().Number,
+        };
+
+        List<Runtime.Instance> src = setActive ? CurrentRoom!.DeactivatedInstances : CurrentRoom!.Instances;
+        for (int i = 0; i < src.Count; i++)
+        {
+            var inst = src[i];
+
+            bool isInside;
+            if (!ignoreMasks && inst.Mask != null)
+                isInside = SeparatingAxisTheorem.AreRectanglesIntersecting(inst.Mask, region);
+            else
+                isInside = SeparatingAxisTheorem.IsPointInRectangle(inst.X.Value!.Number, inst.Y.Value!.Number, region);
+
+            if (isInside != outside)
+            {
+                if (setActive)
+                    CurrentRoom.Activate(inst);
+                else
+                    CurrentRoom.Deactivate(inst);
+                i--;
+            }
+        }
+    }
 }

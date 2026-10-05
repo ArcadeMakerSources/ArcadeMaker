@@ -30,6 +30,9 @@ namespace ArcadeMaker.Core.Runtime
         }
 
         private bool isSorted = false;
+
+        public List<Instance> DeactivatedInstances { get; } = [];
+
         public RoomInstance(IGame game, RoomModel model)
         {
             this.Model = model;
@@ -118,6 +121,41 @@ namespace ArcadeMaker.Core.Runtime
             {
                 doc.Run(interpreter, inst);
             }
+        }
+
+        /// <summary>
+        /// Deactivates an instance of the room - it won't be included in core function like
+        /// <see cref="IGame.PlaceMeeting(Exp.Instance?, IValue?[])"/> or in <c>obj_example.all()</c>, and won't receive events.
+        /// The difference between this and <see cref="GameRunner{TGame}.Destroy(Exp.Instance?, IValue?[])"/> is that the instance's
+        /// Destroy event won't be fired on deactivation, and it can later be re-activated.
+        /// </summary>
+        /// <param name="instance">The instance to deactivate.</param>
+        /// <returns><c>true</c> if the instance was in the room. Otherwise, <c>false</c>.</returns>
+        public bool Deactivate(Instance instance)
+        {
+            if (instances.Remove(instance))
+            {
+                DeactivatedInstances.Add(instance);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Re-activates a previously-deactivated instance.
+        /// </summary>
+        /// <param name="instance">The instance to re-activate.</param>
+        /// <returns><c>true</c> if the instance was in the room's deactivated list and now has been re-activated. Otherwise, <c>false</c>.</returns>
+        public bool Activate(Instance instance)
+        {
+            if (DeactivatedInstances.Remove(instance))
+            {
+                AddInstance(instance);
+                return true;
+            }
+
+            return false;
         }
     }
 }
