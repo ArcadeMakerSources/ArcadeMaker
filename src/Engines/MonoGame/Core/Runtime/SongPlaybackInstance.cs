@@ -7,7 +7,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core.Runtime;
 
 public class SongPlaybackInstance : ArcadeMaker.Core.Runtime.SoundPlaybackInstance<Song>
 {
-    public static Func<string, object> Android_Net_Uri_Parse { get; set; } = null!; // must be assigned by android launcher
+    public static Func<string, object>? Android_Net_Uri_Parse { get; set; }
 
     public override float Volume
     {
