@@ -743,46 +743,109 @@ namespace ArcadeMaker.IDE
         {
             invalidatedByKeyPress = true;
 
+            bool insertTheChar = true;
             if (e.KeyChar == KeyBackspace)
             {
                 if (SelectionLength == 0)
                     RemoveChar();
                 else
                     InsertText();
+                insertTheChar = false;
             }
             else if (e.KeyChar == KeyEnter)
             {
                 if (!interceptEnterKeyPress)
                 {
-                    //// insert new line, with correct tabbing space
                     string Text = this.Text;
-
-                    // get depth
-                    int caretLoc = SelectionStart;
-                    int depth = 0;
-                    for (int i = 0; i < caretLoc; i++)
+                    if (Text.Length >= 1)
                     {
-                        char c = Text[i];
-                        if (c == '{')
-                            depth++;
-                        else if (c == '}')
-                            depth--;
+                        // insert new line, with correct tabbing space
+                        // get depth
+                        int caretLoc = SelectionStart;
+                        int depth = CalculateDepthAt(caretLoc + 1);
+
+                        // insert <depth> tabs
+                        string tabs = "";
+                        for (int t = 0; t < depth; t++)
+                            tabs += TabSpace;
+
+                        if (depth >= 1)
+                            InsertText("\n" + (TabSpace * depth));
+                        else
+                            InsertText("\n");
+                        insertTheChar = false;
                     }
-
-                    // insert <depth> tabs
-                    string tabs = "";
-                    for (int t = 0; t < depth; t++)
-                        tabs += TabSpace;
-
-                    InsertText("\n" + tabs);
                 }
                 else
                 {
                     interceptEnterKeyPress = false;
                 }
             }
+            else if (e.KeyChar == '}')
+            {
+                // move it to the right depth
+                if (Text.Length >= 1 && GetSpanByCharIndex(SelectionStart - 1)?.type is not null and not Exp.Spans.SpanType.EscapedString and not Exp.Spans.SpanType.Comment and not Exp.Spans.SpanType.MultiLineComment)
+                {
+                    string Text = this.Text;
+
+                    // get depth
+                    int caretLoc = SelectionStart;
+                    int depth = CalculateDepthAt(caretLoc + 1);
+
+                    // validate that the } inserted where we need to remove a tab
+                    bool isFirstNonWhiteSpaceCharInLine = true;
+                    int indexOfEndl = 0;
+                    for (int i = caretLoc - 1; i >= 0; i--)
+                    {
+                        char c = Text[i];
+                        if (c == '\n')
+                        {
+                            indexOfEndl = i;
+                            break;
+                        }
+                        if (!char.IsWhiteSpace(c))
+                        {
+                            isFirstNonWhiteSpaceCharInLine = false;
+                            break;
+                        }
+                    }
+
+                    int rightIndexInLine = (depth - 1) * TabSpace.Length + 1;
+                    int caretIndexInLine = SelectionStart - indexOfEndl;
+
+                    if (isFirstNonWhiteSpaceCharInLine && rightIndexInLine >= 0)
+                    {
+                        int spacesToInsert = rightIndexInLine - caretIndexInLine;
+                        if (spacesToInsert >= 1)
+                        {
+                            // if possible, move the caret to the right position.
+                            // insert spaces where it's needed
+                            for (int i = 0; caretIndexInLine < rightIndexInLine; caretIndexInLine++, i++)
+                            {
+                                char c = Text[SelectionStart];
+                                if (c == '\n')
+                                {
+                                    InsertText(" " * (spacesToInsert - i));
+                                    break;
+                                }
+                                else if (c != ' ')
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    SelectionStart++;
+                                }
+                            }
+                        }
+                        else while (caretIndexInLine-- > rightIndexInLine)
+                            RemoveChar();
+                    }
+                }
+            }
             else if (e.KeyChar == '\t')
             {
+                insertTheChar = false;
                 int selectionStart = SelectionStart;
                 string text = Text;
 
@@ -823,8 +886,37 @@ namespace ArcadeMaker.IDE
                 else
                     InsertText(TabSpace);
             }
-            else if (e.KeyChar != KeyEscape)
+
+            if (e.KeyChar != KeyEscape && insertTheChar)
                 InsertText(e.KeyChar.ToString());
+        }
+
+        /// <summary>
+        /// Calculates the depth (how many opened <c>{</c> are) in the given char index.
+        /// </summary>
+        public int CalculateDepthAt(int index, bool minimumReturnValueIs0 = true)
+        {
+            if (index <= 0)
+                return 0;
+
+            // get depth
+            int depth = 0, i = 0;
+            foreach (var span in Spans)
+            {
+                i += span.text.Length;
+                if (i >= index)
+                    break;
+
+                if (span.type == Exp.Spans.SpanType.Brace && span.text.Length == 1)
+                {
+                    if (span.text == "{")
+                        depth++;
+                    else if (span.text == "}")
+                        depth--;
+                }
+            }
+
+            return minimumReturnValueIs0 ? Math.Max(depth, 0) : depth;
         }
 
         private int shiftKeyPressCharIndex = 0;
@@ -1670,9 +1762,14 @@ namespace ArcadeMaker.IDE
             return -1;
         }
 
-        public Exp.Spans.TextSpan GetSpanByCharIndex(int index) => GetSpanByCharIndex(index);
-        public Exp.Spans.TextSpan GetSpanByCharIndex(int index, out int spanStart)
+        public Exp.Spans.TextSpan? GetSpanByCharIndex(int index) => GetSpanByCharIndex(index, out var _);
+        public Exp.Spans.TextSpan? GetSpanByCharIndex(int index, out int spanStart)
         {
+            if (index < 0)
+            {
+                spanStart = -1;
+                return null;
+            }
             int spanIndex = GetSpanIndexByCharIndex(index, out spanStart);
             if (spanIndex >= 0)
                 return Spans[spanIndex];
