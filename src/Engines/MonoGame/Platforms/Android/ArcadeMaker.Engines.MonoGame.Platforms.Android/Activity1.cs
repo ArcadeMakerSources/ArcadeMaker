@@ -29,7 +29,7 @@ namespace ArcadeMaker.Engines.MonoGame.Platforms.Android
 
         protected override void OnCreate(Bundle bundle)
         {
-            Core.Runtime.SongPlaybackInstance.Android_Net_Uri = typeof(Uri);
+            Core.Runtime.SongPlaybackInstance.Android_Net_Uri_Parse = Uri.Parse;
 
             try
             {

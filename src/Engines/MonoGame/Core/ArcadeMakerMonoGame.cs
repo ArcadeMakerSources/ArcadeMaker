@@ -352,8 +352,11 @@ namespace ArcadeMaker.Engines.MonoGame.Core
                             // see https://community.monogame.net/t/solved-how-can-i-play-a-mp3-file-from-file-outside-of-the-content-folder/2687/11
                             if (OperatingSystem.IsAndroid())
                             {
-                                FieldInfo field = song.GetType().GetField("assetUri", BindingFlags.NonPublic | BindingFlags.Instance)!;
-                                field.SetValue(song, Runtime.SongPlaybackInstance.GetAndroidUri(finalUri));
+                                const string fieldName = "assetUri";
+                                FieldInfo field =
+                                    song.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance) ??
+                                    throw new Exception($"FieldInfo for {nameof(song)}.{fieldName} was null.");
+                                field.SetValue(song, Runtime.SongPlaybackInstance.Android_Net_Uri_Parse(finalUri));
                             }
 
                             backgroundMusics.Add(sound, song);
