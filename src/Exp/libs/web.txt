@@ -1,0 +1,58 @@
+﻿using std
+
+namespace web:
+
+class HttpRequest (url, method, headers)
+{
+	constructor(url)
+	{
+		this.url = url
+		method = HttpRequestMethod.get
+	}
+
+	constructor(url, method)
+	{
+		this.url = url
+		this.method = method
+	}
+
+	constructor(url, method, headers)
+	{
+		this.url = url
+		this.method = method
+		this.headers = headers
+	}
+
+
+	@ExternImpl
+	func wait(){}
+
+	func send(onComplete?, onError?)
+	{
+	    try
+		{
+			runAsync(this.wait, onComplete)
+		}
+		catch ex
+		{
+			//if onError != null
+			//{
+			//	onError(ex)
+			//}
+		}
+	}
+}
+
+enum HttpRequestMethod
+{
+	get,
+	query,
+	head,
+	post,
+	put,
+	delete,
+	connect,
+	options,
+	trace,
+	patch
+}

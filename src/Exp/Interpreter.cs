@@ -197,6 +197,7 @@ namespace Exp
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("json"), "json.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("reflection"), "reflection.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("std"), "std.txt"));
+            importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("web"), "web.txt"));
             docs.AddRange(importsLs);
             importsLs.ForEach(doc => Errors.AddRange(doc.SettingsErrors));
 

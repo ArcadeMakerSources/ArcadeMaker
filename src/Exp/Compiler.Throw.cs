@@ -66,6 +66,10 @@ namespace Exp
             }
         }
 
+        /// <summary>
+        /// Same as <see cref="ThrowRuntime(string, string, Span?, bool)"/> but enables shortcuts like <c>object a = b ?? ThrowRuntime&lt;object&gt;(...)</c>.
+        /// </summary>
+        /// <typeparam name="T">Has no effect.</typeparam>
         [DoesNotReturn]
         public T ThrowRuntime<T>(string msg, string type, Span? throwing = null, bool beforeCurrentSpan = true)
         {
