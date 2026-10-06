@@ -42,7 +42,7 @@ public partial class Interpreter
                 else if (word is ElseConditionSpan @else)
                 {
                     Error("Else statement must follow an if statement.");
-                    throw null;
+                    operation = Operation.Error;
                 }
                 else if (word is ILoopContext loop)
                 {

@@ -3,6 +3,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <Platforms>AnyCPU</Platforms>
 	  <Nullable>enable</Nullable>
+	  <!-- these two lines bypass the content builder completely -->
+	  <!--<MonoGameMGCBAdditionalArguments>/v</MonoGameMGCBAdditionalArguments>
+	  <MGCBBuildSkip>true</MGCBBuildSkip>-->
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Content\ArcadeMakerMono.mgcb" />
