@@ -2,7 +2,7 @@
 
 namespace web:
 
-class HttpRequest (url, method, headers)
+class HttpRequest (url, method, headers, body)
 {
 	constructor(url)
 	{
