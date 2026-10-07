@@ -406,7 +406,7 @@ public partial class Interpreter
         }
     */
 
-    internal INamedValue GetNamedValueItem(IVarSystem vs, string name, Span span, bool first, int argsNum, string? nsSpec = null)
+    internal INamedValue? GetNamedValueItem(IVarSystem vs, string name, Span span, bool first, int argsNum, string? nsSpec = null, bool throwIfFoundButItIsNotNamedValue = true)
     {
         if (nsSpec == null)
         {
@@ -447,8 +447,9 @@ public partial class Interpreter
                 {
                     if (def is INamedValue result)
                         return result;
-                    else
+                    else if (throwIfFoundButItIsNotNamedValue)
                         ThrowRuntime($"A function or variable was expected, but {def.FullName} read.", RuntimeException.INVALID_SYNTAX, span);
+                    else break;
                 }
             }
         }
@@ -530,24 +531,20 @@ public partial class Interpreter
                     }
                 }
 
+
                 if (first == null)
                 {
-                    possibilities = GetNamedValueItem(vs, name, word, true, paramsCounter ?? argLists.FirstOrDefault()?.Length ?? -1, nsSpec)?.PackAsArray(false);
+                    possibilities ??= GetNamedValueItem(vs, name, word, true, paramsCounter ?? argLists.FirstOrDefault()?.Length ?? -1, nsSpec, throwIfFoundButItIsNotNamedValue: false)?.PackAsArray(false);
 
                     // if it's first and it's a non static function of instance, the GetNamedValueItem(...) above won't find it bc vs is not an insatnce
                     possibilities ??= funcCtx?.DefinedAt?.Funcs.Where(f => f.Name == name && ((!f.Static) || first == null));
                 }
 
+
                 // if it's a class name, read static name
                 if ((possibilities == null || !possibilities.Any()) && first == null && name != ThisWordSpan.Keyword && argLists.Count == 0 && paramsCounter == null)
                 {
-                    DefNameSpan defname = new DefNameSpan(nsSpec, name, word.Document, word.DocumentLocation, this);
-                    if (defname == null)
-                    {
-                        Error($"Unknown item '{(nsSpec == null ? "" : (nsSpec + NamespaceSpecificationSpan.Symbol)) + name}'.");
-                        ReadErrorPointing(true);
-                        return null;
-                    }
+                    DefNameSpan defname = new(nsSpec, name, word.Document, word.DocumentLocation, this);
 
                     Read<DotSpan>();
                     name = ReadWord()?.FullText;

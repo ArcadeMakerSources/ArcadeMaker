@@ -242,7 +242,7 @@ class DefNameSpan : WordSpan
     internal event EventHandler Resolved;
     internal bool CancelResolve { get; set; }
     internal static bool CancelResolveForNewOnes { get; set; }
-    internal DefNameSpan(string specNs, string name, ScriptDocument doc, int docLoc, Interpreter compiler, bool resolve = true) : base(name)
+    internal DefNameSpan(string? specNs, string name, ScriptDocument doc, int docLoc, Interpreter compiler, bool resolve = true) : base(name)
     {
         (this.SpecificNs, this.Name, Document, DocumentLocation) = (specNs, name, doc, docLoc);
         void Resolve(object? sender, EventArgs e)
@@ -256,7 +256,7 @@ class DefNameSpan : WordSpan
             var matches = defs.Where(d => d.Name == name);
 
             // check ambiguous reference
-            IDefination def = matches.FirstOrDefault(d => d.Namespace == null);
+            IDefination? def = matches.FirstOrDefault(d => d.Namespace == null);
             int matchesCount = matches.Count();
             if (specNs == null && matchesCount >= 2 && def == null)
             {

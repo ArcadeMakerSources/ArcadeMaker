@@ -738,7 +738,7 @@ public partial class Interpreter
                         var vars = new ClassStaticVar[enm.Values.Length];
                         for (int i = 0; i < vars.Length; i++)
                             vars[i] = new ClassStaticVar(enm.Values[i].Name, enm.Values[i].Value.ToExp(), null, enm, false, true) { TagsCode = enm.Values[i].TagsCode };
-                        ClassDefSpan enumcls = new(enm.Name, [], []) { Namespace = currNs, TagsCode = enm.TagsCode, Document = enm.Document, DocumentLocation = enm.DocumentLocation };
+                        ClassDefSpan enumcls = new(enm.Name, [], []) { Namespace = span.Document?.Namespace, TagsCode = enm.TagsCode, Document = enm.Document, DocumentLocation = enm.DocumentLocation };
                         vars.ForEach(v => v.Def = enumcls);
                         enumcls.Vars.AddRange(vars);
                         def = enumcls;
@@ -1132,7 +1132,7 @@ public partial class Interpreter
     internal async void RunAsync(Task action)
     {
         Tasks.Add(action);
-        await action.WaitAsync((CancellationToken)default);
+        await action.WaitAsync(default(CancellationToken));
         Tasks.Remove(action);
     }
 

@@ -197,6 +197,7 @@ namespace Exp
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("json"), "json.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("reflection"), "reflection.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("std"), "std.txt"));
+            importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("web"), "web.txt"));
             docs.AddRange(importsLs);
             importsLs.ForEach(doc => Errors.AddRange(doc.SettingsErrors));
 
@@ -665,7 +666,7 @@ namespace Exp
                         isPointingToLiteralConst = pointing.IsPointingToLiteralConst(this, out constValueFromPointer);
 
                     bool isConst = true;
-
+                    IValue? val = null;
                     if (argIsMissing)
                         Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} is missing from tag declaration.", defName);
                     else if (valop is not ConstValueReadingOperation and not ConstArrayReadingOperation && !isPointingToLiteralConst)
@@ -673,7 +674,7 @@ namespace Exp
                         Error($"Argument '{attr.Params[i].Name}' of attribute {((IDefination)attr).FullName} must be a constant value.", defName);
                         isConst = false;
                     }
-                    var val = isPointingToLiteralConst ? constValueFromPointer : valop?.Read();
+                    else val = isPointingToLiteralConst ? constValueFromPointer : valop?.Read();
 
                     // check type match
                     if (!argIsMissing && isConst)

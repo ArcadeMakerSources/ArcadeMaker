@@ -42,7 +42,7 @@ public partial class Interpreter
                 else if (word is ElseConditionSpan @else)
                 {
                     Error("Else statement must follow an if statement.");
-                    throw null;
+                    operation = Operation.Error;
                 }
                 else if (word is ILoopContext loop)
                 {
@@ -129,7 +129,7 @@ public partial class Interpreter
                         }
                         if (span == null)
                         {
-                            Error("No enclosing function out of which to return.");
+                            Error("No enclosing function out of which to return.", ret);
                             break;
                         }
                         span = span.Container;
@@ -151,7 +151,7 @@ public partial class Interpreter
 
                     if (cw != null)
                     {
-                        IReadingOperation readWhen = null;
+                        IReadingOperation? readWhen = null;
                         if (cw.When?.Condition != null)
                             readWhen = ReadReadingOperation(cw.When.Condition);
                         catc = new CatchStatement(ReadOperations(cw.InnerSource, cw), readWhen, cw);

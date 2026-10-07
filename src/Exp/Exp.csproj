@@ -9,6 +9,7 @@
   <ItemGroup>
     <None Remove="libs\json.txt" />
     <None Remove="libs\reflection.txt" />
+    <None Remove="libs\web.txt" />
     <None Remove="libs\xml.txt" />
   </ItemGroup>
 
@@ -16,6 +17,7 @@
     <EmbeddedResource Include="libs\json.txt" />
     <EmbeddedResource Include="libs\reflection.txt" />
     <EmbeddedResource Include="libs\std.txt" />
+    <EmbeddedResource Include="libs\web.txt" />
     <EmbeddedResource Include="libs\xml.txt" />
   </ItemGroup>
 
