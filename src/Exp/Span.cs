@@ -67,7 +67,7 @@ public abstract class Span : ILocatableSourceMark
         this.Text = text;
     }
 
-    internal void SetContainer(Span[] spans, Span container = null)
+    internal void SetContainer(Span[] spans, Span? container = null)
     {
         ArgumentNullException.ThrowIfNull(spans);
         container ??= this;
@@ -743,7 +743,7 @@ public interface IVarSystem
     internal List<Variable> Vars { get; }
     internal IVarSystem Parent { get; set; }
 
-    internal IEnumerable<IValue> BackupValues() => Vars.Map(v => v.Value);
+    internal IEnumerable<IValue?> BackupValues() => Vars.Map(v => v.Value);
     internal void RestoreValues(IEnumerable<IValue> values)
     {
         int i = 0;
@@ -1415,7 +1415,17 @@ class TryWordSpan : WordSpan, IContext, IKeyword, IExpItem
     public static string Keyword { get; } = "try";
     public static string ItemName { get; } = "try block";
     public IContext Context { get; set; }
-    public List<Variable> Vars { get; } = []; public IVarSystem Parent { get; set; }
+    public List<Variable> Vars { get; } = [];
+    public IVarSystem Parent
+    {
+        get;
+        set
+        {
+            field = value;
+            Catch?.Parent = value;
+            Finally?.Parent = value;
+        }
+    }
     public IVarSystem OuterVarSystem { get; }
     internal CatchWordSpan Catch { get; set; }
     internal FinallyWordSpan Finally { get; set; }
@@ -1447,6 +1457,8 @@ class CatchWordSpan : WordSpan, IContext, IKeyword, IExpItem
     {
         this.VarName = varname;
         this.When = when;
+        if (this.When != null)
+            SetContainer(this.When.Condition);
         this.InnerSource = innerSource;
         this.OuterVarSystem = vs;
     }
