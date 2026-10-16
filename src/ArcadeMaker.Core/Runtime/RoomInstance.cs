@@ -11,6 +11,7 @@ namespace ArcadeMaker.Core.Runtime
         public IGame Game { get; }
 
         public List<RoomBackground> Backgrounds { get; } = [];
+        public List<RoomView> Views { get; } = [];
         private readonly List<Instance> instances = [];
         private readonly (Instance inst, InstanceScriptDocument doc)[] instanceCreationCodes;
         public List<Instance> Instances => instances;
@@ -54,11 +55,9 @@ namespace ArcadeMaker.Core.Runtime
                 }
             }
 
-            // copy all backgrounds from the model
-            foreach (var background in model.Backgrounds)
-            {
-                Backgrounds.Add(background with { });
-            }
+            // copy all background & views from the model
+            Backgrounds.AddRange(model.Backgrounds.Select(b => b with { }).ToArray());
+            Views.AddRange(model.Views.Select(v => v with { }).ToArray());
         }
 
         public void AddInstance(Instance instance)

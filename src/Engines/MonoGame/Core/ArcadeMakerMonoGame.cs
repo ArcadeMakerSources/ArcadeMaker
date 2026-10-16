@@ -70,7 +70,7 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
                 if (value != null)
                 {
-                    foreach (var view in value.Model.Views)
+                    foreach (var view in value.Views)
                     {
                         Cameras.Add(InitCamera(view, out var _,out var _));
 
@@ -479,12 +479,12 @@ namespace ArcadeMaker.Engines.MonoGame.Core
 
             // if views are defined, we need to draw the room for each view, applying the corresponding camera transformations.
             // otherwise, we can just draw the room once without any transformations
-            if (CurrentRoom!.Model.Views.Count > 0) // views are defined
+            if (CurrentRoom!.Views.Count > 0) // views are defined
             {
                 CurrentViewIndex = 0;
                 try
                 {
-                    foreach (var view in CurrentRoom.Model.Views)
+                    foreach (var view in CurrentRoom.Views)
                     {
                         if (!view.Visible)
                             continue;
