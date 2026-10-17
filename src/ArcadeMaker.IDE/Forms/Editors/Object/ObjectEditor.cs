@@ -319,6 +319,8 @@ namespace ArcadeMaker.IDE
 
         private void eventsListView_DrawItem(object sender, DrawItemEventArgs e)
         {
+            if (e.Index < 0) return;
+
             // Draw the background highlights (selection color)
             e.DrawBackground();
 
