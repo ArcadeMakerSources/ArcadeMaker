@@ -44,7 +44,7 @@ class HttpRequest (url, method, headers, body)
 					onError(ex)
 				}
 			}
-			if success { onComplete(result) }
+			if success & onComplete != null { onComplete(result) }
 		})
 	}
 }

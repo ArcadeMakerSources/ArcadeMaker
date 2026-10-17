@@ -85,6 +85,12 @@ public partial class Interpreter
                     value = new InitOperation(init.DefName.Class, ReadParamListOps());
                 else if (init.DefName.Extern != null)
                     value = new ExternTypeInitOperation(init.DefName.Extern, ReadParamListOps());
+                else if (init.DefName.Defination == null)
+                {
+                    string unknownItem = init.DefName.SpecificNs == null ? "" : $"{NamespaceSpecificationSpan.Symbol}{init.DefName.SpecificNs}";
+                    unknownItem += init.DefName.Name;
+                    Error("Unknown item " + unknownItem);
+                }
                 else
                     Error($"Class name was expected, but {((IExpItem)init.DefName.Defination).GetItemName()} received.", init);
             }
