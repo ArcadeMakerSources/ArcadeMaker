@@ -885,7 +885,7 @@ public partial interface IGame
     /// <returns>The view X position as a <see cref="NumberValue"/>.</returns>
     [Param("index", ParamType.Number, "The index of view to get its x.")]
     [EngineFunc(1)]
-    IValue GetViewX(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].X.ToExp();
+    IValue GetViewX(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number].X.ToExp();
 
     /// <summary>
     /// Gets the Y position of the specified view in the active room.
@@ -895,7 +895,7 @@ public partial interface IGame
     /// <returns>The view Y position as a <see cref="NumberValue"/>.</returns>
     [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its y.")]
-    IValue GetViewY(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].Y.ToExp();
+    IValue GetViewY(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number].Y.ToExp();
 
     /// <summary>
     /// Gets the width of the specified view in the active room.
@@ -905,7 +905,7 @@ public partial interface IGame
     /// <returns>The view width as a <see cref="NumberValue"/>.</returns>
     [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its width.")]
-    IValue GetViewWidth(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].Width.ToExp();
+    IValue GetViewWidth(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number].Width.ToExp();
 
     /// <summary>
     /// Gets the height of the specified view in the active room.
@@ -915,7 +915,7 @@ public partial interface IGame
     /// <returns>The view height a <see cref="NumberValue"/>.</returns>
     [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its height.")]
-    IValue GetViewHeight(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].Height.ToExp();
+    IValue GetViewHeight(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number].Height.ToExp();
 
     /// <summary>
     /// Gets the port X position of the specified view in the active room.
@@ -925,7 +925,7 @@ public partial interface IGame
     /// <returns>The view port X position as a <see cref="NumberValue"/>.</returns>
     [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its port x.")]
-    IValue GetViewPortX(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortX.ToExp();
+    IValue GetViewPortX(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number].PortX.ToExp();
 
     /// <summary>
     /// Gets the port Y position of the specified view in the active room.
@@ -935,7 +935,7 @@ public partial interface IGame
     /// <returns>The view port Y position as a <see cref="NumberValue"/>.</returns>
     [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its port y.")]
-    IValue GetViewPortY(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortY.ToExp();
+    IValue GetViewPortY(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number].PortY.ToExp();
 
     /// <summary>
     /// Gets the port width of the specified view in the active room.
@@ -945,7 +945,7 @@ public partial interface IGame
     /// <returns>The view port width as a <see cref="NumberValue"/>.</returns>
     [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its port width.")]
-    IValue GetViewPortWidth(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortWidth.ToExp();
+    IValue GetViewPortWidth(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number].PortWidth.ToExp();
 
     /// <summary>
     /// Gets the port height of the specified view in the active room.
@@ -955,7 +955,7 @@ public partial interface IGame
     /// <returns>The view port height as a <see cref="NumberValue"/>.</returns>
     [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its port height.")]
-    IValue GetViewPortHeight(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].PortHeight.ToExp();
+    IValue GetViewPortHeight(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number].PortHeight.ToExp();
 
     /// <summary>
     /// Sets the X position of the specified view in the active room.
@@ -968,7 +968,7 @@ public partial interface IGame
     [Param("value", ParamType.Number)]
     Exp.Void SetViewX(Exp.Instance? _, IValue?[] args)
     {
-        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        var view = GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number];
         view.SetPosition((int)args[1].ThrowIfNull().Number, view.Y);
         return Exp.Void.Return;
     }
@@ -984,7 +984,7 @@ public partial interface IGame
     [Param("value", ParamType.Number)]
     Exp.Void SetViewY(Exp.Instance? _, IValue?[] args)
     {
-        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        var view = GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number];
         view.SetPosition(view.X, (int)args[1].ThrowIfNull().Number);
         return Exp.Void.Return;
     }
@@ -1000,7 +1000,7 @@ public partial interface IGame
     [Param("value", ParamType.Number)]
     Exp.Void SetViewWidth(Exp.Instance? _, IValue?[] args)
     {
-        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        var view = GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number];
         view.SetSize((int)args[1].ThrowIfNull().Number, view.Height);
         return Exp.Void.Return;
     }
@@ -1016,7 +1016,7 @@ public partial interface IGame
     [Param("value", ParamType.Number)]
     Exp.Void SetViewHeight(Exp.Instance? _, IValue?[] args)
     {
-        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        var view = GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number];
         view.SetSize(view.Width, (int)args[1].ThrowIfNull().Number);
         return Exp.Void.Return;
     }
@@ -1032,7 +1032,7 @@ public partial interface IGame
     [Param("value", ParamType.Number)]
     Exp.Void SetViewPortX(Exp.Instance? _, IValue?[] args)
     {
-        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        var view = GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number];
         view.SetPortPosition((int)args[1].ThrowIfNull().Number, view.PortY);
         return Exp.Void.Return;
     }
@@ -1048,7 +1048,7 @@ public partial interface IGame
     [Param("value", ParamType.Number)]
     Exp.Void SetViewPortY(Exp.Instance? _, IValue?[] args)
     {
-        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        var view = GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number];
         view.SetPortPosition(view.PortX, (int)args[1].ThrowIfNull().Number);
         return Exp.Void.Return;
     }
@@ -1064,7 +1064,7 @@ public partial interface IGame
     [Param("value", ParamType.Number)]
     Exp.Void SetViewPortWidth(Exp.Instance? _, IValue?[] args)
     {
-        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        var view = GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number];
         view.SetPortSize((int)args[1].ThrowIfNull().Number, view.PortHeight);
         return Exp.Void.Return;
     }
@@ -1080,7 +1080,7 @@ public partial interface IGame
     [Param("value", ParamType.Number)]
     Exp.Void SetViewPortHeight(Exp.Instance? _, IValue?[] args)
     {
-        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        var view = GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number];
         view.SetPortSize(view.PortWidth, (int)args[1].ThrowIfNull().Number);
         return Exp.Void.Return;
     }
@@ -1093,7 +1093,7 @@ public partial interface IGame
     /// <returns>The view port width as a <see cref="NumberValue"/>.</returns>
     [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its port width.")]
-    IValue GetViewFollowingHBor(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].Follow_HBorder.ToExp();
+    IValue GetViewFollowingHBor(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number].Follow_HBorder.ToExp();
 
     /// <summary>
     /// Gets the vertical border for a following view in the active room.
@@ -1103,7 +1103,7 @@ public partial interface IGame
     /// <returns>The view port width as a <see cref="NumberValue"/>.</returns>
     [EngineFunc(1)]
     [Param("index", ParamType.Number, "The index of view to get its VBor.")]
-    IValue GetViewFollowingVBor(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number].Follow_VBorder.ToExp();
+    IValue GetViewFollowingVBor(Exp.Instance? _, IValue?[] args) => GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number].Follow_VBorder.ToExp();
 
     /// <summary>
     /// Sets the horizontal border for a following view in the active room.
@@ -1116,7 +1116,7 @@ public partial interface IGame
     [Param("value", ParamType.Number)]
     Exp.Void SetViewFollowingHBor(Exp.Instance? _, IValue?[] args)
     {
-        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        var view = GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number];
         view.Follow_HBorder = args[1].ThrowIfNull().Number;
         return Exp.Void.Return;
     }
@@ -1132,7 +1132,7 @@ public partial interface IGame
     [Param("value", ParamType.Number)]
     Exp.Void SetViewFollowingVBor(Exp.Instance? _, IValue?[] args)
     {
-        var view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        var view = GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number];
         view.Follow_VBorder = args[1].ThrowIfNull().Number;
         return Exp.Void.Return;
     }
@@ -1162,7 +1162,7 @@ public partial interface IGame
         }
 
         // get view
-        RoomView view = GetActivatedRoom().Model.Views[(int)args[0].ThrowIfNull().Number];
+        RoomView view = GetActivatedRoom().Views[(int)args[0].ThrowIfNull().Number];
 
         // set view's target
         view.SpecificInstanceToFollow = target;

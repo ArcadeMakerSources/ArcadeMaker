@@ -18,6 +18,10 @@ public class RoomModel(string name, string caption, int w, int h, Color backgrou
     public int Height => h;
     public Color BackgroundColor => backgroundColor;
     public Background Background { get; init; }
+
+    /// <summary>
+    /// These views are only models to be copied by the room instance when the room is created.
+    /// </summary>
     public List<RoomView> Views { get; } = [];
 
     /// <summary>
@@ -62,17 +66,17 @@ public class RoomInitMap(RoomInitMap.Item[] items)
     public int NumberOfInstancesWithCreationCode { get; } = items.Count(i => i.CreationCodeDoc != null);
 }
 
-public class RoomView(double x, double y, int w, int h, int portX, int portY, int portW, int portH)
+public record RoomView // originally it was a normal class, but we've changed it to "record" to be able to use "with" on this
 {
     public bool Visible { get; set; }
-    public double X { get; private set; } = x;
-    public double Y { get; private set; } = y;
-    public double Width { get; private set; } = w;
-    public double Height { get; private set; } = h;
-    public int PortX { get; private set; } = portX;
-    public int PortY { get; private set; } = portY;
-    public int PortWidth { get; private set; } = portW;
-    public int PortHeight { get; private set; } = portH;
+    public double X { get; private set; }
+    public double Y { get; private set; }
+    public double Width { get; private set; }
+    public double Height { get; private set; }
+    public int PortX { get; private set; }
+    public int PortY { get; private set; }
+    public int PortWidth { get; private set; }
+    public int PortHeight { get; private set; }
     public ObjectModel? Following { get; set; }
     public Runtime.Instance? SpecificInstanceToFollow { get; set; }
     public double Follow_HBorder { get; set; }
@@ -85,6 +89,18 @@ public class RoomView(double x, double y, int w, int h, int portX, int portY, in
     /// When the <c>bool</c> argument is <c>true</c>, it means that only view x / y were modified.
     /// </summary>
     public Action<bool>? Modified;
+
+    public RoomView(double x, double y, double width, double height, int portX, int portY, int portWidth, int portHeight)
+    {
+        X = x;
+        Y = y;
+        Width = width;
+        Height = height;
+        PortX = portX;
+        PortY = portY;
+        PortWidth = portWidth;
+        PortHeight = portHeight;
+    }
 
     public void SetPosition(double x, double y)
     {

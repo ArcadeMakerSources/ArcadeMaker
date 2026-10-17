@@ -30,12 +30,12 @@ public static class SeparatingAxisTheorem
     public static bool AreRectanglesIntersecting(Rect rect1, Rect rect2)
     {
         // if both rectangles aren't rotated, use a fast method
-        if (rect1.Angle == 0 && rect2.Angle == 0)
-        {
-            return
-                rect1.X - rect1.OriginX + rect1.Width  >= rect2.X - rect2.OriginX && rect1.X - rect1.OriginX <= rect2.X - rect2.OriginX + rect2.Width &&
-                rect1.Y - rect1.OriginY + rect1.Height >= rect2.Y - rect2.OriginY && rect1.Y - rect1.OriginY <= rect2.Y - rect2.OriginY + rect2.Height;
-        }
+        //if (rect1.Angle == 0 && rect2.Angle == 0)
+        //{
+        //    return
+        //        rect1.X - rect1.OriginX + rect1.Width  >= rect2.X - rect2.OriginX && rect1.X - rect1.OriginX <= rect2.X - rect2.OriginX + rect2.Width &&
+        //        rect1.Y - rect1.OriginY + rect1.Height >= rect2.Y - rect2.OriginY && rect1.Y - rect1.OriginY <= rect2.Y - rect2.OriginY + rect2.Height;
+        //}
 
         // Broad phase: check if bounding circles overlap, if not we can skip SAT
         double minDist = HalfDiagonal(rect1) + HalfDiagonal(rect2);
@@ -71,12 +71,12 @@ public static class SeparatingAxisTheorem
     {
         // if rect's angle is 0, use a fast method
         // TODO: we can also do this if angle is 90 / 180 / 270
-        if (rect.Angle == 0)
-        {
-            return
-                pointX >= rect.X - rect.OriginX && pointX <= rect.X - rect.OriginX + rect.Width &&
-                pointY >= rect.Y - rect.OriginY && pointY <= rect.Y - rect.OriginY + rect.Height;
-        }
+        //if (rect.Angle == 0)
+        //{
+        //    return
+        //        pointX >= rect.X - rect.OriginX && pointX <= rect.X - rect.OriginX + rect.Width &&
+        //        pointY >= rect.Y - rect.OriginY && pointY <= rect.Y - rect.OriginY + rect.Height;
+        //}
 
         var corners = GetRotatedCorners(rect);
 

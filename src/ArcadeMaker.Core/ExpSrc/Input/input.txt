@@ -1,0 +1,97 @@
+﻿// --- NOT INCLUDED IN THE BUILD YET ---
+
+using std
+using reflection
+
+namespace ArcadeMaker:
+
+// a global input provider
+class Input ()
+{
+	/*private*/ static const _4dirCtrls = new List()
+	
+	private constructor(){}
+
+	static func createBasicControls()
+	{
+		addControl(new BasicKeyboardControl())
+	}
+
+	static func right()
+	{
+		foreach ctrl in _4dirCtrls
+		{
+			if ctrl.getRightState()
+			{
+				return true
+			}
+		}
+		return false
+	}
+
+	static func left()
+	{
+		foreach ctrl in _4dirCtrls
+		{
+			if ctrl.getLeftState()
+			{
+				return true
+			}
+		}
+		return false
+	}
+
+	static func up()
+	{
+		foreach ctrl in _4dirCtrls
+		{
+			if ctrl.getUpState()
+			{
+				return true
+			}
+		}
+		return false
+	}
+
+	static func down()
+	{
+		foreach ctrl in _4dirCtrls
+		{
+			if ctrl.getDownState()
+			{
+				return true
+			}
+		}
+		return false
+	}
+	
+	static func addControl(ctrl)
+	{
+		const attrs = getAttr(ctrl)
+		if attrs.firstOrNull(func(attr) => attr.type == <FourDirControl>) != null
+		{
+			_4dirCtrls.add(ctrl)
+		}
+		else
+		{
+			throw new Exception("Only instances of classes that marked with the @FourDirControl tag can be added.", Exception.INVALID_ARGUMENT)
+		}
+	}
+}
+
+// an interface for controls that provide up/down/left/right input
+@ExpectFunc("getRightState", 0, false)
+@ExpectFunc("getLeftState",  0, false)
+@ExpectFunc("getUpState",    0, false)
+@ExpectFunc("getDownState",  0, false)
+@AllowFor(true, false, false, false, false)
+attribute FourDirControl()
+
+@FourDirControl
+class BasicKeyboardControl ()
+{
+	func getRightState() => keyDown(Keys.right)
+	func getLeftState()  => keyDown(Keys.left)
+	func getUpState()    => keyDown(Keys.up)
+	func getDownState()  => keyDown(Keys.down)
+}

@@ -55,7 +55,7 @@ public class ScriptDocument
         ArgumentNullException.ThrowIfNull(script);
 
         this.Name = name;
-        this.Script = script;
+        this.Script = script.Replace("\r", "");
 
         TextSpans = Spanner.GetTextSpans(this.Script);
         var (updated, errors) = RemoveDisabledCode();

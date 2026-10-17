@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using ArcadeMaker.Core.Models;
 using ArcadeMaker.Core.Exceptions;
 using ArcadeMaker.Core.Runtime;
@@ -187,7 +186,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
         }
 
         // move following views
-        foreach (var view in Game.CurrentRoom.Model.Views)
+        foreach (var view in Game.CurrentRoom.Views)
         {
             if (!view.Visible || view.Following == null)
                 continue;
@@ -348,7 +347,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
 
         // set window size: room size or the minimum region that would contain all visible views ports, when views enabled
         int winWidth = room.Model.Width, winHeight = room.Model.Height;
-        var visibleViews = room.Model.Views.Where(v => v.Visible);
+        var visibleViews = room.Views.Where(v => v.Visible);
         if (visibleViews.Any())
         {
             winWidth = 1;

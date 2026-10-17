@@ -54,8 +54,17 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
 
     private void InterceptDebugLogs()
     {
-        if (_logcatProcess?.HasExited == false)
-            return;
+        try
+        {
+            if (_logcatProcess is { HasExited: false })
+                return;
+        }
+        catch (InvalidOperationException)
+        {
+            // nothing to do here; the "Process.HasExited" property, which we check
+            // inside the try block, may throw an InvalidOperationException. when it
+            // does, just relate to it as if it returned true.
+        }
 
         ProcessStartInfo startInfo = new()
         {

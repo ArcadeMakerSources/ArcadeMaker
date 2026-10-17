@@ -118,10 +118,13 @@ class IfStatement(IfConditionSpan ctx, IReadingOperation cond, IOperation[] inne
     public ElseStatement Else { get; set; }
     public void Run()
     {
-        if (cond.Read().Bool)
+        bool? condition = cond.Read()?.Bool;
+        if (condition == true)
             foreach (var op in InnerOperations) op.Make();
-        else
+        else if (condition == false)
             (Else as IOperation)?.Make();
+        else
+            Interpreter.Activated.ThrowRuntime($"The result of an \"if\" condition was null.", RuntimeException.INVALID_OPERATION, ctx);
     }
 }
 
@@ -493,17 +496,17 @@ class InitOperation : IReadingOperation
 {
     internal ClassDefSpan Def;
     internal IReadingOperation[] Args;
-    internal ConstructorDefSpan Constructor { get; }
+    internal ConstructorDefSpan? Constructor { get; }
     internal InitOperation(ClassDefSpan def, IReadingOperation[] args)
     {
         this.Def = def ?? throw new ArgumentNullException(nameof(def));
         this.Args = args ?? throw new ArgumentNullException(nameof(args));
 
         // find the constructor with the given num of arguments
-        var ctors = def.Funcs.Where(f => !f.Static && f.Args.Length == args.Length && f is ConstructorDefSpan);
-        if (ctors.Count() == 0 && def.Funcs.OfType<ConstructorDefSpan>().Any())
+        var ctors = def.Funcs.Where(f => !f.Static && f.Args.Length == args.Length && f is ConstructorDefSpan).ToArray();
+        if (ctors.Length == 0 && (def.Funcs.OfType<ConstructorDefSpan>().Any(ctor => !ctor.Static) || args.Length >= 1))
             Interpreter.Activated.Error($"{((IDefination)def).FullName} does not contain a constructor taking {args.Length} parameters.");
-        if (ctors.Count() >= 2)
+        if (ctors.Length >= 2)
             throw new Exception($"More than 1 constructor taking {args.Length} parameters found.");
 
         Constructor = ctors.FirstOrNull() as ConstructorDefSpan; // first or null if the class has no constructors at all

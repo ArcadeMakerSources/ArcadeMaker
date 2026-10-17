@@ -79,12 +79,20 @@ public partial class Interpreter
             }
             else if (span is InstInitSpan init)
             {
-                if (init.DefName.Class != null)
+                if (init.DefName == null)
+                    Error("Class name was expected.", init);
+                else if (init.DefName.Class != null)
                     value = new InitOperation(init.DefName.Class, ReadParamListOps());
                 else if (init.DefName.Extern != null)
                     value = new ExternTypeInitOperation(init.DefName.Extern, ReadParamListOps());
+                else if (init.DefName.Defination == null)
+                {
+                    string unknownItem = init.DefName.SpecificNs == null ? "" : $"{NamespaceSpecificationSpan.Symbol}{init.DefName.SpecificNs}";
+                    unknownItem += init.DefName.Name;
+                    Error("Unknown item " + unknownItem);
+                }
                 else
-                    Error($"Class name was expected, but function received.");
+                    Error($"Class name was expected, but {((IExpItem)init.DefName.Defination).GetItemName()} received.", init);
             }
             else if (span is WordSpan word)
             {

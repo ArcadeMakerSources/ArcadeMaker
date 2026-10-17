@@ -29,17 +29,23 @@ class HttpRequest (url, method, headers, body)
 
 	func send(onComplete?, onError?)
 	{
-	    try
+		runAsync(func()
 		{
-			runAsync(this.wait, onComplete)
-		}
-		catch ex
-		{
-			//if onError != null
-			//{
-			//	onError(ex)
-			//}
-		}
+		    var result, success = false
+			try
+			{
+				result = this.wait()
+				success = true
+			}
+			catch ex
+			{
+				if onError != null
+				{
+					onError(ex)
+				}
+			}
+			if success & onComplete != null { onComplete(result) }
+		})
 	}
 }
 

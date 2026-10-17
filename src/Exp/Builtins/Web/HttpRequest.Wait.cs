@@ -37,11 +37,27 @@ static partial class Impl
         using HttpRequestMessage  reqMsg   = new(method, url) { Content = content };
         foreach (var header in headers)
             reqMsg.Headers.Add(header.Key, header.Value);
-        
-        using HttpResponseMessage response = client.Send(reqMsg);
-        using Stream stream = response.Content.ReadAsStream();
-        using StreamReader reader = new(stream);
-        return reader.ReadToEnd().ToExpString();
+
+        HttpResponseMessage? response = null;
+        try
+        {
+            response = client.Send(reqMsg);
+        }
+        catch (Exception ex)
+        {
+            Interpreter.Activated.ThrowRuntime(ex.Message, ex.GetType().FullName!);
+        }
+        if (response != null)
+        {
+            using var _ = response;
+            using Stream stream = response.Content.ReadAsStream();
+            using StreamReader reader = new(stream);
+            return reader.ReadToEnd().ToExpString();
+        }
+        else
+        {
+            return null;
+        }
 
         static Dictionary<string, string?[]> GetHeaders(Instance? expDictionary)
         {

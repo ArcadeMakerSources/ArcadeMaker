@@ -622,6 +622,23 @@ namespace ArcadeMaker.IDE
 
         private async void saveExeBtn_Click(object sender, EventArgs e)
         {
+            // disable the debug button for 2 seconds
+            debugBtn.Enabled = false;
+            System.Windows.Forms.Timer timer = new() { Interval = 2000 };
+            timer.Tick += (s, ea) => {
+                try
+                {
+                    debugBtn.Enabled = true;
+                    timer.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    _ = ex;
+                }
+            };
+            timer.Start();
+
+            // run the game
             ProgressForm frm = new();
             frm.Show();
 

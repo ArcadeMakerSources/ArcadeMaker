@@ -50,7 +50,7 @@ public partial interface IGame
     (double x, double y) PositionInRoom((double x, double y) positionInWindow)
     {
         // if views enabled, return in room
-        foreach (var view in CurrentRoom!.Model.Views)
+        foreach (var view in CurrentRoom!.Views)
         {
             if (!view.Visible)
                 continue;

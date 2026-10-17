@@ -64,10 +64,21 @@ namespace ArcadeMaker.Core.ExpSrc
                 throw new BuildFailureException(InitializersErrors);
         }
 
-        public static IEnumerable<ScriptDocument> GetScripts()
+        public static List<ScriptDocument> GetScripts()
         {
             List<ScriptDocument> docs = [];
 
+            // get all embedded resources in ExpSrc with .txt extension
+            //Assembly currentAssembly = typeof(ExpSrc).Assembly;
+            //foreach (var res in currentAssembly.GetManifestResourceNames().Where(name => name.EndsWith(".txt")))
+            //{
+            //    using var stream = currentAssembly.GetManifestResourceStream(res);
+            //    if (stream == null)
+            //        continue;
+            //    using StreamReader reader = new(stream);
+            //    docs.Add(ScriptDocument.FromString(reader.ReadToEnd(), res));
+            //}
+            
             // get the types of all the enums that should be copied to the interpreter
             List<Type> enums = [];
             enums.AddRange(GetEnums());
