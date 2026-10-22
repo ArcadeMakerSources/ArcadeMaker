@@ -217,6 +217,7 @@ namespace Exp
             CollectDefs(importsLs.ToArray());
             CollectDefs(); // also loads code spans
             source.Usings.AddRange(currUsings);
+            ConstructorDefSpan.ResolveAutoCtors(this);
             CatchCoreDefinitions();
             CollectNamespaces();
 
@@ -242,6 +243,7 @@ namespace Exp
                         staticPropsToInit.Add(staticProp, ReadReadingOperation(staticProp.InitValueCode));
                 }
             }
+            ConstructorDefSpan.OperateAutoCtors(this);
 
             ResolveAttributes();
 

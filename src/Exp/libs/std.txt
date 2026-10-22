@@ -626,6 +626,8 @@ class Dictionary (const keys private, const values private basearray)
 
 class Date (year, month, day, hour, minute, sec, millis, nanos)
 {
+    constructor(...);
+
     constructor(year, month, day, hour, minute)
     {
         this.year = year
@@ -636,18 +638,6 @@ class Date (year, month, day, hour, minute, sec, millis, nanos)
         sec = 0
         millis = 0
         nanos = 0
-    }
-
-    constructor(year, month, day, hour, minute, sec, millis, nanos)
-    {
-        this.year = year
-        this.month = month
-        this.day = day
-        this.hour = hour
-        this.minute = minute
-        this.sec = sec
-        this.millis = millis
-        this.nanos = nanos
     }
 
     private constructor() {}

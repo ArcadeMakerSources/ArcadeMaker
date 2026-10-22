@@ -64,6 +64,8 @@ public partial class Interpreter
                 span = new NumberSpan(0);
             }
         }
+        else if (textSpan.type == SpanType.DotDotDot)
+            span = new EllipsisSpan();
         else if (textSpan.type == SpanType.String)
             span = new StringSpan(text[1..^1].Replace("\\n", "\n").Replace("\\t", "\t").Replace("\\\"", "\"").Replace("\\\\", "\\"));
         else if (textSpan.type == SpanType.EscapedString)
@@ -304,47 +306,57 @@ public partial class Interpreter
             else if (text == FuncDefSpan.Keyword || text == ConstructorDefSpan.Keyword)
             {
                 string name = null;
-                bool ctor = text == ConstructorDefSpan.Keyword;
+                bool ctor = text == ConstructorDefSpan.Keyword, autoCtor = false;
+                List<ArgumentSpan> args = [];
 
                 if (!ctor && Spoiler() is not OpeningBracketSpan)
                     name = ReadWord()?.FullText ?? "<<MissingName>>";
 
                 Read<OpeningBracketSpan>();
 
-                var args = new List<ArgumentSpan>();
-                Span argsp = ReadWord();
-                if (argsp is not ClosingBracketSpan)
+                // check auto constructor(constructor(...))
+                if (Spoiler() is EllipsisSpan)
                 {
-                    while (true)
+                    autoCtor = true;
+                    ReadSpan();
+                    Read<ClosingBracketSpan>();
+                }
+                else
+                {
+                    Span argsp = ReadWord();
+                    if (argsp is not ClosingBracketSpan)
                     {
-                        bool notnull = true; // removing notnull word
-                        var nspoiler = Spoiler();
-                        if (Spoiler() is NotNullWordSpan)
+                        while (true)
                         {
-                            notnull = true;
-                            ReadWord();
-                        }
-                        else if (nspoiler is QuestionMarkSpan)
-                        {
-                            notnull = false;
-                            ReadWord();
-                        }
+                            bool notnull = true; // removing notnull word
+                            var nspoiler = Spoiler();
+                            if (Spoiler() is NotNullWordSpan)
+                            {
+                                notnull = true;
+                                ReadWord();
+                            }
+                            else if (nspoiler is QuestionMarkSpan)
+                            {
+                                notnull = false;
+                                ReadWord();
+                            }
 
-                        // error if this arg name already exists
-                        ValidateDefNameLegallity(null, argsp?.FullText);
-                        if (args.Any(a => a.Name == argsp?.FullText))
-                            Error($"The parameter name '{argsp?.FullText}' is a duplicate.");
+                            // error if this arg name already exists
+                            ValidateDefNameLegallity(null, argsp?.FullText);
+                            if (args.Any(a => a.Name == argsp?.FullText))
+                                Error($"The parameter name '{argsp?.FullText}' is a duplicate.");
 
-                        args.Add(new ArgumentSpan(argsp?.FullText, notnull));
-                        argsp = ReadSpan();
-                        if (argsp is CommaSpan)
-                            argsp = ReadWord();
-                        else if (argsp is ClosingBracketSpan)
-                            break;
-                        else
-                        {
-                            Error(argsp == null ? $"Argument name was expected." : $"Unexpected '{argsp.Text}'. Only ',' or ')' are expected here.");
-                            break;
+                            args.Add(new ArgumentSpan(argsp?.FullText, notnull));
+                            argsp = ReadSpan();
+                            if (argsp is CommaSpan)
+                                argsp = ReadWord();
+                            else if (argsp is ClosingBracketSpan)
+                                break;
+                            else
+                            {
+                                Error(argsp == null ? $"Argument name was expected." : $"Unexpected '{argsp.Text}'. Only ',' or ')' are expected here.");
+                                break;
+                            }
                         }
                     }
                 }
@@ -359,12 +371,21 @@ public partial class Interpreter
                     ls.Add(new ReturnWordSpan { Document = first.Document, DocumentLocation = first.DocumentLocation });
                     ls.AddRange(innerSrc);
                     innerSource = ls.ToArray();
+
+                    if (ctor)
+                        Error("Constructors should not return a value.", first);
                 }
                 else if (first is SourceOpenerSpan or DoSymbolSpan)
                     innerSource = ReadInnerSource(readOpener: false, singleCmd: first is DoSymbolSpan);
+                else if (first is SemicolonSpan)
+                {
+                    innerSource = [];
+                    if (!autoCtor)
+                        Error($"Only auto-constructors may be followed by {SemicolonSpan.Symbol}.", first);
+                }
                 else
                 {
-                    Error("Expected { or => or ->.");
+                    Error("Expected { or => or ->.", first, true);
                 }
 
                 innerSource ??= []; // on error
@@ -372,7 +393,7 @@ public partial class Interpreter
                 if (!spoiler)
                 {
                     if (ctor)
-                        span = new ConstructorDefSpan(args.ToArray(), innerSource, def, this) { Static = true }; // static will become false in reading as class member
+                        span = new ConstructorDefSpan(args.ToArray(), innerSource, def, this) { Static = true, Auto = autoCtor }; // static will become false in reading as class member
                     else
                         span = new FuncDefSpan(name, args.ToArray(), innerSource, def) { Static = true }; // see comment above
                 }
