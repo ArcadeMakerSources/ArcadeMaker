@@ -237,11 +237,13 @@ class ForeachStatement(ForEachLoopSpan ctx, Variable var, IReadingOperation read
     public ILoopContext LoopContext => ctx ?? throw new ArgumentNullException();
     public void Run()
     {
+        int index = 0;
         IValue counterNum = 0d.ToExp();
         counter?.SetSkippingConstant(counterNum);
         var iter = ReadingOperation.Read()?.Inst;
         if (iter?.GetBasearray() is ArrayInstance array)
         {
+            Variable iteratorIndexProperty = array.Vars.First(v => v.Name == ArrayInstance.ITERATOR_INDEX_PNAME);
             foreach (var item in array.ArrayValues)
             {
                 Var.SetSkippingConstant(item);
@@ -261,13 +263,11 @@ class ForeachStatement(ForEachLoopSpan ctx, Variable var, IReadingOperation read
                 }
 
             continue_fe:
-                if (counter != null)
-                {
-                    counterNum = (counterNum.Number + 1).ToExp();
-                    counter.SetSkippingConstant(counterNum);
-                }
+                counterNum = (++index).ToExp();
+                counter?.SetSkippingConstant(counterNum);
+                iteratorIndexProperty.Value = counterNum;
             }
-        break_fe: { }
+        break_fe:;
         }
         else if (iter?.def.HasTag(AttributeDefSpan.IterableAttr) == true)
         {

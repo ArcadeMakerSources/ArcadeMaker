@@ -109,10 +109,19 @@ public class Instance : IVarSystem, IValue, IExpItem
     }
 }
 
-public class ArrayInstance(ClassDefSpan cls, IValue[] array, bool addProperties = true) : Instance(cls, addProperties)
+public class ArrayInstance : Instance
 {
+    public ArrayInstance(ClassDefSpan cls, IValue[] array, bool addProperties = true) : base(cls, addProperties)
+    {
+        ArrayValues = array;
+
+        // set iteratorIndex property to 0
+        Vars.First(v => v.Name == "iteratorIndex").Value = 0d.ToExp();
+    }
+
+    internal const string ITERATOR_INDEX_PNAME = "iteratorIndex";
     public override bool IsArray => true;
-    public override IValue?[] ArrayValues => array;
+    public override IValue?[] ArrayValues { get; }
 }
 
 public class ExternTypeInstance : Instance

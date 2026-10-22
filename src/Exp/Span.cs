@@ -1270,7 +1270,7 @@ public class ClassDefSpan : WordSpan, IDefination, IVarSystem, IKeyword, ICanSet
         return n;
     }
 
-    public static ClassDefSpan ExpArrayDef { get; internal set; } = new("Array", []);
+    public static ClassDefSpan ExpArrayDef { get; internal set; } = new("Array", [new(null, false, ArrayInstance.ITERATOR_INDEX_PNAME, false, false)]);
     public static ClassDefSpan ExpStringDef { get; internal set; } = Create("string", [new Property(null, true, "chars", true, true)]);
     public static ClassDefSpan ExpExceptionDef { get; internal set; } = new("Exception", []);
     public static ClassDefSpan ExternTypeValueDef { get; internal set; } = new("ExternTypeValue", []);

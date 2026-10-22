@@ -8,13 +8,14 @@ attribute Iterable()
 
 enum StaticRequirements
 {
-    RequireStatic,
-    RequireNonStatic,
-    DoNotRequire
+    requireStatic,
+    requireNonStatic,
+    doNotRequire
 }
 
+@Iterable
 @xml::OverridesXmlSerialization
-class Array (const csType private) 
+class Array (const csType private, iteratorIndex) 
 {
     @ExternImpl
     constructor(len) {}
@@ -174,6 +175,21 @@ class Array (const csType private)
     {
     
     }
+
+    // @Iterator implementation.
+    // note that these functions won't actually be used when iterating over an array with foreach loop,
+    // because the interpreter would override this with a normal C# foreach loop.
+    // but the functions should work anyway, for case someone would manually call them.
+    func it_hasNext() => iteratorIndex < length() - 1
+
+    func it_next()
+    {
+        const item = this[iteratorIndex]
+        iteratorIndex++
+        return item
+    }
+
+    func it_reset() { iteratorIndex = 0 }
 }
 
 @xml::OverridesXmlSerialization
