@@ -4,7 +4,7 @@
 @ExpectFunc("it_hasNext", 0, false)
 @ExpectFunc("it_next"   , 0, false)
 @ExpectFunc("it_reset"  , 0, false)
-attribute Iteratable()
+attribute Iterable()
 
 enum StaticRequirements
 {

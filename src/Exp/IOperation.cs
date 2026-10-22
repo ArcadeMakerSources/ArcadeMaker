@@ -269,11 +269,11 @@ class ForeachStatement(ForEachLoopSpan ctx, Variable var, IReadingOperation read
             }
         break_fe: { }
         }
-        else if (iter?.def.HasTag(AttributeDefSpan.IteratableAttr) == true)
+        else if (iter?.def.HasTag(AttributeDefSpan.IterableAttr) == true)
         {
-            var hasNextFunc = iter.def.Funcs.First(f => f.Name == ForEachLoopSpan.IteratableFunc_HasNext);
-            var nextFunc = iter.def.Funcs.First(f => f.Name == ForEachLoopSpan.IteratableFunc_Next);
-            var resetFunc = iter.def.Funcs.First(f => f.Name == ForEachLoopSpan.IteratableFunc_Reset);
+            var hasNextFunc = iter.def.Funcs.First(f => f.Name == ForEachLoopSpan.IterableFunc_HasNext);
+            var nextFunc = iter.def.Funcs.First(f => f.Name == ForEachLoopSpan.IterableFunc_Next);
+            var resetFunc = iter.def.Funcs.First(f => f.Name == ForEachLoopSpan.IterableFunc_Reset);
 
             Interpreter.Activated.FuncCall(iter, resetFunc, null, out bool _, []);
             while (Interpreter.Activated.FuncCall(iter, hasNextFunc, null, out bool _, [])?.Bool == true)
@@ -305,7 +305,7 @@ class ForeachStatement(ForEachLoopSpan ctx, Variable var, IReadingOperation read
         }
         else
         {
-            string err = iter == null ? "The object to iterate over was null" : $"The object to iterate over was not an array, basearray-setter or an instance of a class containg a tag of attribute '{AttributeDefSpan.IteratableAttr.GetExpTypeName(false)}', but it was of type '{Extensions.GetExpTypeName(iter, false)}'";
+            string err = iter == null ? "The object to iterate over was null" : $"The object to iterate over was not an array, basearray-setter or an instance of a class containg a tag of attribute '{AttributeDefSpan.IterableAttr.GetExpTypeName(false)}', but it was of type '{Extensions.GetExpTypeName(iter, false)}'";
             Interpreter.Activated.ThrowRuntime($"Foreach loop failed: {err}.", RuntimeException.INVALID_OPERATION, ctx);
         }
     }

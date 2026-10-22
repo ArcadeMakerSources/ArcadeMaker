@@ -294,7 +294,7 @@ namespace Exp
             FuncDefSpan.ArrayIndexSetter.Name = "array.set";
 
             // attributes (use ??=)
-            AttributeDefSpan.IteratableAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "Iteratable");
+            AttributeDefSpan.IterableAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "Iterable");
 
             ClassDefSpan CatchClass(string? ns, string name) => Catch<ClassDefSpan>(ns, name);
 

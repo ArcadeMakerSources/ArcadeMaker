@@ -902,9 +902,9 @@ class ForEachLoopSpan : WordSpan, ILoopContext, IKeyword, IExpItem
     public static string Keyword { get; } = "foreach";
     public static string ItemName { get; } = "foreach loop";
 
-    public const string IteratableFunc_HasNext = "it_hasNext";
-    public const string IteratableFunc_Next = "it_next";
-    public const string IteratableFunc_Reset = "it_reset";
+    public const string IterableFunc_HasNext = "it_hasNext";
+    public const string IterableFunc_Next = "it_next";
+    public const string IterableFunc_Reset = "it_reset";
 
     public List<Variable> Vars { get; } = [];
     public IVarSystem Parent { get; set; }
@@ -1569,7 +1569,7 @@ class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
     internal static AttributeDefSpan ReadOnlyAttr { get; } = new("ReadOnly", [])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = true, AllowFor_Property = false, AllowFor_Attr = false };
 
-    internal static AttributeDefSpan IteratableAttr { get; set; } /*= new("Iteratable", [])
+    internal static AttributeDefSpan IterableAttr { get; set; } /*= new("Iterable", [])
     { AllowFor_Class = true, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false, AllowFor_Attr = false }*/
 
     public static string Keyword { get; } = "attribute";
