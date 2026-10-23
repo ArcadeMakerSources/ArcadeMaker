@@ -116,7 +116,7 @@ public class ArrayInstance : Instance
         ArrayValues = array;
 
         // set iteratorIndex property to 0
-        Vars.First(v => v.Name == "iteratorIndex").Value = 0d.ToExp();
+        Vars.First(v => v.Name == ITERATOR_INDEX_PNAME).Value = 0d.ToExp();
     }
 
     internal const string ITERATOR_INDEX_PNAME = "iteratorIndex";
