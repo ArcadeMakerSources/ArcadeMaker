@@ -482,7 +482,7 @@ namespace Exp
             public IOperation[] Operations { get; set; }
         }
 
-        private Span[] ReadInnerSource(bool readOpener = true, bool allowSingleCmd = false, bool singleCmd = false)
+        private Span[]? ReadInnerSource(bool readOpener = true, bool allowSingleCmd = false, bool singleCmd = false)
         {
             allowSingleCmd = allowSingleCmd || singleCmd;
             if (readOpener || singleCmd)

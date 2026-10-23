@@ -175,7 +175,7 @@ class CountSpan : Span
     }
 }
 
-class EllipsisSpan() : Span("...");
+class EllipsisSpan(): Span(Symbol), ISymbol { public static string Symbol => "..."; }
 
 class NamespaceWordSpan : WordSpan, IKeyword
 {

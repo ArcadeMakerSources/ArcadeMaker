@@ -315,14 +315,18 @@ public partial class Interpreter
                 Read<OpeningBracketSpan>();
 
                 // check auto constructor(constructor(...))
-                if (Spoiler() is EllipsisSpan)
+                if (Spoiler() is EllipsisSpan ellipsis)
                 {
                     autoCtor = true;
                     ReadSpan();
                     Read<ClosingBracketSpan>();
+
+                    if (!ctor)
+                        Error($"Only constructors may be declared with the {EllipsisSpan.Symbol} symbol.", ellipsis);
                 }
                 else
                 {
+                    // read parameter list
                     Span argsp = ReadWord();
                     if (argsp is not ClosingBracketSpan)
                     {
@@ -362,7 +366,7 @@ public partial class Interpreter
                 }
 
                 // read inner source. if next is '=>' add a return span as first inner source span
-                Span[] innerSource = null;
+                Span[]? innerSource = null;
                 Span first = ReadSpan();
                 if (first is ReturnSymbolSpan)
                 {
@@ -388,7 +392,7 @@ public partial class Interpreter
                     Error("Expected { or => or ->.", first, true);
                 }
 
-                innerSource ??= []; // on error
+                innerSource ??= []; // on error or auto ctor
 
                 if (!spoiler)
                 {
@@ -405,7 +409,7 @@ public partial class Interpreter
                 List<FuncDefSpan> funcs = [];
 
                 // read class name
-                string name = ReadWord()?.FullText;
+                string? name = ReadWord()?.FullText;
 
                 // read properties
                 Read<OpeningBracketSpan>();
@@ -578,9 +582,10 @@ public partial class Interpreter
                     else
                     {
                         int args = member is FuncDefSpan f ? f.Args.Length : -1;
+                        string clsFullName = textSpan.Document.Namespace + NamespaceSpecificationSpan.Symbol + cls.Name;
                         ValidateDefNameLegallity(null, member.Name, args);
-                        if (members.Any(m => m != member && m.Name == member.Name && (m is FuncDefSpan fn && fn.Args.Length == args)))
-                            Error(cls.GetExpTypeName(false) + $" already contains a member named '{member.Name}'.");
+                        if (members.Any(m => m != member && m.Name == member.Name && (m is not FuncDefSpan fn || fn.Args.Length == args)))
+                            Error(clsFullName + $" already contains a member named '{member.Name}'.");
                     }
                 }
 
