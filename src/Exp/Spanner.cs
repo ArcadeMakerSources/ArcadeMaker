@@ -641,5 +641,5 @@ public class TextSpan : IDisposable, ILocatableSourceMark
 public static class Filter
 {
     public static string[] Operators { get; } = ["=", "==", ">", "<", "!=", ">=", "<=", "!", "&", "|", "+", "-", "++", "--", "+=", "-=", "/", "*", "%", "=>", "->"];
-    public static string[] Keywords { get; } = ["using", "namespace", "class", "func", "constructor", "private", "static", "if", "else", "while", "for", "foreach", "basearray", "in", "from", "to", "is", "not", "throw", "true", "false", "new", "try", "catch", "when", "finally", "var", "const", "return", "break", "continue", "bool", "char", "number", "attribute", "null", "function", "this", "extern", "lenof", "counter", "id", "object"];
+    public static string[] Keywords { get; } = ["using", "namespace", "class", "enum", "func", "constructor", "private", "static", "if", "else", "while", "for", "foreach", "basearray", "in", "from", "to", "is", "not", "throw", "true", "false", "new", "try", "catch", "when", "finally", "var", "const", "return", "break", "continue", "bool", "char", "number", "attribute", "null", "function", "this", "extern", "lenof", "counter", "id", "object"];
 }

@@ -1461,6 +1461,7 @@ class EnumValueSpan : WordSpan, ICanSetAttr, IExpItem
 {
     public static string ItemName { get; } = "enum value";
     internal string Name { get; }
+    internal string? CustomDisplayName { get; set; }
     internal double Value { get; set; }
     internal bool CustomValue { get; }
     public List<Span[]> TagsCode { get; set; } = [];
@@ -1665,6 +1666,8 @@ class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
 
     internal static AttributeDefSpan IterableAttr { get; set; } /*= new("Iterable", [])
     { AllowFor_Class = true, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false, AllowFor_Attr = false }*/
+    internal static AttributeDefSpan DisplayNameAttr { get; } = new("DisplayName", [new((Interpreter.STD_NAMESPACE, "string"), "name")])
+    { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = true, AllowFor_Attr = false, Namespace = Interpreter.STD_NAMESPACE };
 
     public static string Keyword { get; } = "attribute";
     public static string ItemName { get; } = "attribute";

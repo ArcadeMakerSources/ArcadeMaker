@@ -210,6 +210,7 @@ namespace Exp
             definations.Add(AttributeDefSpan.FuncRequirementsAttr);
             definations.Add(AttributeDefSpan.ExpectFuncAttr);
             definations.Add(AttributeDefSpan.ReadOnlyAttr);
+            definations.Add(AttributeDefSpan.DisplayNameAttr);
             definations.AddRange(defsToImport ?? []);
             AddAllExternFuncsInAssembly(typeof(Interpreter).Assembly);
 
@@ -852,6 +853,24 @@ namespace Exp
                     {
                         FuncsThatMustBeImplementedExternally.Add(func);
                     }
+                }
+
+                // if it's @DisplayName attr, validate that it's set to an enum value and set its
+                // "EnumValueSpan.CustomDisplayName" property
+                if (attr == AttributeDefSpan.DisplayNameAttr)
+                {
+                    // taggedItem is now ClassStaticVar which its SettingSpan property is the EnumDefSpan
+                    // that the class was generated from, so try to get the EnumValueSpan from it
+                    ClassStaticVar? property = taggedItem as ClassStaticVar;
+                    EnumValueSpan? value =
+                        (property?.SettingSpan as EnumDefSpan)?
+                        .Values
+                        .FirstOrDefault(v => v.Name == property?.Name);
+
+                    if (value != null)
+                        value.CustomDisplayName = args[0]?.ToString();
+                    else
+                        Error($"The {AttributeDefSpan.DisplayNameAttr.GetExpTypeName(false)} attribute can only be attached to enum values.");
                 }
 
                 // reset source properties
