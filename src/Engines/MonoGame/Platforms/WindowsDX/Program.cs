@@ -18,6 +18,7 @@ public class Program
     /// It also creates an instance of your game and calls it's Run() method 
     /// </summary>
     /// <param name="args">Command-line arguments passed to the application.</param>
+    [STAThread]
     public static void Main(string[] args)
     {
         // find game resources file

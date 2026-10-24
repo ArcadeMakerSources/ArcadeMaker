@@ -64,6 +64,8 @@ public partial class Interpreter
                 span = new NumberSpan(0);
             }
         }
+        else if (textSpan.type == SpanType.DotDotDot)
+            span = new EllipsisSpan();
         else if (textSpan.type == SpanType.String)
             span = new StringSpan(text[1..^1].Replace("\\n", "\n").Replace("\\t", "\t").Replace("\\\"", "\"").Replace("\\\\", "\\"));
         else if (textSpan.type == SpanType.EscapedString)
@@ -304,53 +306,67 @@ public partial class Interpreter
             else if (text == FuncDefSpan.Keyword || text == ConstructorDefSpan.Keyword)
             {
                 string name = null;
-                bool ctor = text == ConstructorDefSpan.Keyword;
+                bool ctor = text == ConstructorDefSpan.Keyword, autoCtor = false;
+                List<ArgumentSpan> args = [];
 
                 if (!ctor && Spoiler() is not OpeningBracketSpan)
                     name = ReadWord()?.FullText ?? "<<MissingName>>";
 
                 Read<OpeningBracketSpan>();
 
-                var args = new List<ArgumentSpan>();
-                Span argsp = ReadWord();
-                if (argsp is not ClosingBracketSpan)
+                // check auto constructor(constructor(...))
+                if (Spoiler() is EllipsisSpan ellipsis)
                 {
-                    while (true)
+                    autoCtor = true;
+                    ReadSpan();
+                    Read<ClosingBracketSpan>();
+
+                    if (!ctor)
+                        Error($"Only constructors may be declared with the {EllipsisSpan.Symbol} symbol.", ellipsis);
+                }
+                else
+                {
+                    // read parameter list
+                    Span argsp = ReadWord();
+                    if (argsp is not ClosingBracketSpan)
                     {
-                        bool notnull = true; // removing notnull word
-                        var nspoiler = Spoiler();
-                        if (Spoiler() is NotNullWordSpan)
+                        while (true)
                         {
-                            notnull = true;
-                            ReadWord();
-                        }
-                        else if (nspoiler is QuestionMarkSpan)
-                        {
-                            notnull = false;
-                            ReadWord();
-                        }
+                            bool notnull = true; // removing notnull word
+                            var nspoiler = Spoiler();
+                            if (Spoiler() is NotNullWordSpan)
+                            {
+                                notnull = true;
+                                ReadWord();
+                            }
+                            else if (nspoiler is QuestionMarkSpan)
+                            {
+                                notnull = false;
+                                ReadWord();
+                            }
 
-                        // error if this arg name already exists
-                        ValidateDefNameLegallity(null, argsp?.FullText);
-                        if (args.Any(a => a.Name == argsp?.FullText))
-                            Error($"The parameter name '{argsp?.FullText}' is a duplicate.");
+                            // error if this arg name already exists
+                            ValidateDefNameLegallity(null, argsp?.FullText);
+                            if (args.Any(a => a.Name == argsp?.FullText))
+                                Error($"The parameter name '{argsp?.FullText}' is a duplicate.");
 
-                        args.Add(new ArgumentSpan(argsp?.FullText, notnull));
-                        argsp = ReadSpan();
-                        if (argsp is CommaSpan)
-                            argsp = ReadWord();
-                        else if (argsp is ClosingBracketSpan)
-                            break;
-                        else
-                        {
-                            Error(argsp == null ? $"Argument name was expected." : $"Unexpected '{argsp.Text}'. Only ',' or ')' are expected here.");
-                            break;
+                            args.Add(new ArgumentSpan(argsp?.FullText, notnull));
+                            argsp = ReadSpan();
+                            if (argsp is CommaSpan)
+                                argsp = ReadWord();
+                            else if (argsp is ClosingBracketSpan)
+                                break;
+                            else
+                            {
+                                Error(argsp == null ? $"Argument name was expected." : $"Unexpected '{argsp.Text}'. Only ',' or ')' are expected here.");
+                                break;
+                            }
                         }
                     }
                 }
 
                 // read inner source. if next is '=>' add a return span as first inner source span
-                Span[] innerSource = null;
+                Span[]? innerSource = null;
                 Span first = ReadSpan();
                 if (first is ReturnSymbolSpan)
                 {
@@ -359,20 +375,29 @@ public partial class Interpreter
                     ls.Add(new ReturnWordSpan { Document = first.Document, DocumentLocation = first.DocumentLocation });
                     ls.AddRange(innerSrc);
                     innerSource = ls.ToArray();
+
+                    if (ctor)
+                        Error("Constructors should not return a value.", first);
                 }
                 else if (first is SourceOpenerSpan or DoSymbolSpan)
                     innerSource = ReadInnerSource(readOpener: false, singleCmd: first is DoSymbolSpan);
+                else if (first is SemicolonSpan)
+                {
+                    innerSource = [];
+                    if (!autoCtor)
+                        Error($"Only auto-constructors may be followed by {SemicolonSpan.Symbol}.", first);
+                }
                 else
                 {
-                    Error("Expected { or => or ->.");
+                    Error("Expected { or => or ->.", first, true);
                 }
 
-                innerSource ??= []; // on error
+                innerSource ??= []; // on error or auto ctor
 
                 if (!spoiler)
                 {
                     if (ctor)
-                        span = new ConstructorDefSpan(args.ToArray(), innerSource, def, this) { Static = true }; // static will become false in reading as class member
+                        span = new ConstructorDefSpan(args.ToArray(), innerSource, def, this) { Static = true, Auto = autoCtor }; // static will become false in reading as class member
                     else
                         span = new FuncDefSpan(name, args.ToArray(), innerSource, def) { Static = true }; // see comment above
                 }
@@ -384,7 +409,7 @@ public partial class Interpreter
                 List<FuncDefSpan> funcs = [];
 
                 // read class name
-                string name = ReadWord()?.FullText;
+                string? name = ReadWord()?.FullText;
 
                 // read properties
                 Read<OpeningBracketSpan>();
@@ -557,9 +582,10 @@ public partial class Interpreter
                     else
                     {
                         int args = member is FuncDefSpan f ? f.Args.Length : -1;
+                        string clsFullName = textSpan.Document.Namespace + NamespaceSpecificationSpan.Symbol + cls.Name;
                         ValidateDefNameLegallity(null, member.Name, args);
-                        if (members.Any(m => m != member && m.Name == member.Name && (m is FuncDefSpan fn && fn.Args.Length == args)))
-                            Error(cls.GetExpTypeName(false) + $" already contains a member named '{member.Name}'.");
+                        if (members.Any(m => m != member && m.Name == member.Name && (m is not FuncDefSpan fn || fn.Args.Length == args)))
+                            Error(clsFullName + $" already contains a member named '{member.Name}'.");
                     }
                 }
 

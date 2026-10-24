@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics;
 
 namespace Exp.Spans;
 
@@ -173,6 +174,8 @@ class CountSpan : Span
         this.Count = count;
     }
 }
+
+class EllipsisSpan(): Span(Symbol), ISymbol { public static string Symbol => "..."; }
 
 class NamespaceWordSpan : WordSpan, IKeyword
 {
@@ -902,9 +905,9 @@ class ForEachLoopSpan : WordSpan, ILoopContext, IKeyword, IExpItem
     public static string Keyword { get; } = "foreach";
     public static string ItemName { get; } = "foreach loop";
 
-    public const string IteratableFunc_HasNext = "it_hasNext";
-    public const string IteratableFunc_Next = "it_next";
-    public const string IteratableFunc_Reset = "it_reset";
+    public const string IterableFunc_HasNext = "it_hasNext";
+    public const string IterableFunc_Next = "it_next";
+    public const string IterableFunc_Reset = "it_reset";
 
     public List<Variable> Vars { get; } = [];
     public IVarSystem Parent { get; set; }
@@ -1107,7 +1110,7 @@ public class FuncDefSpan : WordSpan, IContext, IDefination, IKeyword, IClassMemb
     public IValue Value => throw new Exception("A function value can only be accessed by calling it.");
     public bool IsVar => false;
     internal bool Static { get; set; }
-    internal ArgumentSpan[] Args { get; }
+    internal ArgumentSpan[] Args { get; private protected set; }
     internal bool Return { get; set; } = false;
     internal IValue? Returns { get; set; }
     internal bool SpanItselfIsReadedAsValue { get; set; }
@@ -1124,7 +1127,7 @@ public class FuncDefSpan : WordSpan, IContext, IDefination, IKeyword, IClassMemb
     internal static FuncDefSpan ExternInvoker = new("extern.invoker", [new ArgumentSpan("extrn", notNull: true), new ArgumentSpan("statc", notNull: true), new ArgumentSpan("memberName", true), new ArgumentSpan("inst"), new ArgumentSpan("args", notNull: true)], [], null);
     internal static FuncDefSpan ExternPropGetSet = new("extern.pgetset", [new ArgumentSpan("extrn", notNull: true), new ArgumentSpan("pinfo", true), new ArgumentSpan("inst"), new ArgumentSpan("value", notNull: false), new ArgumentSpan("set", notNull: true)], [], null);
 
-    internal Variable[] ParamVariables { get; }
+    internal Variable[] ParamVariables { get; private protected set; }
     internal FuncDefSpan(string name, ArgumentSpan[] args, Span[] innerSource, ClassDefSpan definedAt, string text = null) : base(text ?? Keyword)
     {
         this.Name = name;
@@ -1184,12 +1187,103 @@ public class ConstructorDefSpan : FuncDefSpan, IKeyword, IExpItem
     public static string Keyword { get; } = "constructor";
     public static string ItemName { get; } = "constructor";
     public bool OverridesInit { get; init; }
+    public bool Auto { get; init; }
     public ConstructorDefSpan(ArgumentSpan[] args, Span[] innerSource, ClassDefSpan definedAt, Interpreter toThrowWith) : base(definedAt == null ? null : $"{definedAt.Name}.ctor", args, innerSource, definedAt, Keyword)
     {
         if (definedAt == null)
             toThrowWith.Error("Constructor must be defined inside a class.");
 
         base.ReadOnly = true;
+    }
+
+    /// <summary>
+    /// Initializes the <see cref="FuncDefSpan.Args"/> collection for every auto ctor in the given interpreter instance.
+    /// </summary>
+    /// <param name="interpreter">The interpreter to resolve all of the auto ctors in its classes.</param>
+    internal static void ResolveAutoCtors(Interpreter interpreter)
+    {
+        // find all auto ctors
+        foreach (ClassDefSpan cls in interpreter.definations.OfType<ClassDefSpan>())
+        {
+            bool alreadyFound = false;
+            foreach (var func in cls.Funcs)
+            {
+                if (func is ConstructorDefSpan { Auto: true } autoCtor)
+                {
+                    // if the auto ctor is static, error & remove it (for case the user executes the program anyway...)
+                    if (autoCtor.Static)
+                    {
+                        interpreter.Error("Auto constructors cannot be static.", autoCtor);
+                        cls.Funcs = cls.Funcs.Remove(f => f == autoCtor).ToArray();
+                        continue;
+                    }
+
+                    // same if it's not the only auto ctor for this class
+                    if (alreadyFound)
+                    {
+                        interpreter.Error(cls.GetExpTypeName(false) + " already defines an auto constructor.", autoCtor);
+                        cls.Funcs = cls.Funcs.Remove(f => f == autoCtor).ToArray();
+                        continue;
+                    }
+
+                    // same if the class defines a manual constructor with the same parameters count
+                    if (cls.Funcs.Any(f => f != autoCtor && f is ConstructorDefSpan { Static: false, Auto: false } other && other.Args.Length == cls.Props.Length))
+                    {
+                        interpreter.Error(cls.GetExpTypeName(false) + " cannot define an auto constructor because it already defines another constructor which its parameters count matches the class instance properties count.", autoCtor);
+                        cls.Funcs = cls.Funcs.Remove(f => f == autoCtor).ToArray();
+                        continue;
+                    }
+
+                    // set parameters
+                    autoCtor.Args = cls.Props.Select(p => new ArgumentSpan(p.Name)).ToArray();
+                    autoCtor.ParamVariables = autoCtor.Args.Select(a => new Variable(a.Name, null)).ToArray();
+
+                    alreadyFound = true;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Inserts an operation for initializing the instance's properties to the beginning of the operations list of every auto ctor in the given interpreter instance.
+    /// </summary>
+    internal static void OperateAutoCtors(Interpreter interpreter)
+    {
+        foreach (ClassDefSpan cls in interpreter.definations.OfType<ClassDefSpan>())
+        {
+            foreach (FuncDefSpan func in cls.Funcs)
+            {
+                if (func is ConstructorDefSpan { Auto: true, Static: false } autoCtor)
+                {
+                    // operate
+                    ConstructorDefSpan ctor_captured = autoCtor;
+                    Operation initPropsOp = new(() =>
+                    {
+                        try
+                        {
+                            // get the calling instance
+                            Instance inst =
+                                Interpreter.FindParentVarSystem<Instance>(ctor_captured) ??
+                                interpreter.ThrowRuntime<Instance>("The calling instance could not be found.", RuntimeException.NOT_FOUND, ctor_captured);
+
+                            // init the properties
+                            int i = 0;
+                            foreach (var var in inst.Vars)
+                                var.SetSkippingConstant(ctor_captured.ParamVariables[i++].Value);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.Assert(false);
+                            throw;
+                        }
+                    });
+                    IEnumerable<IOperation> ctorBody = autoCtor.Operations;
+                    autoCtor.Operations = [initPropsOp];
+                    autoCtor.Operations = [.. autoCtor.Operations.AppendRange(ctorBody)];
+                    interpreter.OperationsSpanPair.Add(initPropsOp, ctor_captured);
+                }
+            }
+        }
     }
 
     internal override string FullText
@@ -1270,7 +1364,7 @@ public class ClassDefSpan : WordSpan, IDefination, IVarSystem, IKeyword, ICanSet
         return n;
     }
 
-    public static ClassDefSpan ExpArrayDef { get; internal set; } = new("Array", []);
+    public static ClassDefSpan ExpArrayDef { get; internal set; } = new("Array", [new(null, false, ArrayInstance.ITERATOR_INDEX_PNAME, false, false)]);
     public static ClassDefSpan ExpStringDef { get; internal set; } = Create("string", [new Property(null, true, "chars", true, true)]);
     public static ClassDefSpan ExpExceptionDef { get; internal set; } = new("Exception", []);
     public static ClassDefSpan ExternTypeValueDef { get; internal set; } = new("ExternTypeValue", []);
@@ -1367,6 +1461,7 @@ class EnumValueSpan : WordSpan, ICanSetAttr, IExpItem
 {
     public static string ItemName { get; } = "enum value";
     internal string Name { get; }
+    internal string? CustomDisplayName { get; set; }
     internal double Value { get; set; }
     internal bool CustomValue { get; }
     public List<Span[]> TagsCode { get; set; } = [];
@@ -1569,8 +1664,10 @@ class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
     internal static AttributeDefSpan ReadOnlyAttr { get; } = new("ReadOnly", [])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = true, AllowFor_Property = false, AllowFor_Attr = false };
 
-    internal static AttributeDefSpan IteratableAttr { get; set; } /*= new("Iteratable", [])
+    internal static AttributeDefSpan IterableAttr { get; set; } /*= new("Iterable", [])
     { AllowFor_Class = true, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false, AllowFor_Attr = false }*/
+    internal static AttributeDefSpan DisplayNameAttr { get; } = new("DisplayName", [new((Interpreter.STD_NAMESPACE, "string"), "name")])
+    { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = true, AllowFor_Attr = false, Namespace = Interpreter.STD_NAMESPACE };
 
     public static string Keyword { get; } = "attribute";
     public static string ItemName { get; } = "attribute";

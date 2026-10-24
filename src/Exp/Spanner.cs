@@ -56,7 +56,10 @@ public static class Spanner
                         case '.':
                             if (i < length - 1 && text[i + 1] == '.')
                             {
-                                span.type = SpanType.Count;
+                                if (i < length - 2 && text[i + 2] == '.')
+                                    span.type = SpanType.DotDotDot; // ...
+                                else
+                                    span.type = SpanType.Count;
                             }
                             else goto case ':';
                             break;
@@ -205,6 +208,9 @@ public static class Spanner
                             isSep = c < '0' || c > '9';
                             nextSpan = true;
                         }
+                        break;
+                    case SpanType.DotDotDot:
+                        isSep = spanText.Length == 3;
                         break;
                     case SpanType.Symbol:
                         if (c == '+')
@@ -413,6 +419,7 @@ public static class Spanner
                     break;
                 case SpanType.Symbol:
                 case SpanType.Count:
+                case SpanType.DotDotDot:
                     sp.color = Color.OrangeRed;
                     break;
                 case SpanType.Tag:
@@ -550,6 +557,7 @@ public enum SpanType
     Normal,
     Number,
     Count,
+    DotDotDot,
     Symbol,
     Brace,
     String,
@@ -633,5 +641,5 @@ public class TextSpan : IDisposable, ILocatableSourceMark
 public static class Filter
 {
     public static string[] Operators { get; } = ["=", "==", ">", "<", "!=", ">=", "<=", "!", "&", "|", "+", "-", "++", "--", "+=", "-=", "/", "*", "%", "=>", "->"];
-    public static string[] Keywords { get; } = ["using", "namespace", "class", "func", "constructor", "private", "static", "if", "else", "while", "for", "foreach", "basearray", "in", "from", "to", "is", "not", "throw", "true", "false", "new", "try", "catch", "when", "finally", "var", "const", "return", "break", "continue", "bool", "char", "number", "attribute", "null", "function", "this", "extern", "lenof", "counter", "id", "object"];
+    public static string[] Keywords { get; } = ["using", "namespace", "class", "enum", "func", "constructor", "private", "static", "if", "else", "while", "for", "foreach", "basearray", "in", "from", "to", "is", "not", "throw", "true", "false", "new", "try", "catch", "when", "finally", "var", "const", "return", "break", "continue", "bool", "char", "number", "attribute", "null", "function", "this", "extern", "lenof", "counter", "id", "object"];
 }

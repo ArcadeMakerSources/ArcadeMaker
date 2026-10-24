@@ -751,10 +751,11 @@ public partial class Interpreter
                         {
                             if (args == null || args.Length == 0 || args[0] == null)
                                 ThrowRuntime("Argument 'val' cannot be null.", RuntimeException.ARGUMENT_NULL);
-                            var result = enm.Values.FirstOrDefault(ev => ev.Value == args[0]!.Number);
+                            var val = args[0]!.Number;
+                            var result = enm.Values.FirstOrDefault(ev => ev.Value == val);
                             if (result == null)
                                 ThrowRuntime($"The given value ({args[0]!.Number}) is not defined in the enum ({enumcls.GetExpTypeName(false)}).", RuntimeException.INVALID_ARGUMENT);
-                            return result?.Name.ToExpString()!;
+                            return (result.CustomDisplayName ?? result.Name).ToExpString()!;
                         }
                     }
 
