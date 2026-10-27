@@ -14,7 +14,7 @@ const y = 0
 y = 1 // error
 ```
 
-Functions
+## Functions
 A function is declared using the `func` keyword:
 ```
 func multiply(a, b)
@@ -33,15 +33,15 @@ func createUser(name, password, passwordHint?)
 }
 ```
 
-If your function body contains only a single short return statement, you can use the => operator followed by the expression instead of { return ... }:
-func add(a, b) => a + b
+If your function body contains only a single short return statement, you can use the => operator followed by the expression instead of `{ return ... }`:
+`func add(a, b) => a + b`
 
 ## Classes
 Unlike many other dynamically typed languages, in Exp all class properties must be declared along with the class, and you cannot add new properties to an existing object instance at runtime.
 
 Here’s a simple class declaration:
 ```
-class Product (/properties:/ name, salary)
+class Product (/*properties:*/ name, salary)
 {
     constructor (name, salary)
     {
@@ -73,6 +73,39 @@ class Point (x, y)
 var pnt = Point.zero
 const loc = Point.fromCurrLocation()
 ```
+
+To make your life easier, use auto constructors to init all the instance properties:
+```
+class User (name, password, age)
+{
+    constructor(...)
+    {
+        if password.length() < 8
+        {
+            throw new Exception("Password length must be 8 or higher")
+        }
+     }
+}
+```
+equals to:
+```
+class User (name, password, age)
+{
+    constructor(name?, password?, age?)
+    {
+        this.name = name
+        this.password = password
+        this.age = age
+        
+        if password.length() < 8
+        {
+            throw new Exception("Password length must be 8 or higher")
+        }
+    }
+}
+```
+If you don't need to have any validation or logic in the constructor, you can just leave it without a body, but with a ; symbol:
+`constructor(...);`
 
 ## Code organization
 Exp uses namespaces for code organization. You define the namespace of a document using the namespace keyword at the beginning:
