@@ -4,8 +4,13 @@
 <img width="300" height="180" alt="rbr_ss3" src="https://github.com/user-attachments/assets/c6430cca-10ea-47fd-aa70-b18b0d80bd61" />
 <img width="300" height="180" alt="rbr_ss1" src="https://github.com/user-attachments/assets/849d9827-a560-4565-bfa7-a6636ba96314" />
 
-[![A little game that I made using the engine](https://img.youtube.com/vi/KRDHFFZZdIQ/0.jpg)](https://www.youtube.com/watch?v=KRDHFFZZdIQ)
-[![A video that shows how to create a simple game](https://img.youtube.com/vi/h_AnUg4yJWs/0.jpg)](https://www.youtube.com/watch?v=h_AnUg4yJWs)
+**A gameplay video of a little game that I made using the engine:**
+
+[![A little game that I made using the engine](https://img.youtube.com/vi/KRDHFFZZdIQ/0.jpg)](https://www.youtube.com/watch?v=KRDHFFZZdIQ "A little game that I made using the engine")
+
+**A video that shows how to create a simple game:**
+
+[![A video that shows how to create a simple game](https://img.youtube.com/vi/h_AnUg4yJWs/0.jpg)](https://www.youtube.com/watch?v=h_AnUg4yJWs "A video that shows how to create a simple game")
 
 ArcadeMaker is a simple 2D cross‑platform game engine that includes its own programming language (its prototype is called Exp) and an integrated IDE.  
 The engine and IDE themselves are written in C#, but the language you use inside ArcadeMaker to program your games is my custom language, not C#.
