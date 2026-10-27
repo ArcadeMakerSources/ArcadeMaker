@@ -1,7 +1,6 @@
 ﻿using Exp.Spans;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using System.Globalization;
 
@@ -276,7 +275,22 @@ public partial class Interpreter
                         }
                     }
 
-                    innerSource = ReadInnerSource(idAttr == null && counterAttr == null, allowSingleCmd: true) ?? [];
+                    // read inner source, allowing else if
+                    if (elsec && Spoiler() is IfConditionSpan)
+                    {
+                        List<Span> innerSourceList = [];
+
+                        innerSourceList.Add(Read<IfConditionSpan>());
+                        if (Spoiler() is ElseConditionSpan)
+                        {
+                            innerSourceList.Add(Read<ElseConditionSpan>());
+
+                        }
+
+                        innerSource = innerSourceList.ToArray();
+                    }
+                    else
+                        innerSource = ReadInnerSource(idAttr == null && counterAttr == null, allowSingleCmd: false) ?? [];
                 }
 
                 // create the spans
@@ -598,7 +612,7 @@ public partial class Interpreter
             else if (text == EnumDefSpan.Keyword)
             {
                 // read enum name
-                string ename = ReadWord().FullText;
+                string ename = ReadWord()?.FullText;
 
                 // read content
                 List<EnumValueSpan> evalues = [];
@@ -627,7 +641,7 @@ public partial class Interpreter
                     bool specific = false;
 
                     // read value name
-                    vname = next.FullText;
+                    vname = next?.FullText ?? "<<missing name>>";
                     next = ReadSpan();
 
                     // read specific value

@@ -325,11 +325,10 @@ class string (const chars private basearray)
             sign = 0 - 1
             i = 1
         }
-        else 
-        { if charAt(0) == '+'
+        else if charAt(0) == '+'
         {
             i = 1
-        } }
+        }
 
         for (; i < length(); i++)
         {
