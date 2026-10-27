@@ -126,4 +126,4 @@ namespace game:
 println(sqrt(16))
 ```
 
-In ArcadeMaker, every script document added to an object event automatically uses the Exp standard namespace (system) and the ArcadeMaker engine namespace (ArcadeMaker) by default, so you don’t need to write using directives for them each time.
+In ArcadeMaker, every script document added to an object event automatically uses the Exp standard namespace (`std`), the ArcadeMaker engine namespace (`ArcadeMaker`), and a `game` namespace for the game code by default, so you don’t need to write using directives for them each time.
