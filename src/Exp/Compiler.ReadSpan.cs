@@ -125,7 +125,7 @@ public partial class Interpreter
                             next.TagsCode.Add(code.ToArray());
                             return nextSpan;
                         }
-                        Error(nextSpan + " cannot have tags.");
+                        Error(nextSpan + " cannot have tags.", textSpan);
                     }
                     else
                         return nextSpan;

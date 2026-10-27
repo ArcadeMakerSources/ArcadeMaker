@@ -1638,10 +1638,10 @@ class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = true, AllowFor_Property = false, AllowFor_Attr = false, LimitTo1InCls = true, Func_StaticRequirement = StaticRequirement.NonStatic, Func_ParamsCountRequirement = 1 };
 
     internal static AttributeDefSpan AllowFor { get; } = new("AllowFor",
-        [new(typeof(BoolValue), "class"),
-        new(typeof(BoolValue), "property"),
-        new(typeof(BoolValue), "func"),
-        new(typeof(BoolValue), "ctor"),
+        [new(typeof(BoolValue), "classes"),
+        new(typeof(BoolValue), "props"),
+        new(typeof(BoolValue), "funcs"),
+        new(typeof(BoolValue), "ctors"),
         new(typeof(BoolValue), "attr")])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false };
 
@@ -1661,7 +1661,7 @@ class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
     internal static AttributeDefSpan ExpectFuncAttr { get; } = new("ExpectFunc",
         [new((Interpreter.STD_NAMESPACE, "string"), "name"),
         new(typeof(NumberValue), "paramsCount"),
-        new(typeof(BoolValue), "static")])
+        new(typeof(BoolValue), "sttc")])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false, AllowMultiple = true };
     
 

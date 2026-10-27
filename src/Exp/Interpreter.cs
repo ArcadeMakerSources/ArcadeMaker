@@ -193,8 +193,8 @@ namespace Exp
 
             // builtin libs
             var importsLs = new List<ScriptDocument>(imports);
-            importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("xml"), "xml.txt"));
-            importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("json"), "json.txt"));
+            //importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("xml"), "xml.txt"));
+            //importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("json"), "json.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("reflection"), "reflection.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("std"), "std.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("web"), "web.txt"));
@@ -651,7 +651,7 @@ namespace Exp
                 // read args
                 List<IValue> args = [];
                 var spoiler = Spoiler();
-                if (spoiler == null || spoiler is not OpeningBracketSpan)
+                if (spoiler is not OpeningBracketSpan)
                 {
                     if (attr.Params.Length >= 1)
                         Error($"Argument list expected, as attribute {attr.GetExpTypeName(false)} takes {attr.Params.Length} parameters.", defName);
@@ -660,6 +660,17 @@ namespace Exp
                 Read<OpeningBracketSpan>();
                 for (int i = 0; i < attr.Params.Length; i++)
                 {
+                    // allow explicit parameter name
+                    if (Spoiler() is WordSpan && Spoiler(1)?.FullText == ":")
+                    {
+                        WordSpan explicitNameSpan = Read<WordSpan>();
+                        string? explicitName = explicitNameSpan.FullText;
+                        ReadSpan();
+
+                        if (explicitName != attr.Params[i].Name)
+                            Error($"Explicit attribute parameter name '{explicitName}' does not match the target parameter name ('{attr.Params[i].Name}').", explicitNameSpan);
+                    }
+
                     var valop = ReadReadingOperation();
                     bool argIsMissing = valop == null;
 

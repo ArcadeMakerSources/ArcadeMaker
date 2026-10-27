@@ -3,10 +3,10 @@ using reflection
 
 namespace json:
 
-@AllowFor(false, true, false, false, false)
+@AllowFor(classes: false, props: true, funcs: false, ctors: false, attr: false)
 attribute JsonRelateAs(std::Type type)
 
-@AllowFor(false, true, false, false, false)
+@AllowFor(classes: false, props: true, funcs: false, ctors: false, attr: false)
 attribute JsonIgnore()
 
 class JsonSerializer (const types)
