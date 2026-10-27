@@ -2,7 +2,6 @@
 using Exp.Spans;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Exp;
 
@@ -288,7 +287,20 @@ public partial class Interpreter
         else
             action();
 
-        src = [..readOps_codeRecord];
+        // delete spans which are children of other spans in the record
+        foreach (var span in readOps_codeRecord.ToArray())
+        {
+            if (span is IContext context)
+                readOps_codeRecord.RemoveAll(s => context.InnerSource.Contains(s));
+            if (span is ConditionSpan condition)
+                readOps_codeRecord.RemoveAll(s => condition.Condition.Contains(s));
+            if (span is CatchWordSpan catc)
+                readOps_codeRecord.RemoveAll(s => false);
+            if (span is WhenWordSpan when)
+                readOps_codeRecord.RemoveAll(s => when.Condition.Contains(s));
+        }
+        src = [.. readOps_codeRecord];
+
         if (deleteRecord)
             readOps_codeRecord = null;
 

@@ -85,7 +85,9 @@ namespace ArcadeMaker.IDE
 #else
                         false;
 #endif
-                    MessageBox.Show("An error occoured while trying to run the game.\n\n" + (debug ? ex.ToString() : ex.Message), "Deployment Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    var result = MessageBox.Show("An error occoured while trying to run the game.\n\n" + (debug ? ex.ToString() : ex.Message) + "\n\nDo you want to copy this error message to the clipboard?", "Deployment Error", MessageBoxButtons.YesNo, MessageBoxIcon.Error);
+                    if (result == DialogResult.Yes)
+                        Global.form1.Invoke(() => Clipboard.SetText(ex.ToString())); // must be on STA thread
                 }
             }
             else

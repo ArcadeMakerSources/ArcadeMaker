@@ -1,11 +1,7 @@
 ﻿using Exp.Spans;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Exp
 {
@@ -28,8 +24,8 @@ namespace Exp
             {
                 if (RunOpsRunning)
                 {
-                    if (!OperationsSpanPair.TryGetValue(lastOp, out var _throwing))
-                        throw new Exception("An operation without span pair found.");
+                    bool found = OperationsSpanPair.TryGetValue(lastOp, out var _throwing);
+                    System.Diagnostics.Debug.Assert(found);
                     throwing = _throwing;
                 }
             }

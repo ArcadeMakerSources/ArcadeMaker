@@ -342,7 +342,7 @@ class PlusPlusOperatorSpan : OperatorSpan, ISymbol
     internal PlusPlusOperatorSpan() : base(Symbol) { }
     internal override bool TwoSides => false;
     internal override bool Action => true;
-    internal override IValue Result(IValue left, IValue right = null)
+    internal override IValue Result(IValue? left, IValue? right = null)
     {
         if (left == null)
             OperationFailed("Cannot apply {Symbol} on null.");
@@ -356,7 +356,7 @@ class MinusMinusOperatorSpan : OperatorSpan, ISymbol
     internal MinusMinusOperatorSpan() : base(Symbol) { }
     internal override bool TwoSides => false;
     internal override bool Action => true;
-    internal override IValue Result(IValue left, IValue right = null)
+    internal override IValue Result(IValue? left, IValue? right = null)
     {
         if (left == null)
             OperationFailed("Cannot apply {Symbol} on null.");
@@ -384,7 +384,11 @@ class PlusOperatorSpan : OperatorSpan, ISymbol
                 if (left.IsNumber && right.IsNumber)
                     return (left.Number + right.Number).ToExp();
                 else if (left.IsChar && right.IsChar)
-                    return ((double)left.Char + right.Char).ToExp();
+                    return (left.Char + right.Char).ToExp();
+                else if (left.IsNumber && right.IsChar)
+                    return (left.Number + right.Char).ToExp();
+                else if (left.IsChar && right.IsNumber)
+                    return (left.Char + right.Number).ToExp();
                 else if (left.IsInst)
                     return left.Inst + right;
                 else if (right.IsInst)
@@ -410,11 +414,11 @@ class MinusOperatorSpan : OperatorSpan, ISymbol
             if (left.IsNumber && right.IsNumber)
                 return (left.Number - right.Number).ToExp();
             else if (left.IsChar && right.IsChar)
-                return ((char)(left.Char - right.Char)).ToExp();
+                return (left.Char - right.Char).ToExp();
             else if (left.IsNumber && right.IsChar)
-                return ((char)(left.Number - right.Char)).ToExp();
+                return (left.Number - right.Char).ToExp();
             else if (left.IsChar && right.IsNumber)
-                return ((char)(left.Char - right.Number)).ToExp();
+                return (left.Char - right.Number).ToExp();
         }
         OperationFailed($"Cannot subtract {TypeOrNull(right)} from {TypeOrNull(left)}.", throwing);
         throw null;
