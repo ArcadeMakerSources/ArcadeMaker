@@ -723,7 +723,7 @@ public partial class Interpreter
                 if (def is FuncDefSpan { Name: null } namelessFunc)
                 {
                     AfterAllOperationsCreated += ErrForNamelessFunc;
-                    void ErrForNamelessFunc(object s, EventArgs e)
+                    void ErrForNamelessFunc(object? s, EventArgs e)
                     {
                         if (!namelessFunc.SpanItselfIsReadedAsValue)
                             Error($"Missing {FuncDefSpan.ItemName} name.", namelessFunc);
