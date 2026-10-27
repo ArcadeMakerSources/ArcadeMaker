@@ -1,12 +1,9 @@
-﻿using ArcadeMaker.Core.Math.Shapes;
-using ArcadeMaker.Core.Models;
+﻿using ArcadeMaker.Core.Models;
 using ArcadeMaker.Core.Resources;
 using ArcadeMaker.Core.Runtime;
 using Exp;
-using Microsoft.JSInterop;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ArcadeMaker.IDE.Debugging;
 
