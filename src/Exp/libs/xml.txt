@@ -4,13 +4,13 @@ using reflection
 namespace xml:
 
 // define an interface for overriding the serialization logic
+@AllowFor(classes: true, props: false, funcs: false, ctors: false, attr: false)
 @ExpectFunc("toXmlString", 1, false)
 @ExpectFunc("fromXmlString", 1, true)
-@AllowFor(true, false, false, false, false)
 attribute OverridesXmlSerialization()
 
 // define an attribute that allows discluding specific properties from the serialization
-@AllowFor(false, true, false, false, false)
+@AllowFor(classes: false, props: true, funcs: false, ctors: false, attr: false)
 attribute XmlIgnore()
 
 // define xml object class

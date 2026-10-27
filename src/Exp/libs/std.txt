@@ -1,9 +1,9 @@
 ﻿namespace std:
 
-@AllowFor(true, false, false, false, false)
-@ExpectFunc("it_hasNext", 0, false)
-@ExpectFunc("it_next"   , 0, false)
-@ExpectFunc("it_reset"  , 0, false)
+@AllowFor(classes: true, props: false, funcs: false, ctors: false, attr: false)
+@ExpectFunc("it_hasNext", 0, sttc: false)
+@ExpectFunc("it_next"   , 0, sttc: false)
+@ExpectFunc("it_reset"  , 0, sttc: false)
 attribute Iterable()
 
 enum StaticRequirements
@@ -14,7 +14,7 @@ enum StaticRequirements
 }
 
 @Iterable
-@xml::OverridesXmlSerialization
+//@xml::OverridesXmlSerialization
 class Array (const csType private, iteratorIndex) 
 {
     @ExternImpl
@@ -155,6 +155,7 @@ class Array (const csType private, iteratorIndex)
         }
     }
     
+    /*
     func toXmlString(depth)
     {
         var xml = ""
@@ -175,6 +176,7 @@ class Array (const csType private, iteratorIndex)
     {
     
     }
+    */
 
     // @Iterator implementation.
     // note that these functions won't actually be used when iterating over an array with foreach loop,
@@ -192,7 +194,7 @@ class Array (const csType private, iteratorIndex)
     func it_reset() { iteratorIndex = 0 }
 }
 
-@xml::OverridesXmlSerialization
+//@xml::OverridesXmlSerialization
 class string (const chars private basearray) 
 {
     @Equalizer
@@ -366,18 +368,13 @@ class string (const chars private basearray)
         return result * sign
     }
     
+    /*
     func toXmlString(depth) => xml::escapeForXml(this)
     
     static func fromXmlString(xml) => xml::unescapeXml(xml)
+    */
 }
 
-@AllowFor(true, false, false, false, false)
-@ExpectFunc("getType", 0, false)
-@ExpectFunc("getMessage", 0, false)
-@ExpectFunc("getData", 0, false)
-attribute Throwable()
-
-@Throwable
 class Exception (msg, type, const source, const line, const col, data)
 {
     static const INDEX_OUT_OF_RANGE = "INDEX_OUT_OF_RANGE"
@@ -408,10 +405,6 @@ class Exception (msg, type, const source, const line, const col, data)
         type = t
         data = d
     }
-    
-    func getType() => type
-    func getMessage() => msg
-    func getData() => data
 }
 
 class ExternTypeValue ()
