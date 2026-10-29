@@ -272,23 +272,9 @@ public partial class Interpreter
                                     Error($"The value returned by {pointingOrFuncCall.KnownFunc?.GetExpTypeName(false)} must be used because it's marked as read-only.");
 
                                 // error if a null literal is passed as an argument to a non-nullable paramerter
-                                // we must do it after ResolveAttribute(), bc of the @NullableArg attribute
-                                void ValidateNullParams(object? sender, EventArgs? e)
-                                {
-                                    BuildCompleted -= ValidateNullParams;
-                                    int i = -1;
-
-                                    IReadingOperation[]? args = pointingOrFuncCall.ArgLists.FirstOrDefault();
-                                    foreach (IReadingOperation expr in args ?? [])
-                                    {
-                                        i++;
-
-                                        // if it's build-time constant null being passed to a non-nullable param - error
-                                        if (kfunc.Args[i].NotNull && ((expr is ConstValueReadingOperation literal && literal.Read() is null) || (expr is PointingOrFuncCall pnt && pnt.IsPointingToLiteralConst(this, out var lit) && lit is null)))
-                                            Error($"Parameter '{kfunc.Args[i].Name}' of function '{kfunc.GetExpTypeName(false)}' is non-nullable.", word);
-                                    }
-                                }
-                                BuildCompleted += ValidateNullParams;
+                                IReadingOperation[]? args = pointingOrFuncCall.ArgLists.FirstOrDefault();
+                                if (args != null)
+                                    ErrorIfLiteralNullPassedToNonNullabledParam(kfunc, args, word);
                             }
                             // it's not a known function; if it's not a known function *pointer* as well,
                             // and it's the first node in the expression, then what is it? it's an error!

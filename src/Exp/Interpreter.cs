@@ -359,6 +359,19 @@ namespace Exp
             }
         }
 
+        internal void ErrorIfLiteralNullPassedToNonNullabledParam(FuncDefSpan func, IEnumerable<IReadingOperation> args, ILocatableSourceMark? sourceMark = null)
+        {
+            int i = -1;
+            foreach (IReadingOperation expr in args)
+            {
+                i++;
+
+                // if it's build-time constant null being passed to a non-nullable param - error
+                if (func.Args[i].NotNull && ((expr is ConstValueReadingOperation literal && literal.Read() is null) || (expr is PointingOrFuncCall pnt && pnt.IsPointingToLiteralConst(this, out var lit) && lit is null)))
+                    Error($"Parameter '{func.Args[i].Name}' of function '{func.GetExpTypeName(false)}' is non-nullable.", sourceMark);
+            }
+        }
+
         private IOperation[] operations;
 
         private WordSpan ReadWord(string specific = null)
