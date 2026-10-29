@@ -274,7 +274,7 @@ public partial class Interpreter
                                 // error if a null literal is passed as an argument to a non-nullable paramerter
                                 IReadingOperation[]? args = pointingOrFuncCall.ArgLists.FirstOrDefault();
                                 if (args != null)
-                                    ErrorIfLiteralNullPassedToNonNullabledParam(kfunc, args, word);
+                                    ErrorIfLiteralNullPassedToNonNullableParam(kfunc, args, word);
                             }
                             // it's not a known function; if it's not a known function *pointer* as well,
                             // and it's the first node in the expression, then what is it? it's an error!

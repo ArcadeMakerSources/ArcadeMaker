@@ -519,7 +519,7 @@ class InitOperation : IReadingOperation
             void ValidateNonNullableParams(object? s, EventArgs e)
             {
                 interpreter.BuildCompleted -= ValidateNonNullableParams;
-                interpreter.ErrorIfLiteralNullPassedToNonNullabledParam(Constructor!, args);
+                interpreter.ErrorIfLiteralNullPassedToNonNullableParam(Constructor!, args);
             }
             interpreter.BuildCompleted += ValidateNonNullableParams;
         }
