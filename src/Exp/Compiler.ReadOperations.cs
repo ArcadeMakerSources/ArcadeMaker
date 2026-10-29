@@ -263,10 +263,44 @@ public partial class Interpreter
                         else
                         {
                             // it's a function call
-                            if (pointingOrFuncCall.Next == null && pointingOrFuncCall.KnownFunc?.ReadOnly == true)
-                                Error($"The value returned by {pointingOrFuncCall.KnownFunc?.GetExpTypeName(false)} must be used because it's marked as read-only.");
 
-                            operation = new Invocation(pointingOrFuncCall); //Operation.Custom(() => pointingOrFuncCall.Read());
+                            // try finding some invalid states
+                            if (pointingOrFuncCall.KnownFunc is { } kfunc)
+                            {
+                                // error if it's a read-only function
+                                if (pointingOrFuncCall.Next == null && kfunc.ReadOnly == true)
+                                    Error($"The value returned by {pointingOrFuncCall.KnownFunc?.GetExpTypeName(false)} must be used because it's marked as read-only.");
+
+                                // error if a null literal is passed as an argument to a non-nullable paramerter
+                                // we must do it after ResolveAttribute(), bc of the @NullableArg attribute
+                                void ValidateNullParams(object? sender, EventArgs? e)
+                                {
+                                    BuildCompleted -= ValidateNullParams;
+                                    int i = -1;
+
+                                    IReadingOperation[]? args = pointingOrFuncCall.ArgLists.FirstOrDefault();
+                                    foreach (IReadingOperation expr in args ?? [])
+                                    {
+                                        i++;
+
+                                        // if it's build-time constant null being passed to a non-nullable param - error
+                                        if (kfunc.Args[i].NotNull && ((expr is ConstValueReadingOperation literal && literal.Read() is null) || (expr is PointingOrFuncCall pnt && pnt.IsPointingToLiteralConst(this, out var lit) && lit is null)))
+                                            Error($"Parameter '{kfunc.Args[i].Name}' of function '{kfunc.GetExpTypeName(false)}' is non-nullable.", word);
+                                    }
+                                }
+                                BuildCompleted += ValidateNullParams;
+                            }
+                            // it's not a known function; if it's not a known function *pointer* as well,
+                            // and it's the first node in the expression, then what is it? it's an error!
+                            else if (pointingOrFuncCall.Next == null && pointingOrFuncCall.Known == null)
+                            {
+                                // if it's an instance property name, it can still be a function pointer, but .Known would be false
+                                ClassDefSpan? cls = FindParentContext<FuncDefSpan>(word)?.DefinedAt;
+
+                                if (cls?.Props.Any(p => p.Name == pointingOrFuncCall.Name) is not true)
+                                    Error($"Unknown function {pointingOrFuncCall.Name}(..{pointingOrFuncCall.ArgLists.FirstOrDefault()?.Length.ToString() ?? "?"})", word);
+                            }
+                            operation = new Invocation(pointingOrFuncCall);
                         }
                     }
                 }

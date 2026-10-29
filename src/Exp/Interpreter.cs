@@ -174,6 +174,7 @@ namespace Exp
         /// </summary>
         public ScriptDocument MainDoc { get; private set; }
         internal event EventHandler AfterAllOperationsCreated;
+        internal event EventHandler BuildCompleted;
 
         /// <summary>
         /// Creates and iniitializes a new interpreter.
@@ -255,7 +256,8 @@ namespace Exp
             Builtins.OverridesAttribute.ApplyForAll(this);
 
             operations = ReadOperations(null, this);
-            AfterAllOperationsCreated?.Invoke(this, null);
+            AfterAllOperationsCreated?.Invoke(this, EventArgs.Empty);
+            BuildCompleted?.Invoke(this, EventArgs.Empty);
 
             ThrowIfErr();
 
