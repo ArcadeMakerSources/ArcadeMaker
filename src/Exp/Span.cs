@@ -1239,7 +1239,7 @@ public class ConstructorDefSpan : FuncDefSpan, IKeyword, IExpItem
                     }
 
                     // set parameters
-                    autoCtor.Args = cls.Props.Select(p => new ArgumentSpan("this." + p.Name, notNull: true)).ToArray();
+                    autoCtor.Args = cls.Props.Select(p => new ArgumentSpan(ArgumentSpan.PropertyPointerParamNamePrefix + p.Name, notNull: true) { IsPropertyPointer = true }).ToArray();
                     autoCtor.ParamVariables = autoCtor.Args.Select(a => new Variable(a.Name, null)).ToArray();
 
                     alreadyFound = true;
@@ -1249,18 +1249,19 @@ public class ConstructorDefSpan : FuncDefSpan, IKeyword, IExpItem
     }
 
     /// <summary>
-    /// Inserts an operation for initializing the instance's properties to the beginning of the operations list of every auto ctor in the given interpreter instance.
+    /// Inserts an operation for initializing the instance's properties to the beginning of the operations
+    /// list of every auto ctor OR A CTOR WHICH CONTAINS "this." PARAMETERS in the given interpreter instance.
     /// </summary>
     internal static void OperateAutoCtors(Interpreter interpreter)
     {
         foreach (ClassDefSpan cls in interpreter.definations.OfType<ClassDefSpan>())
         {
-            foreach (FuncDefSpan func in cls.Funcs)
+            foreach (ConstructorDefSpan ctor in cls.Funcs.OfType<ConstructorDefSpan>().Where(ctor => !ctor.Static))
             {
-                if (func is ConstructorDefSpan { Auto: true, Static: false } autoCtor)
+                if (ctor.Args.Any(p => p.IsPropertyPointer))
                 {
                     // operate
-                    ConstructorDefSpan ctor_captured = autoCtor;
+                    ConstructorDefSpan ctor_captured = ctor;
                     Operation initPropsOp = new(() =>
                     {
                         try
@@ -1271,9 +1272,20 @@ public class ConstructorDefSpan : FuncDefSpan, IKeyword, IExpItem
                                 interpreter.ThrowRuntime<Instance>("The calling instance could not be found.", RuntimeException.NOT_FOUND, ctor_captured);
 
                             // init the properties
-                            int i = 0;
-                            foreach (var var in inst.Vars)
-                                var.SetSkippingConstant(ctor_captured.ParamVariables[i++].Value);
+                            int pIndex = -1;
+                            foreach (var p in ctor_captured.Args)
+                            {
+                                pIndex++;
+
+                                if (!p.IsPropertyPointer)
+                                    continue;
+
+                                foreach (var var in inst.Vars)
+                                {
+                                    if (p.PropertyPointerName == var.Name)
+                                        var.SetSkippingConstant(ctor_captured.ParamVariables[pIndex].Value);
+                                }
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -1281,9 +1293,9 @@ public class ConstructorDefSpan : FuncDefSpan, IKeyword, IExpItem
                             throw;
                         }
                     });
-                    IEnumerable<IOperation> ctorBody = autoCtor.Operations;
-                    autoCtor.Operations = [initPropsOp];
-                    autoCtor.Operations = [.. autoCtor.Operations.AppendRange(ctorBody)];
+                    IEnumerable<IOperation> ctorBody = ctor.Operations;
+                    ctor.Operations = [initPropsOp];
+                    ctor.Operations = [.. ctor.Operations.AppendRange(ctorBody)];
                     interpreter.OperationsSpanPair.Add(initPropsOp, ctor_captured);
                 }
             }
@@ -1334,8 +1346,27 @@ public class ConstructorDefSpan : FuncDefSpan, IKeyword, IExpItem
 public class ArgumentSpan : WordSpan, IExpItem
 {
     public static string ItemName { get; } = "argument";
+    internal const string PropertyPointerParamNamePrefix = "this.";
+
     internal string Name { get; }
-    internal bool NotNull { get; set; }
+    internal bool NotNull { get; set; } // mutable bc @NullableArg attr modifies it
+    internal bool IsPropertyPointer
+    {
+        get;
+        init
+        {
+            field = value;
+
+            if (value)
+            {
+                if (!Name.StartsWith(PropertyPointerParamNamePrefix))
+                    throw new Exception("Property pointer parameter names must start with " + PropertyPointerParamNamePrefix);
+                PropertyPointerName = Name.Substring(PropertyPointerParamNamePrefix.Length);
+            }
+        }
+    
+    }
+    internal string? PropertyPointerName { get; private init; }
     internal ArgumentSpan(string name, bool notNull = false) : base(name)
     {
         this.Name = name;

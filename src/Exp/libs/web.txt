@@ -2,29 +2,18 @@
 
 namespace web:
 
-class HttpRequest (url, method, headers, body)
+class HttpRequest (url, method, @NullableArg headers, @NullableArg body)
 {
 	constructor(...);
 
-	constructor(url)
+	constructor(this.url)
 	{
-		this.url = url
 		method = HttpRequestMethod.get
 	}
 
-	constructor(url, method)
-	{
-		this.url = url
-		this.method = method
-	}
+	constructor(this.url, this.method);
 
-	constructor(url, method, headers)
-	{
-		this.url = url
-		this.method = method
-		this.headers = headers
-	}
-
+	constructor(this.url, this.method, this.headers?);
 
 	@ExternImpl
 	func wait(){}
