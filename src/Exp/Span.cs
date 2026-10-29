@@ -1239,7 +1239,7 @@ public class ConstructorDefSpan : FuncDefSpan, IKeyword, IExpItem
                     }
 
                     // set parameters
-                    autoCtor.Args = cls.Props.Select(p => new ArgumentSpan(p.Name)).ToArray();
+                    autoCtor.Args = cls.Props.Select(p => new ArgumentSpan(p.Name, notNull: true)).ToArray();
                     autoCtor.ParamVariables = autoCtor.Args.Select(a => new Variable(a.Name, null)).ToArray();
 
                     alreadyFound = true;
@@ -1290,6 +1290,31 @@ public class ConstructorDefSpan : FuncDefSpan, IKeyword, IExpItem
         }
     }
 
+    /// <summary>
+    /// Sets the <see cref="ArgumentSpan.NotNull"/> properties of auto ctors to <see langword="false"/>
+    /// where the target property is marked with the <see cref="AttributeDefSpan.NullableArgAttr"/> attribute.
+    /// </summary>
+    internal static void SetAutoCtorsParamsNullability(Interpreter interpreter)
+    {
+        foreach (ClassDefSpan cls in interpreter.definations.OfType<ClassDefSpan>())
+        {
+            foreach (FuncDefSpan func in cls.Funcs)
+            {
+                if (func is ConstructorDefSpan { Auto: true, Static: false } autoCtor)
+                {
+                    int i = -1;
+                    foreach (var param in autoCtor.Args)
+                    {
+                        i++;
+
+                        if (cls.Props[i].HasTag(AttributeDefSpan.NullableArgAttr, out var _))
+                            param.NotNull = false;
+                    }
+                }
+            }
+        }
+    }
+
     internal override string FullText
     {
         get
@@ -1310,7 +1335,7 @@ public class ArgumentSpan : WordSpan, IExpItem
 {
     public static string ItemName { get; } = "argument";
     internal string Name { get; }
-    internal bool NotNull { get; }
+    internal bool NotNull { get; set; }
     internal ArgumentSpan(string name, bool notNull = false) : base(name)
     {
         this.Name = name;
@@ -1671,6 +1696,9 @@ class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
     internal static AttributeDefSpan IterableAttr { get; set; } /*= new("Iterable", [])
     { AllowFor_Class = true, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false, AllowFor_Attr = false }*/
     internal static AttributeDefSpan DisplayNameAttr { get; } = new("DisplayName", [new((Interpreter.STD_NAMESPACE, "string"), "name")])
+    { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = true, AllowFor_Attr = false, Namespace = Interpreter.STD_NAMESPACE };
+
+    internal static AttributeDefSpan NullableArgAttr { get; } = new("NullableArg", [])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = true, AllowFor_Attr = false, Namespace = Interpreter.STD_NAMESPACE };
 
     public static string Keyword { get; } = "attribute";

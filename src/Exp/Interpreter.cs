@@ -211,6 +211,7 @@ namespace Exp
             definations.Add(AttributeDefSpan.ExpectFuncAttr);
             definations.Add(AttributeDefSpan.ReadOnlyAttr);
             definations.Add(AttributeDefSpan.DisplayNameAttr);
+            definations.Add(AttributeDefSpan.NullableArgAttr);
             definations.AddRange(defsToImport ?? []);
             AddAllExternFuncsInAssembly(typeof(Interpreter).Assembly);
 
@@ -247,6 +248,8 @@ namespace Exp
             ConstructorDefSpan.OperateAutoCtors(this);
 
             ResolveAttributes();
+
+            ConstructorDefSpan.SetAutoCtorsParamsNullability(this);
 
             // overrides
             Builtins.OverridesAttribute.ApplyForAll(this);

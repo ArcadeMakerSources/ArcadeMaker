@@ -125,7 +125,7 @@ public partial class Interpreter
                             next.TagsCode.Add(code.ToArray());
                             return nextSpan;
                         }
-                        Error(nextSpan + " cannot have tags.", textSpan);
+                        Error(((nextSpan as IExpItem)?.GetItemName() ?? nextSpan?.ToString() ?? "<<Invalid Item>>") + " cannot have tags.", textSpan);
                     }
                     else
                         return nextSpan;
@@ -483,7 +483,11 @@ public partial class Interpreter
                         props.Add(new Property(null, cons, pname, prvt, basearr, val, tagCode));
 
                         if (propsp is CommaSpan)
+                        {
+                            ignoreCanSetTag = true;
                             propsp = ReadWord();
+                            ignoreCanSetTag = false;
+                        }
                         else if (propsp is ClosingBracketSpan)
                             break;
                         else if (propsp != null)
