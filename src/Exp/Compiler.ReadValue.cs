@@ -668,11 +668,9 @@ public partial class Interpreter
 
     internal static string ExpStringToString(Instance exp)
     {
-        var oarr = (exp.Vars[0].Value as Instance).ArrayValues;
-        string s = "";
-        foreach (var c in oarr)
-            s += c.Char;
-        return s;
+        IValue?[] chars = exp.Vars[0].Value?.Inst.ArrayValues ??
+            throw new Exception("Could not convert exp string to C# string: Vars[0].Value was null.");
+        return new(chars.Select(c => c?.Char ?? char.MinValue).ToArray());
     }
 
     /// <summary>
