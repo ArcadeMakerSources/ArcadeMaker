@@ -1239,7 +1239,7 @@ public class ConstructorDefSpan : FuncDefSpan, IKeyword, IExpItem
                     }
 
                     // set parameters
-                    autoCtor.Args = cls.Props.Select(p => new ArgumentSpan(p.Name, notNull: true)).ToArray();
+                    autoCtor.Args = cls.Props.Select(p => new ArgumentSpan("this." + p.Name, notNull: true)).ToArray();
                     autoCtor.ParamVariables = autoCtor.Args.Select(a => new Variable(a.Name, null)).ToArray();
 
                     alreadyFound = true;

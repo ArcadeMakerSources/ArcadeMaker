@@ -282,7 +282,6 @@ public partial class Interpreter
                             {
                                 // if it's an instance property name, it can still be a function pointer, but .Known would be false
                                 ClassDefSpan? cls = FindParentContext<FuncDefSpan>(word)?.DefinedAt;
-
                                 if (cls?.Props.Any(p => p.Name == pointingOrFuncCall.Name) is not true)
                                     Error($"Unknown function {pointingOrFuncCall.Name}(..{pointingOrFuncCall.ArgLists.FirstOrDefault()?.Length.ToString() ?? "?"})", word);
                             }
