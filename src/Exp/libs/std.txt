@@ -562,7 +562,7 @@ class Dictionary (const keys private, const values private basearray)
         const index = keys.indexOf(key)
         if (index < 0)
         {
-            throw new Exception(Exception.NOT_FOUND ?? "NOT_FOUND", "The specified key was not found.") // TODO: remove not_found coalscing after fixing static vars auto init
+            throw new Exception(Exception.NOT_FOUND, "The specified key was not found.")
         }
         return values.get(index)
     }
