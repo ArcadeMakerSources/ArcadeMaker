@@ -24,7 +24,7 @@ namespace Exp
             {
                 if (RunOpsRunning)
                 {
-                    bool found = OperationsSpanPair.TryGetValue(lastOp, out var _throwing);
+                    bool found = OperationsSpanPair.TryGetValue(lastOp, out var _throwing); // keep it out of the Debug.Assert()!!!
                     System.Diagnostics.Debug.Assert(found);
                     throwing = _throwing;
                 }

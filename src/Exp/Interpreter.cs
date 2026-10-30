@@ -174,6 +174,7 @@ namespace Exp
         /// </summary>
         public ScriptDocument MainDoc { get; private set; }
         internal event EventHandler AfterAllOperationsCreated;
+        internal event EventHandler BuildCompleted;
 
         /// <summary>
         /// Creates and iniitializes a new interpreter.
@@ -211,6 +212,7 @@ namespace Exp
             definations.Add(AttributeDefSpan.ExpectFuncAttr);
             definations.Add(AttributeDefSpan.ReadOnlyAttr);
             definations.Add(AttributeDefSpan.DisplayNameAttr);
+            definations.Add(AttributeDefSpan.NullableArgAttr);
             definations.AddRange(defsToImport ?? []);
             AddAllExternFuncsInAssembly(typeof(Interpreter).Assembly);
 
@@ -248,11 +250,14 @@ namespace Exp
 
             ResolveAttributes();
 
+            ConstructorDefSpan.SetAutoCtorsParamsNullability(this);
+
             // overrides
             Builtins.OverridesAttribute.ApplyForAll(this);
 
             operations = ReadOperations(null, this);
-            AfterAllOperationsCreated?.Invoke(this, null);
+            AfterAllOperationsCreated?.Invoke(this, EventArgs.Empty);
+            BuildCompleted?.Invoke(this, EventArgs.Empty);
 
             ThrowIfErr();
 
@@ -351,6 +356,19 @@ namespace Exp
                 var staticCtor = cls.Funcs.OfType<ConstructorDefSpan>().Where(ctor => ctor.Static).FirstOrDefault();
                 if (staticCtor != null)
                     FuncCall(null, staticCtor, null, out bool _, []);
+            }
+        }
+
+        internal void ErrorIfLiteralNullPassedToNonNullableParam(FuncDefSpan func, IEnumerable<IReadingOperation> args, ILocatableSourceMark? sourceMark = null)
+        {
+            int i = -1;
+            foreach (IReadingOperation expr in args)
+            {
+                i++;
+
+                // if it's build-time constant null being passed to a non-nullable param - error
+                if (func.Args[i].NotNull && ((expr is ConstValueReadingOperation literal && literal.Read() is null) || (expr is PointingOrFuncCall pnt && pnt.IsPointingToLiteralConst(this, out var lit) && lit is null)))
+                    Error($"Parameter '{func.Args[i].Name}' of function '{func.GetExpTypeName(false)}' is non-nullable.", sourceMark);
             }
         }
 

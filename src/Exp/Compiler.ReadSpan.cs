@@ -125,7 +125,7 @@ public partial class Interpreter
                             next.TagsCode.Add(code.ToArray());
                             return nextSpan;
                         }
-                        Error(nextSpan + " cannot have tags.", textSpan);
+                        Error(((nextSpan as IExpItem)?.GetItemName() ?? nextSpan?.ToString() ?? "<<Invalid Item>>") + " cannot have tags.", textSpan);
                     }
                     else
                         return nextSpan;
@@ -346,6 +346,21 @@ public partial class Interpreter
                     {
                         while (true)
                         {
+                            bool isPropPntr = false;
+
+                            // this. parameters
+                            if (argsp is ThisWordSpan)
+                            {
+                                Read<DotSpan>();
+
+                                if (ctor)
+                                    isPropPntr = true;
+                                else
+                                    Error($"The \"{ThisWordSpan.Keyword}.\" prefix is only valid for constructor parameters.", argsp);
+
+                                argsp = ReadWord();
+                            }
+
                             bool notnull = true; // removing notnull word
                             var nspoiler = Spoiler();
                             if (Spoiler() is NotNullWordSpan)
@@ -361,10 +376,11 @@ public partial class Interpreter
 
                             // error if this arg name already exists
                             ValidateDefNameLegallity(null, argsp?.FullText);
-                            if (args.Any(a => a.Name == argsp?.FullText))
+                            if (args.Any(a => a.Name == argsp?.FullText || a.PropertyPointerName == argsp?.FullText))
                                 Error($"The parameter name '{argsp?.FullText}' is a duplicate.");
 
-                            args.Add(new ArgumentSpan(argsp?.FullText, notnull));
+                            string pname = (isPropPntr ? ArgumentSpan.PropertyPointerParamNamePrefix : "") + (argsp?.FullText  ?? "<<Invalid Param>>");
+                            args.Add(new ArgumentSpan(pname, notnull) { IsPropertyPointer = isPropPntr });
                             argsp = ReadSpan();
                             if (argsp is CommaSpan)
                                 argsp = ReadWord();
@@ -398,8 +414,8 @@ public partial class Interpreter
                 else if (first is SemicolonSpan)
                 {
                     innerSource = [];
-                    if (!autoCtor)
-                        Error($"Only auto-constructors may be followed by {SemicolonSpan.Symbol}.", first);
+                    if (!autoCtor && (args.Any(arg => !arg.IsPropertyPointer) || args.Count == 0))
+                        Error($"Only auto-constructors and non-parameterless constructors that all of their parameters are \"{ArgumentSpan.PropertyPointerParamNamePrefix}\" parameters may be followed by {SemicolonSpan.Symbol}.", first);
                 }
                 else
                 {
@@ -483,7 +499,11 @@ public partial class Interpreter
                         props.Add(new Property(null, cons, pname, prvt, basearr, val, tagCode));
 
                         if (propsp is CommaSpan)
+                        {
+                            ignoreCanSetTag = true;
                             propsp = ReadWord();
+                            ignoreCanSetTag = false;
+                        }
                         else if (propsp is ClosingBracketSpan)
                             break;
                         else if (propsp != null)
@@ -556,9 +576,19 @@ public partial class Interpreter
                         func.Private = prvtdef;
                         func.TagsCode = tagsCode;
 
-                        // throw if a static constructor has parameters
-                        if (func is ConstructorDefSpan && func.Static && func.Args.Length > 0)
-                            Error("A static constructor must be parameterless.");
+                        // static ctors errors
+                        if (func is ConstructorDefSpan { Static: true } staticCtor)
+                        { 
+                            // error if a static constructor has parameters
+                            if (staticCtor.Args.Length > 0)
+                                Error("A static constructor must be parameterless.", staticCtor);
+
+                            // error if a static constructor is an auto constructor
+                            if (staticCtor.Auto)
+                                Error("Auto constructors cannot be static.", staticCtor);
+                        }
+                        else foreach (var param in func.Args.Where(p => p.IsPropertyPointer && !props.Any(prop => prop.Name == p.PropertyPointerName)))
+                            Error($"'{textSpan.Document.Namespace}{NamespaceSpecificationSpan.Symbol}{name}' does not contain an instance property with the name '{param.Name}'.", func);
 
                         funcs.Add(func);
                     }

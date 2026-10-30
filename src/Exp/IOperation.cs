@@ -510,6 +510,19 @@ class InitOperation : IReadingOperation
             throw new Exception($"More than 1 constructor taking {args.Length} parameters found.");
 
         Constructor = ctors.FirstOrNull() as ConstructorDefSpan; // first or null if the class has no constructors at all
+
+        if (Constructor != null)
+        {
+            // error if a null literal is passed as an argument to a non-nullable paramerter
+            // we must do it after ResolveAttribute(), bc of the @NullableArg attribute
+            var interpreter = Interpreter.Activated;
+            void ValidateNonNullableParams(object? s, EventArgs e)
+            {
+                interpreter.BuildCompleted -= ValidateNonNullableParams;
+                interpreter.ErrorIfLiteralNullPassedToNonNullableParam(Constructor!, args);
+            }
+            interpreter.BuildCompleted += ValidateNonNullableParams;
+        }
     }
 
     public IValue Read()

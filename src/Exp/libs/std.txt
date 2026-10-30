@@ -377,34 +377,21 @@ class string (const chars private basearray)
 
 class Exception (msg, type, const source, const line, const col, data)
 {
-    static const INDEX_OUT_OF_RANGE = "INDEX_OUT_OF_RANGE"
-    static const ARGUMENT_NULL = "ARGUMENT_NULL"
-    static const NULL_REFERENCE = "NULL_REFERENCE"
-    static const INVALID_ARGUMENT = "INVALID_ARGUMENT"
-    static const INVALID_OPERATION = "INVALID_OPERATION"
+    static const INDEX_OUT_OF_RANGE      = "INDEX_OUT_OF_RANGE"
+    static const ARGUMENT_NULL           = "ARGUMENT_NULL"
+    static const NULL_REFERENCE          = "NULL_REFERENCE"
+    static const INVALID_ARGUMENT        = "INVALID_ARGUMENT"
+    static const INVALID_OPERATION       = "INVALID_OPERATION"
     static const EXTERN_OPERATION_FAILED = "EXTERN_OPERATION_FAILED"
-    static const NOT_FOUND = "NOT_FOUND"
-    static const DIVIDE_BY_ZERO = "DIVIDE_BY_ZERO"
-    static const STACK_OVERFLOW = "STACK_OVERFLOW"
+    static const NOT_FOUND               = "NOT_FOUND"
+    static const DIVIDE_BY_ZERO          = "DIVIDE_BY_ZERO"
+    static const STACK_OVERFLOW          = "STACK_OVERFLOW"
     
-    constructor (t, m)
-    {
-        type = t
-        msg = m
-    }
+    constructor (this.type, this.msg);
 
-    constructor(m) 
-    {
-        this.msg = m
-        this.type = "UNKNOWN"
-    }
+    constructor(this.msg);
 
-    constructor(t, m, d?)
-    {
-        msg = m
-        type = t
-        data = d
-    }
+    constructor(this.type, this.msg, this.data);
 }
 
 class ExternTypeValue ()
@@ -543,13 +530,9 @@ class List (array private basearray)
     }
 }
 
-class KeyValuePair (key, value)
+class KeyValuePair (key, @NullableArg value)
 {
-    constructor(k, v?)
-    {
-        key = k
-        value = v
-    }
+    constructor(...);
 }
 
 class Dictionary (const keys private, const values private basearray)
@@ -579,7 +562,7 @@ class Dictionary (const keys private, const values private basearray)
         const index = keys.indexOf(key)
         if (index < 0)
         {
-            throw new Exception(Exception.NOT_FOUND ?? "NOT_FOUND", "The specified key was not found.") // TODO: remove not_found coalscing after fixing static vars auto init
+            throw new Exception(Exception.NOT_FOUND, "The specified key was not found.")
         }
         return values.get(index)
     }
@@ -620,13 +603,8 @@ class Date (year, month, day, hour, minute, sec, millis, nanos)
 {
     constructor(...);
 
-    constructor(year, month, day, hour, minute)
+    constructor(this.year, this.month, this.day, this.hour, this.minute)
     {
-        this.year = year
-        this.month = month
-        this.day = day
-        this.hour = hour
-        this.minute = minute
         sec = 0
         millis = 0
         nanos = 0
