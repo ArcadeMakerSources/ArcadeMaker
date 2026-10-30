@@ -74,6 +74,7 @@ var pnt = Point.zero
 const loc = Point.fromCurrLocation()
 ```
 
+## Auto Constrcutors and "this." Parameters
 To make your life easier, use auto constructors to init all the instance properties:
 ```
 class User (name, password, age)
@@ -91,7 +92,7 @@ equals to:
 ```
 class User (name, password, age)
 {
-    constructor(name?, password?, age?)
+    constructor(name, password, age)
     {
         this.name = name
         this.password = password
@@ -104,8 +105,20 @@ class User (name, password, age)
     }
 }
 ```
+By default, the parameters of auto constructors are not nullable. Use the `std::NullableArg` attribute to mark a property as nullable in auto constructors, like `class Node (value, @std::NullableArg next) {...}`.
 If you don't need to have any validation or logic in the constructor, you can just leave it without a body, but with a ; symbol:
 `constructor(...);`
+If you need a constructor that only initializes some of the properties, or that you need a constructor that initializes all of them but gets extra parameters other than just the properties, you can add the "this." prefix to the parameter names to define them as specific properties initializers:
+```
+class User (name, password, age)
+{
+    constructor(this.name, this.password, birthdate)
+    {
+        // this.name and this.password are now holding the values that were passed by the first 2 arguments
+        age = Date.now().year - birthdate.year
+    }
+}
+```
 
 ## Code organization
 Exp uses namespaces for code organization. You define the namespace of a document using the namespace keyword at the beginning:
