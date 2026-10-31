@@ -15,7 +15,8 @@ public class Instance : Exp.Instance
     public const int NUMBER_OF_ALARMS = 11;
 
     public ObjectModel Model { get; }
-    public IGame Game { get; }
+    //public IGame Game { get; }
+    private readonly List<Sprite> _spritesList;
     public bool WasDestroyed { get; private set; }
     public int FramesSinceLastImageIndex { get; set; }
 
@@ -103,10 +104,10 @@ public class Instance : Exp.Instance
         }
     }
 
-    public Instance(IGame game, ObjectModel model) : base(model.Class, addProperties: false)
+    public Instance(List<Sprite> spritesList, ObjectModel model) : base(model.Class, addProperties: false)
     {
         this.Model = model;
-        this.Game = game;
+        this._spritesList = spritesList;
 
         Sprite = model.Sprite;
 
@@ -170,7 +171,7 @@ public class Instance : Exp.Instance
     public void SetSprite(IValue? id)
     {
         ArgumentNullException.ThrowIfNull(id);
-        Sprite = Game.Sprites.GetById((int)id.Number);
+        Sprite = _spritesList.GetById((int)id.Number);
         InitMask();
     }
 
@@ -295,13 +296,13 @@ public class Instance : Exp.Instance
     }
 
 
-    internal void Destroy(Interpreter interpreter)
+    internal void Destroy(Interpreter interpreter, RoomInstance currentRoom)
     {
         if (WasDestroyed)
             return;
-
+        
         // remove from room
-        Game.GetActivatedRoom().RemoveInstance(this);
+        currentRoom.RemoveInstance(this);
 
         // run Destroy event
         if (Model.DestroyEvent != null)
