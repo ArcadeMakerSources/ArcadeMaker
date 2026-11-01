@@ -11,10 +11,7 @@ attribute JsonIgnore()
 
 class JsonSerializer (const types)
 {
-    constructor(types)
-    {
-        this.types = types
-    }
+    constructor(...);
     
     func serialize(inst?)
     {
@@ -108,11 +105,7 @@ class JsonObject (const values basearray)
     }
 }
 
-class JsonValue (name, value)
+class JsonValue (name, @NullableArg value)
 {
-    constructor(name, value?)
-    {
-        this.name = name
-        this.value = value
-    }
+    constructor(...);
 }
