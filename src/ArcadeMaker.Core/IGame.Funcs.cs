@@ -681,7 +681,97 @@ public partial interface IGame
     [Param("outline", ParamType.Bool, "Whether to fill a rectangle or only draw the outline.", Optional = true)]
     [Param("thickness", ParamType.Number, "Outline thickness.", Optional = true)]
     Exp.Void DrawRect(Exp.Instance? _, IValue?[] args);
+        /// <summary>
+    /// Draws a healthbar displaying a value between a minimum and maximum range with color interpolation.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">(x1, y1, x2, y2, fullCol, emptyCol, frameCol, value, min, max).</param>
+    [EngineFunc(10)]
+    [Param("x1", ParamType.Number, "Top-left x position.")]
+    [Param("y1", ParamType.Number, "Top-left y position.")]
+    [Param("x2", ParamType.Number, "Bottom-right x position.")]
+    [Param("y2", ParamType.Number, "Bottom-right y position.")]
+    [Param("fullCol", ParamType.Number, "Color when full (ABGR).")]
+    [Param("emptyCol", ParamType.Number, "Color when empty (ABGR).")]
+    [Param("frameCol", ParamType.Number, "Border and text color (ABGR).")]
+    [Param("value", ParamType.Number, "Current value.")]
+    [Param("min", ParamType.Number, "Minimum value.")]
+    [Param("max", ParamType.Number, "Maximum value.")]
+    Exp.Void DrawHealthbar(Exp.Instance? _, IValue?[] args)
+    {
+        double x1 = args[0].ThrowIfNull().Number;
+        double y1 = args[1].ThrowIfNull().Number;
+        double x2 = args[2].ThrowIfNull().Number;
+        double y2 = args[3].ThrowIfNull().Number;
 
+        uint fullCol = (uint)args[4].ThrowIfNull().Number;
+        uint emptyCol = (uint)args[5].ThrowIfNull().Number;
+        uint frameCol = (uint)args[6].ThrowIfNull().Number;
+
+        double val = args[7].ThrowIfNull().Number;
+        double min = args[8].ThrowIfNull().Number;
+        double max = args[9].ThrowIfNull().Number;
+
+        double span = max - min;
+        double pct = span > 0 ? System.Math.Clamp((val - min) / span, 0.0, 1.0) : 0.0;
+
+        // Channel lerp for ABGR
+        static byte LerpByte(uint c1, uint c2, int shift, double t)
+        {
+            int b1 = (int)((c1 >> shift) & 0xFF);
+            int b2 = (int)((c2 >> shift) & 0xFF);
+            return (byte)(b1 + (b2 - b1) * t);
+        }
+
+        byte r = LerpByte(emptyCol, fullCol, 0, pct);
+        byte g = LerpByte(emptyCol, fullCol, 8, pct);
+        byte b = LerpByte(emptyCol, fullCol, 16, pct);
+        byte a = LerpByte(emptyCol, fullCol, 24, pct);
+        uint barColor = ((uint)a << 24) | ((uint)b << 16) | ((uint)g << 8) | r;
+
+        double minX = System.Math.Min(x1, x2), maxX = System.Math.Max(x1, x2);
+        double minY = System.Math.Min(y1, y2), maxY = System.Math.Max(y1, y2);
+        double totalWidth = maxX - minX;
+        double totalHeight = maxY - minY;
+
+        const double border = 3.0;
+
+        // Inner fill
+        double innerW = totalWidth - (border * 2);
+        double innerH = totalHeight - (border * 2);
+        if (innerW > 0 && innerH > 0 && pct > 0)
+        {
+            SetColor(_, [((double)barColor).ToExp()]);
+            DrawRect(_, [
+                (minX + border).ToExp(),
+                (minY + border).ToExp(),
+                (minX + border + innerW * pct).ToExp(),
+                (maxY - border).ToExp(),
+                false.ToExp()
+            ]);
+        }
+
+        // Outer frame
+        SetColor(_, [((double)frameCol).ToExp()]);
+        DrawRect(_, [minX.ToExp(), minY.ToExp(), maxX.ToExp(), maxY.ToExp(), true.ToExp(), border.ToExp()]);
+
+        // Centered value text
+        try
+        {
+            string text = ((int)val).ToString();
+            double tw = GetTextWidth(_, [text.ToExpString()]).Number;
+            double th = GetTextHeight(_, [text.ToExpString()]).Number;
+
+            SetColor(_, [((double)frameCol).ToExp()]);
+            DrawText(_, [(minX + (totalWidth - tw) / 2).ToExp(), (minY + (totalHeight - th) / 2).ToExp(), text.ToExpString()]);
+        }
+        catch
+        {
+            // Project might not have a font selected
+        }
+
+        return Exp.Void.Return;
+    }
     /// <summary>
     /// Draws an ellipse.
     /// </summary>
