@@ -42,7 +42,7 @@ namespace ArcadeMaker.Core.Runtime
             int indexOfInstWithCreationCode = 0;
             foreach (var item in model.InitMap.Items)
             {
-                var instance = new Instance(game, item.Object);
+                var instance = new Instance(game.Sprites, item.Object);
                 instance.X.Value = item.X.ToExp();
                 instance.Y.Value = item.Y.ToExp();
                 instance.ImageIndex.Value = item.ImageIndex.ToExp();

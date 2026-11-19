@@ -1,0 +1,567 @@
+using std
+using math
+namespace linq:
+
+@Iterable
+@Iterator
+class Query (col, it, expr, end, current, lastExpr)
+{
+    constructor(this.col)
+    {
+        it = col.getIterator()
+        expr = new List()
+        end = new QueryEndResult()
+        lastExpr = this
+    }
+    
+    func getIterator() => this
+    
+    func next()
+    {
+        current = lastExpr.exec()
+        return current != end
+    }
+    
+    func getValue() => current
+    
+    func exec() => it.next() ? it.getValue() : end
+    
+    func addExpr(e)
+    {
+        expr.add(e)
+        lastExpr = e
+    }
+    
+    func select(d)
+    {
+        addExpr(new SelectExpr(lastExpr, end, d))
+        return this
+    }
+    
+    func where(d)
+    {
+        addExpr(new WhereExpr(lastExpr, end, d))
+        return this
+    }
+    
+    func ofType(type)
+    {
+        var d
+        if type is number
+        {
+            if type == Primitive._bool
+                { d = func(x) => x is bool }
+            else if type == Primitive._char
+                { d = func(x) => x is char }
+            else if type == Primitive._number
+                { d = func(x) => x is number }
+            else if type == Primitive._func
+                { d = func(x) => x is function }
+            else
+            {
+                throw new Exception(Exception.INVALID_ARGUMENT, "Parameter 'type' may only be std::Type or std::Primitive.")
+            }
+        }
+        else
+        {
+            d = func(x) => x is object & Type.get(x) == type
+        }
+        
+        return where(d)
+    }
+    
+    func intersect(col)
+    {
+        addExpr(new IntersectExpr(lastExpr, end, col))
+        return this
+    }
+    
+    func append(val?) => appendRange([val])
+    
+    func appendRange(range)
+    {
+        addExpr(new AppendRangeExpr(lastExpr, end, range))
+        return this
+    }
+    
+    func orderBy(d) => orderBy(d, null)
+    
+    func orderBy(d, comparer?)
+    {
+        addExpr(new OrderByExpr(lastExpr, end, d, comparer))
+        return this
+    }
+    
+    func groupBy(keySel)
+    {
+        addExpr(new GroupByExpr(lastExpr, end, keySel))
+        return this
+    }
+    
+    func reverse()
+    {
+        addExpr(new ReverseExpr(lastExpr, end))
+        return this
+    }
+    
+    func shuffle()
+    {
+        addExpr(new ShuffleExpr(lastExpr, end))
+        return this
+    }
+    
+    func toArr() => toList().array
+    
+    func toList()
+    {
+        const ls = new List(), next = lastExpr
+        while true
+        {
+            const x = next.exec()
+            if x == end { break }
+            ls.add(x)
+        }
+        return ls
+    }
+    
+    func count()
+    {
+        // let's try to avoid the iteration
+        if (lenof expr.array) == 0
+        {
+            if col is Array { return lenof col }
+            if col is List  { return lenof col.array }
+            if col is Dictionary { return lenof col.keys.array }
+        }
+        
+        const nxt = lastExpr
+        while true : counter c
+        {
+            if nxt.exec() == end { return c }
+        }
+    }
+    
+    func count(d)
+    {
+        const nxt = lastExpr
+        var c = 0
+        while true
+        {
+            const val = nxt.exec()
+            if val == end { return c }
+            if d(c) { c++ }
+        }
+    }
+    
+    func any() => lastExpr.exec() != end
+    
+    func any(d)
+    {
+        const e = lastExpr
+        while true
+        {
+            const item = e.exec()
+            if item == end
+                { return false }
+            if d(item)
+                { return true }
+        }
+    }
+    
+    func first()
+    {
+        const item = lastExpr.exec()
+        if item == end
+            { throw new Exception("The collection was empty.", Exception.INVALID_OPERATION) }
+        return item
+    }
+    
+    func firstOrNull()
+    {
+        const item = lastExpr.exec()
+        if item == end
+            { return null }
+        return item
+    }
+    
+    func first(d)
+    {
+        const e = lastExpr
+        while true
+        {
+            const item = e.exec()
+            if item == end
+                { throw new Exception("No item in the collection has matched the given condition.", Exception.INVALID_OPERATION) }
+            if d(item)
+                { return item }
+        }
+    }
+    
+    func firstOrNull(d)
+    {
+        const e = lastExpr
+        while true
+        {
+            const item = e.exec()
+            
+            if item == end
+                { return null }
+            if d(item)
+                { return item }
+        }
+    }
+    
+    func contains(val?) => indexOf(val) != null
+    
+    func indexOf(val?)
+    {
+        const nxt = lastExpr
+        while true : counter c
+        {
+            const x = nxt.exec()
+            if x == end { return null }
+            if x == val { return c }
+        }
+    }
+    
+    func min()
+    {
+        const nxt = lastExpr
+        var minVal, first = true
+        while true
+        {
+            const x = nxt.exec()
+            if x == end { return minVal }
+            if first | x < minVal
+            {
+                first = false
+                minVal = x
+            }
+        }
+    }
+    
+    func max()
+    {
+        const nxt = lastExpr
+        var maxVal, first = true
+        while true
+        {
+            const x = nxt.exec()
+            if x == end { return maxVal }
+            if first | x > maxVal
+            {
+                first = false
+                maxVal = x
+            }
+        }
+    }
+    
+    func sum()
+    {
+        var s = 0
+        
+        const nxt = lastExpr
+        while true
+        {
+            const item = nxt.exec()
+            if item == end { return s }
+            s += item
+        }
+    }
+    
+    func average()
+    {
+        var s = 0, cnt = 0
+        
+        const nxt = lastExpr
+        while true
+        {
+            const item = nxt.exec()
+            if item == end { return s / cnt }
+            cnt++
+            s += item
+        }
+    }
+    
+    func elementAt(i)
+    {
+        if i < 0
+        {
+            throw new Exception(
+                Exception.INDEX_OUT_OF_RANGE,
+                "Negative values are not valid indeces."
+            )
+        }
+        
+        // let's try to avoid the iteration
+        if (lenof expr.array) == 0
+        {
+            if col is Array { return col[i] }
+            if col is List  { return col.array[i] }
+            if col is Dictionary { return col.values.array[i] }
+        }
+        
+        const nxt = lastExpr
+        while true : counter c
+        {
+            const x = nxt.exec()
+            if x == end
+            {
+                throw new Exception(
+                    Exception.INDEX_OUT_OF_RANGE,
+                    c == 0 ?
+                    "The collection was empty." :
+                    ("The given index (" + i + ") was out of the range of 0-" + (c - 1) + '.')
+                )
+            }
+            if c == i { return x }
+        }
+    }
+}
+
+class QueryEndResult () {}
+
+class SelectExpr (next, end, d)
+{
+    constructor(...);
+    
+    func exec()
+    {
+        const x = next.exec()
+        return x == end ? x : d(x)
+    }
+}
+
+class WhereExpr (next, end, d)
+{
+    constructor(...);
+    
+    func exec()
+    {
+        var x = next.exec()
+        while x != end & !d(x)
+        {
+            x = next.exec()
+        }
+        return x
+    }
+}
+
+class AppendRangeExpr (next, end, col, colIt)
+{
+    constructor(this.next, this.end, this.col);
+    
+    func exec()
+    {
+        if colIt != null
+        {
+            return colIt.next() ? colIt.getValue() : end
+        }
+        const item = next.exec()
+        if item == end
+        {
+            colIt = col.getIterator()
+            return exec()
+        }
+        return item
+    }
+}
+
+class OrderByExpr (next, end, d, comparer, orderedLs, i)
+{
+    constructor(this.next, this.end, this.d, this.comparer?)
+    {
+        i = 0
+    }
+    
+    func exec()
+    {
+        // TODO: consider using a linked list insead of an array list
+        if orderedLs == null
+        {
+            orderedLs = new List()
+            
+            var x = next.exec()
+            while x != end
+            {
+                const result = d(x)
+                const pair = new KeyValuePair(x, result)
+                
+                // put the pair in the right index
+                var inserted = false
+                foreach item in orderedLs : counter c
+                {
+                    const val = item.value
+                    if comparer != null ?
+                       comparer(val, result) >= 0:
+                       (val >= result)
+                    {
+                        orderedLs.insert(c, pair)
+                        inserted = true
+                        break
+                    }   
+                }
+                if !inserted
+                    { orderedLs.add(pair) }
+                    
+                x = next.exec()
+            }
+        }
+        
+        if i < lenof orderedLs.array
+        {
+            i++
+            return orderedLs.array[i - 1].key
+        }
+        
+        return end
+    }
+}
+
+class IntersectExpr (next, end, other)
+{
+    constructor(...)
+    {
+        // convert other to a list, excluding duplicates
+        const ls = new List()
+        foreach x in other
+        {
+            if !q(ls).contains(x) { ls.add(x) }
+        }
+        other = ls
+    }
+    
+    func exec()
+    {
+        while true
+        {
+            const x = next.exec()
+            if x == end { return x }
+        
+            const iInOther = q(other).indexOf(x)
+            if iInOther != null
+            {
+                other.removeAt(iInOther)
+                return x
+            }
+        }
+    }
+}
+
+class Group (key, items) { constructor(...); }
+
+class GroupByExpr (next, end, keySel, groups, i)
+{
+    constructor(this.next, this.end, this.keySel)
+    {
+        i = 0
+    }
+    
+    func exec()
+    {
+        if groups == null
+        {
+            groups = new List()
+            group()
+        }
+        
+        if i < lenof groups.array
+        {
+            i++
+            return groups.array[i - 1]
+        }
+        
+        return end
+    }
+    
+    func group()
+    {
+        while true
+        {
+            const x = next.exec()
+            if x == end { break }
+            
+            const key = keySel(x)
+            var g = q(groups).firstOrNull(func(gr) => gr.key == key)
+            
+            if g == null
+            {
+                g = new Group(key, new List())
+                groups.add(g)
+            }
+            
+            g.items.add(x)
+        }
+    }
+}
+
+class ReverseExpr (next, end, buffer, i)
+{
+    constructor(this.next, this.end);
+    
+    func exec()
+    {
+        if buffer == null
+        {
+            buffer = new List()
+            loadBuffer()
+        }
+        
+        if i >= 0
+        {
+            i--
+            return buffer.get(i + 1)
+        }
+        
+        return end
+    }
+    
+    func loadBuffer()
+    {
+        while true
+        {
+            const x = next.exec()
+            if x == end { break }
+            buffer.add(x)
+        }
+        
+        i = buffer.count() - 1
+    }
+}
+
+class ShuffleExpr (next, end, buffer, blen)
+{
+    constructor(this.next, this.end);
+    
+    func exec()
+    {
+        if buffer == null
+        {
+            buffer = new List()
+            loadBuffer()
+        }
+        
+        if blen >= 1
+        {
+            const rnd = random(blen) // maximum possible output is blen - 1
+            const item = buffer.get(rnd)
+            buffer.removeAt(rnd)
+            blen--
+            return item
+        }
+        
+        return end
+    }
+    
+    func loadBuffer()
+    {
+        while true
+        {
+            const x = next.exec()
+            if x == end { break }
+            buffer.add(x)
+        }
+        
+        blen = buffer.count()
+    }
+}

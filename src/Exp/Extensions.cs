@@ -1,4 +1,4 @@
-﻿using Exp.Operations;
+using Exp.Operations;
 using Exp.Spans;
 using System;
 using System.Collections.Generic;
@@ -105,9 +105,9 @@ public static class Extensions
     {
         ArgumentNullException.ThrowIfNull(arr, nameof(arr));
 
-        var objs = new IValue[arr.Length];
-        Array.Copy(arr, objs, arr.Length);
-        return new ArrayInstance(ClassDefSpan.ExpArrayDef, objs);
+        //var objs = new IValue[arr.Length];
+        //Array.Copy(arr, objs, arr.Length);
+        return new ArrayInstance(ClassDefSpan.ExpArrayDef, arr);
     }
 
     public static Instance ToExpString(this string str)

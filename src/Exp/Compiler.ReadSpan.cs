@@ -1,4 +1,4 @@
-﻿using Exp.Spans;
+using Exp.Spans;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -459,7 +459,7 @@ public partial class Interpreter
                         {
                             tagCode.Add(tag.Code);
                             ignoreCanSetTag = true;
-                            propsp = ReadWord();
+                            propsp = ReadSpan();
                             ignoreCanSetTag = false;
                         }
 
@@ -501,7 +501,7 @@ public partial class Interpreter
                         if (propsp is CommaSpan)
                         {
                             ignoreCanSetTag = true;
-                            propsp = ReadWord();
+                            propsp = ReadSpan();
                             ignoreCanSetTag = false;
                         }
                         else if (propsp is ClosingBracketSpan)

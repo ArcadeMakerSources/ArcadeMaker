@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -143,7 +143,7 @@ namespace Exp
         internal IEnumerable<ClassDefSpan> UsedClasses(Span from) => UsedDefinations(from).OfType<ClassDefSpan>();
         internal IEnumerable<IDefination> UsedDefinations(Span from)
         {
-            return definations.Where(d => d.Namespace == null || from.Document.Namespace == d.Namespace || from.Document.Usings?.Contains(d.Namespace) == true);
+            return definations.Where(d => d.Namespace == null || from.Document.Namespace == d.Namespace || (from.Document.Usings?.Contains(d.Namespace) == true));
         }
 
         internal List<ExternClassDefSpan> externs = [];
@@ -199,6 +199,7 @@ namespace Exp
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("reflection"), "reflection.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("std"), "std.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("web"), "web.txt"));
+            importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("linq"), "linq.txt"));
             docs.AddRange(importsLs);
             importsLs.ForEach(doc => Errors.AddRange(doc.SettingsErrors));
 
@@ -303,7 +304,9 @@ namespace Exp
 
             // attributes (use ??=)
             AttributeDefSpan.IterableAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "Iterable");
-
+            AttributeDefSpan.IteratorAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "Iterator");
+            AttributeDefSpan.StackTraceHiddenAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "StackTraceHidden");
+            
             ClassDefSpan CatchClass(string? ns, string name) => Catch<ClassDefSpan>(ns, name);
 
             T Catch<T>(string? ns, string name) where T : class, IDefination, IExpItem =>
@@ -1119,12 +1122,18 @@ namespace Exp
         public const string STACK_OVERFLOW = "STACK_OVERFLOW";
         public const string INIT_ERR = "INIT_ERR";
         public const string INVALID_SYNTAX = "INVALID_SYNTAX";
+        
         public string msg, type, source;
         public int line, col;
         public Instance ex;
         public bool ByExpThrowStmt { get; }
+        public List<StackTraceNode> StackTrace { get; } = [];
+        
+        public readonly record struct StackTraceNode(FuncDefSpan Func, string Source, int Line, int Col);
 
-        internal RuntimeException(Instance ex, string msg, string type, string source = null, int line = 0, int col = 0, bool byExpThrowStmt = false) : base($"{source ?? "Unknown"}({line}, {col}): {msg}")
+        internal RuntimeException
+            (Instance ex, string msg, string type, string source = null, int line = 0, int col = 0, bool byExpThrowStmt = false) :
+            base($"{(string.IsNullOrWhiteSpace(type) ? "UNKNOWN_EXCEPTION" : type)}: {msg}")
         {
             if (ex == null || ex.def != ClassDefSpan.ExpExceptionDef)
                 throw new Exception($"Argument '{nameof(ex)}' was not an instance of std::Exception.");
@@ -1135,6 +1144,32 @@ namespace Exp
             this.line = line;
             this.col = col;
             this.ByExpThrowStmt = byExpThrowStmt;
+        }
+        
+        public string ReadStackTrace(bool clear = true, bool includeHiddens = false)
+        {
+            try
+            {
+                System.Text.StringBuilder text = new();
+                (string src, int line, int col) loc = (source, this.line, this.col);
+                foreach (var next in StackTrace)
+                {
+                    if (includeHiddens || !next.Func.HasTag(AttributeDefSpan.StackTraceHiddenAttr, out var _))
+                    {
+                        text.Append("\nat " +
+                            next.Func.FullSignature + " -> " +
+                            $"{loc.src} ({loc.line}, {loc.col})");
+                    }
+                    loc = (next.Source, next.Line, next.Col);
+                }
+                text.Append($"\nat {loc.src} ({loc.line}, {loc.col})");
+                return text.ToString();
+            }
+            finally
+            {
+                if (clear)
+                    StackTrace.Clear();
+            }
         }
     }
 }

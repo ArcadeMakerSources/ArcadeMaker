@@ -1,4 +1,4 @@
-﻿using std
+using std
 namespace reflection:
 
 class Property (const name, const value, const prvt, const isConst)
@@ -68,7 +68,7 @@ func getConstructor(type, paramsCount)
 }
 
 @ExternImpl
-func invoke(inst, name, args) {}
+func invoke(type?, name, inst?, args) {}
 
 @ExternImpl
 func getTypeByName(name) {}

@@ -268,7 +268,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     {
         var inst = (Runtime.Instance)expinst!;
 
-        inst.Destroy(Interpreter);
+        inst.Destroy(Interpreter, Game.GetActivatedRoom());
 
         return Exp.Void.Return;
     }
@@ -286,7 +286,7 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
     public Runtime.Instance CreateInstance(Exp.Instance? _, IValue?[] args)
     {
         ObjectModel model = Game.Objects.FirstOrDefault(m => m.Class.ExpType == args[2].ThrowIfNull()) ?? throw new ArgumentException("Value of argument type must be a type of a game object.");
-        Runtime.Instance inst = new(Game, model);
+        Runtime.Instance inst = new(Game.Sprites, model);
         inst.X.Value = args[0];
         inst.Y.Value = args[1];
         Game.GetActivatedRoom().AddInstance(inst);

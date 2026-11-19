@@ -1,158 +1,100 @@
-﻿using std
+using std
 using reflection
-
+using math
 namespace xml:
 
-// define an interface for overriding the serialization logic
-@AllowFor(classes: true, props: false, funcs: false, ctors: false, attr: false)
-@ExpectFunc("toXmlString", 1, false)
-@ExpectFunc("fromXmlString", 1, true)
-attribute OverridesXmlSerialization()
-
-// define an attribute that allows discluding specific properties from the serialization
-@AllowFor(classes: false, props: true, funcs: false, ctors: false, attr: false)
-attribute XmlIgnore()
-
-// define xml object class
-@OverridesXmlSerialization
-class XmlObject (type, attr, values)
+/*class TextReader(text, i)
 {
-    constructor(type)
+    constructor(this.text)
     {
-        this.type = type
+        i = 0
+    }
+    
+    func hasNext() => i < text.length()
+    
+    func next()
+    {
+        if hasNext()
+            { return text.charAt(i) i++ }
+        throw new Exception("The stream has reached its end.")
+    }
+}*/
+
+class XmlNode (name, const attr, const content)
+{
+    constructor(this.name, this.attr, this.content);
+    
+    constructor(this.name)
+    {
         attr = new Dictionary()
-        values = new List()
+        content = new List()
     }
     
-    static func fromObject(obj)
-    {
-        // init with attributre type = object
-        const xml = new XmlObject("object")
-        xml.attr.set("type", Type.get(obj).fullName)
-        
-        // fill values as properties
-        foreach property in getProperties(obj)
-        {
-            if true // getAttr(Type.get(obj), property.name).first(func(attr) => attr.type == <XmlIgnore>) == null
-            {
-                const pobj = new XmlObject("property")
-                pobj.attr.set("name", property.name)
-                pobj.attr.set("type", getValueType(property.value))
-                pobj.values.add(property.value)
-                
-                xml.values.add(pobj)
-            }
-        }
-        
-        return xml
-    }
+    func getValue() => q(content).firstOrNull()
     
-    func toXmlString(depth)
-    {
-        // a function returns x tabs
-        func tabs(num)
-        {
-            var str = ""
-            foreach x from 0 to num
-            {
-                str += "   "
-            }
-            return str
-        }
-        
-        // xml header
-        var xml = (depth > 0 ? "\n" : "") + tabs(depth) + "<" + type
-        
-        // add attributes
-        foreach attr in this.attr.pairs()
-        {
-            xml += " " + attr.key + "=\"" + attr.value + "\""
-        }
-        
-        xml += ">"
-        
-        // values
-        foreach val in values
-        {
-            // new line
-            xml += getXmlString(val, depth + 1)
-        }
-        
-        // close xml
-        xml += "</" + type + ">" + (depth > 0 ? "\n" + tabs(depth - 1) : "")
-        return xml
-    }
-    
-    func toXmlString() => toXmlString(0)
-    
-    static func fromXmlString(xml)
-    {
-        func spc(str, i)
-        {
-            const whites = [' ', '\n', '\t']
-            while (whites.contains(str.charAt(i)))
-            {
-                i++
-            }
-            return i
-        }
-        
-        func expect(str, i, c)
-        {
-            if str.charAt(i) != c
-                { throw new Exception("Invalid XML format: '" + c + "' expected.") }
-        }
-        
-        // skip spaces
-        var i = spc(xml, 0)
-        
-        expect(xml, i, '<')
-        
-    }
-    
-    func deserialize()
-    {
-        // find class type
-        const cls = getTypeByName(type) ?? throw new Exception("Class " + type + " could not be found.", Exception.NOT_FOUND)
-        
-        // get ctor list
-        const ctors = getConstructors(type).where(func(c) => !c.isStatic)
-        
-        // if there are none - try setting all properties manually
-        if ctors.length() == 0
-        {
-            const obj = createInstance(cls)
-            
-            foreach property in values
-            {
-                setProperty(obj, property.attr.get("name"), property.values.get(0))
-            }
-        }
-        
-        // if there are, find one that its param list match the properties
-        else
-        {
-            var ctor
-            foreach x in ctors
-            {
-                if x.params.length() == values.length()
-                {
-                    foreach p in values
-                    {
-                    
-                    }
-                }
-            }
-        }
-    }
+    func getInnerNodes() => q(content).ofType(<XmlNode>).toArr()
     
     @Translator
-    func toString() => toXmlString(0)
-}
-
-func escapeForXml(text)
-{
-    return text
+    func toString() => toString(0)
+    
+    func toString(depth)
+    {
+        // header
+        var str = "<" + name + getAttrStr() + ">"
+        
+        // content
+        str += getContentStr(depth)
+        
+        // closing tag
+        str += "</" + name + ">"
+        
+        return str
+    }
+    
+    func getAttrStr()
+    {
+        var str = ""
+        for (var i = 0; i < attr.keys.count(); i++)
+        {
+            str +=
+                " " +
+                escape("" + attr.keys.get(i)) +
+                "=\"" +
+                escape("" + attr.values.get(i)) +
+                "\""
+        }
+        return str
+    }
+    
+    func getContentStr(depth)
+    {
+        var str = "", firstChild = true
+        depth++
+        const depSpc = "   "
+        foreach child in content
+        {
+            if child is not XmlNode
+            {
+                str += escape(child + "")
+                continue
+            }
+            
+            if child == null { continue }
+            if firstChild
+            {
+                firstChild = false
+                str += "\n"
+            }
+            str += depSpc * depth
+            str += child.toString(depth)
+            str += "\n"
+        }
+        if !firstChild { str += depSpc * (depth - 1) }
+        return str
+    }
+        
+    // TODO: optimize
+    static func escape(str) => str
         .replace("&", "&amp;")
         .replace("<", "&lt;")
         .replace(">", "&gt;")
@@ -160,61 +102,717 @@ func escapeForXml(text)
         .replace("'", "&apos;")
 }
 
-func unescapeXml(xml)
+class XmlSerializer (settings, allTypeNames private)
 {
-    return xml
-        .replace("&amp;", "&")
+    static const deserialize_overriding_func_name = "fromXmlNode"
+    
+    constructor()
+    {
+        settings = new XmlSerializerSettings(XmlPrimitivesIdefntifyingStrategy.requireExplicitTypeInSource)
+    }
+    
+    constructor(this.settings);
+    
+    func serialize(val)
+    {
+        if val is Array
+        {
+            return serArr(val)
+        }
+        else if val is object & val is not string
+        {
+            return serObj(val)
+        }
+        else
+        {
+            return serPremitive(val)
+        }
+    }
+    
+    func serPremitive(val)
+    {
+        var nodeName
+        if val is bool
+        {
+            nodeName = "bool"
+        }
+        else if val is char
+        {
+            nodeName = "char"
+        }
+        else if val is number
+        {
+            nodeName = "number"
+        }
+        else if val is string
+        {
+            nodeName = "string"
+        }
+        else
+        {
+            throw new Exception(Exception.INVALID_OPERATION, "This value could not be serialized.")
+        }
+        
+        const node = new XmlNode(nodeName)
+        node.content.add(val)
+        return node
+    }
+    
+    func serObj(obj)
+    {
+        const type = Type.get(obj)
+        
+        // get class / custom name
+        var typeName = type.fullName
+        foreach a in getAttr(type)
+        {
+            if a.type == <XmlNonSerializable>
+            {
+                throw new Exception(/*Exception.INVALID_OPERATION,*/ "A value couldn't be serialized because the type was marked as non-serializable (type: " + type.fullName + ").")
+            }
+            if a.type == <OverridesXmlSerialization>
+            {
+                return obj.toXmlNode()
+            }
+            if a.type == <XmlName>
+            {
+                typeName = a.values[0]
+            }
+        }
+        
+        const node = new XmlNode(typeName)
+        
+        foreach prop in getProperties(obj) : id ploop
+        {
+            // if a property value is null, just omit it
+            if prop.value == null { continue }
+            
+            var pname = prop.name, asAttr = false
+            const attr = getAttr(type, prop.name)
+            
+            // skip if ignored, and check for custom name
+            foreach a in attr
+            {
+                if a.type == <XmlIgnore> { continue ploop }
+                if a.type == <XmlName>
+                {
+                    pname = a.values[0]
+                }
+                else if a.type == <XmlAttr>
+                {
+                    asAttr = true
+                }
+            }
+            
+            /*
+            if attr.firstOrNull(func(a) => a.type == <XmlIgnore>) != null
+            {
+                println("continued")
+                continue
+            }
+            
+            const pname =
+                //attr.firstOrNull(func(a) => a.type == <XmlName>)?.values[0] ??
+                prop.name
+            */
+            
+            if asAttr
+            {
+                node.attr.set(pname, prop.value)
+            }
+            else
+            {
+                const pnode = new XmlNode(pname)
+                pnode.content.add(serialize(prop.value))  
+                node.content.add(pnode)
+            }
+        }
+        
+        return node
+    }
+    
+    func serArr(arr)
+    {
+        const main = new XmlNode("array")
+        main.content.addRange(arr.select(func(i) => this.serialize(i)))
+        
+        return main
+    }
+    
+    func deserialize(node)
+    {
+        const primitive = deserIfPrimitive(node) ?? deserIfArr(node)
+        if primitive != null { return primitive }
+        
+        if allTypeNames == null
+            { initAllTypeNames() }
+            
+        // find the right type
+        if !allTypeNames.containsKey(node.name)
+            { throw new Exception("Could not find the target type for the name '" + node.name + "'.") }
+        const type = allTypeNames.get(node.name)
+        
+        foreach a in getAttr(type)
+        {
+            if a.type == <OverridesXmlSerialization>
+            {
+                return invoke(type, deserialize_overriding_func_name, null, [node])
+            }
+            if a.type == <XmlNonSerializable>
+            {
+                err("The XML file contained a value of type " + type.fullName + ", which is marked as non-serializable.")
+            }
+        }
+        
+        // init a new instance and set its properties
+        const inst = createInstance(type, [])
+        foreach prop in getProperties(inst) : id ploop
+        {
+            // get property name
+            var pname = prop.name, isAttr = false
+            var explType
+            foreach attr in getAttr(type, pname)
+            {
+                if attr.type == <XmlIgnore>
+                    { continue ploop }
+                if attr.type == <XmlName>
+                {
+                    pname = attr.values[0]
+                }
+                else if attr.type == <XmlAttr>
+                {
+                    isAttr = true
+                }
+                else if attr.type == <XmlType>
+                {
+                    explType = attr.values[0]
+                }
+            }
+            
+            var value
+            if isAttr
+            {
+                if explType == null & settings.primitivesIdentifying != XmlPrimitivesIdefntifyingStrategy.stringByDefault
+                {
+                    err("The target type for " + type.fullName + '.' + prop.name + " was not specified.")
+                }
+                const keyInd = node.attr.keys.indexOf(pname)
+                if keyInd != null & keyInd >= 0
+                {
+                    value = node.attr.values.get(keyInd)
+                    if explType != null
+                        { value = strToPrim(value, explType) }
+                }
+                else
+                    { err("No matching attribute found for " + type.fullName + '.' + prop.name) }
+            }
+            else
+            {
+                // find the property value and assign it
+                var propNode = null, wasObj = false
+                foreach x in node.content
+                {
+                    if x is XmlNode & x.name == pname
+                    {
+                        propNode = x
+                        foreach inner in x.content
+                        {
+                            if inner is XmlNode
+                            {
+                                wasObj = true
+                                value = deserialize(inner)
+                                break
+                            }
+                        }
+                    }
+                }
+                if propNode == null
+                {
+                    err("The value of " + type.fullName + "." + prop.name + " was missing.")
+                }
+                else
+                {
+                    if !wasObj
+                    {
+                        if settings.primitivesIdentifying == XmlPrimitivesIdefntifyingStrategy.requireExplicitTypeInSource
+                        {
+                            err("The XML file contained a primitive value without an identifier tag.")
+                        
+                        }
+                        else if explType != null
+                        {
+                            value = strToPrim(propNode.content.array.firstOrNull() ?? "", explType)
+                        }
+                        else if settings.primitivesIdentifying == XmlPrimitivesIdefntifyingStrategy.stringByDefault
+                              //settings.primitivesIdentifying == XmlPrimitivesIdefntifyingStrategy.requireExplicitTypeInTarget
+                        {
+                            value = propNode.content.array.firstOrNull() ?? ""
+                        }
+                        else
+                        {
+                            err("The target type for " + type.fullName + '.' + prop.name + " was not specified.")
+                        }
+                    }
+                }
+            }
+            setProperty(inst, prop.name, value)
+        }
+        
+        return inst
+    }
+    
+    func deserIfPrimitive(node)
+    {
+        const name = node.name
+        if node.content.count() == 0 { return null }
+        const first = node.content.get(0)
+        if first is not string { return null }
+        
+        if name == "bool"
+        {
+            return strToBool(first)
+        }
+        else if name == "char"
+        {
+            return first.length() == 1 ? first.charAt(0) : err("1 char was expected.")
+        }
+        else if name == "number"
+        {
+            return first.toNum()
+        }
+        else if name == "string"
+        {
+            return first
+        }
+        
+        return null
+    }
+    
+    func deserIfArr(node)
+    {
+        if node.name == "array"
+        {
+            return q(node.content)
+                .ofType(<XmlNode>)
+                .select(func(x) => deserialize(x))
+                .toArr()
+        }
+        
+        return null
+    }
+    
+    func strToPrim(value, prType)
+    {
+        if prType == Primitive._bool
+        {
+            return strToBool(value)
+        }
+        else if prType == Primitive._char
+        {
+            if value.length() != 1
+                { err("Could not convert a string to char because it contained " + value.length() + " characters.") }
+            return value.charAt(0)    
+        }
+        else if prType == Primitive._number
+        {
+            return value.toNum()
+        }
+        err("Invalid primitive type specification. Use Primitive enum to get valid values, e.g. Primitive._bool")
+    }
+    
+    func strToBool(str) =>
+        str == "false" ? false : (str == "true" ? true : err("Invalid bool value."))
+    
+    func err(msg)
+    {
+        throw new Exception("SERIALIZITION_FAILED", msg)
+    }
+    
+    func initAllTypeNames()
+    {
+        allTypeNames = new Dictionary()
+        foreach type in Type.all
+        {
+            var name = type.fullName
+            
+            foreach attr in getAttr(type)
+            {
+                if attr.type == <XmlName>
+                {
+                    name = attr.values[0]
+                }
+            }
+            
+            allTypeNames.set(name, type)
+        }
+    }
+}
+
+class XmlSerializerSettings (primitivesIdentifying)
+{
+    constructor(...);
+}
+
+enum XmlPrimitivesIdefntifyingStrategy
+{
+    requireExplicitTypeInSource,
+    requireExplicitTypeInTarget,
+    stringByDefault
+}
+
+
+// --- attr -----------
+@AllowFor(classes: false, props: true, funcs: false, ctors: false, attr: false)
+attribute XmlIgnore()
+
+@AllowFor(classes: true, props: true, funcs: false, ctors: false, attr: false)
+attribute XmlName(string name)
+
+@AllowFor(classes: false, props: true, funcs: false, ctors: false, attr: false)
+attribute XmlAttr()
+
+@AllowFor(classes: false, props: true, funcs: false, ctors: false, attr: false)
+attribute XmlType(number type)
+
+@AllowFor(classes: true, props: false, funcs: false, ctors: false, attr: false)
+attribute XmlNonSerializable()
+
+@AllowFor(classes: true, props: false, funcs: false, ctors: false, attr: false)
+@ExpectFunc("toXmlNode", 0, sttc: false)
+@ExpectFunc(XmlSerializer.deserialize_overriding_func_name, 1, sttc: true)
+attribute OverridesXmlSerialization()
+
+// --- parsing and reading ---------------
+class XmlReader (stream, prev, line, col)
+{
+    constructor(this.stream)
+    {
+        line = 1
+        col = 1
+    }
+    
+    func readDoc()
+    {
+        const row = new List()
+        
+        var nxt = next()
+        while nxt != null
+        {
+            if nxt == '<'
+            {
+                row.add(parseNode(expectNext()))
+            }
+            else
+            {
+                err("Unexpected char in XML document (Expected: '<', Received: '" + nxt + "').")
+            }
+            nxt = next()
+        }
+        
+        return new XmlDoc(row.array)
+    }
+    
+    func parseNode() => parseNode(null)
+    
+    func parseNode(chr2?)
+    {
+        var name = ""
+        
+        if chr2 == null
+        {
+            expect('<')
+            chr2 = expectNext()
+        }
+        else
+        {
+            if chr2 != '?' & chr2 != '!'
+            {
+                name = chr2
+            }
+        }
+        
+        if chr2 == '!' { return parseComment(true) }
+        const isProcInstr = chr2 == '?'
+        if !isProcInstr
+            { name = chr2 }
+        
+        name += readUntil(isProcInstr ? ['?', ' ', '\n'] : ['>', '/', ' ', '\n'])
+        const attr = new Dictionary(), children = new List()
+        
+        var inlined = false
+        
+        while isWhiteSpc(prev)
+        {
+            const nxt = expectNext()
+            
+            //if nxt == '/'
+            //    { inlined = true }
+            if isProcInstr ? (nxt != '?') : (nxt != '>' & nxt != '/')
+            {
+                // parse attr
+                const nextAttr = parseAttr(nxt)
+                attr.set(nextAttr.key, nextAttr.value)
+                prev = ' ' // make the loop run again
+            }
+        }
+        if prev == '/'
+        {
+            inlined = true
+        }
+        else if !isProcInstr & prev != '>'
+        {
+            err("Missing >")
+        }
+        
+        if isProcInstr
+        {
+            expect('>')
+            return new XmlProcInstr(name, attr)
+        }
+        
+        // --- after header ---
+        if inlined
+        {
+            // close and return
+            expect('>')
+            return new XmlNode(name)
+        }
+        else
+        {
+            // parse children or content
+            const row = new List()
+            var currValNode = "", ret = false
+            while stream.hasNext()
+            {
+                var nxt = read()
+                
+                if nxt == '<'
+                {
+                    nxt = expectNext()
+                    if nxt == '/'
+                    {
+                        row.add(unescape(currValNode))
+                        foreach c in name { expect(c) }
+                        expect('>')
+                        const node = new XmlNode(name, attr, row)
+                        ret = true return node
+                    }
+                    else
+                    {
+                        row.add(unescape(currValNode))
+                        row.add(parseNode(nxt))
+                        currValNode = ""
+                    }
+                }
+                else
+                {
+                    currValNode += nxt
+                }
+            }
+            if !ret
+            {err("Missing closing tag for '" + name + "'")}
+        }
+    }
+    
+    func parseAttr(first?)
+    {
+        const name = unescape((first ?? expectNext()) + readUntil('='))
+        expect('"')
+        const value = unescape(readUntil('"'))
+        return new KeyValuePair(name, value)
+    }
+    
+    func parseComment(startFromI2)
+    {
+        // note: XML format rules does not alloe comments inside comments
+        if !startFromI2
+        {
+            expect('<')
+            expect('!')
+        }
+        expect('-')
+        expect('-')
+        
+        var text = "", prevWasMinus = false
+        
+        while read() != null
+        {
+            if prev == '-'
+            {
+                if prevWasMinus
+                {
+                    expect('>')
+                    break
+                }
+                prevWasMinus = true
+            }
+            else
+            {
+                prevWasMinus = false
+                text += prev
+            }
+        }
+        
+        return new XmlComment(text)
+    }
+    
+    func err(msg)
+    {
+        throw new Exception("INVALID_FORMAT", msg + " (Line: " + line + ", Col: " + col + ").")
+    }
+    
+    func expectNext() =>
+        next() ?? err("Unexpected end of source.")
+    
+    // returns the next non-white-space char, or null if end of source reached
+    func next()
+    {
+        while stream.hasNext()
+        {
+            const chr = read()
+            if !isWhiteSpc(chr) { return chr }
+        }
+        return null
+    }
+    
+    func read()
+    {
+        prev = stream.next()
+        if prev == '\n'
+        {
+            line++
+            col = 1
+        }
+        else
+            { col++ }
+        return prev
+    }
+    
+    // expects the given char. if any other char is received or if the
+    // end of source is reached, throws
+    func expect(chr?)
+    {
+        const n = next()
+        if n != chr
+        {
+            err((chr ?? "End of file") + " was expected, but " + (n ?? "end of file") + " received.")
+        }
+    }
+    
+    func readUntil(chr?)
+    {
+        var str = ""
+        while stream.hasNext()
+        {
+            const c = read()
+            if chr is Array ? chr.contains(c) : (c == chr) { return str }
+            str += c
+        }
+        if chr is Array ? !chr.contains(null) : (chr != null)
+        {
+            err(chr is Array ? "Unexpected end of file" : ("Missing " + chr))
+        }
+        return str
+    }
+    
+    static func isWhiteSpc(chr) => chr == ' ' | chr == '\n' | chr == '\t'
+    
+    static func unescape(str) => str
         .replace("&lt;", "<")
         .replace("&gt;", ">")
         .replace("&quot;", "\"")
         .replace("&apos;", "'")
+        .replace("&amp;", "&")
 }
 
-func overridesSerialization(obj?)
+class XmlProcInstr (name, const attr)
 {
-    if obj == null { return false }
-           
-    foreach attr in getAttr(Type.get(obj))
+    constructor(...)
     {
-        if attr.type == <OverridesXmlSerialization>
+        validateName()
+    }
+    
+    constructor(this.name)
+    {
+        validateName()
+        attr = new Dictionary()
+    }
+    
+    func validateName()
+    {
+        if name.length() == 0
+            { throw new Exception("") }
+        foreach c in name
         {
-            return true
+            if c < 'a' | c > 'z'
+                { throw new Exception("A processor instruction's name may only contain lower case letters.") }
         }
     }
     
-    return false
+    @Translator
+    func toString()
+    {
+        var str = "<?" + name
+        
+        foreach key in attr.keys : counter c
+        {
+            str +=
+                " " +
+                XmlNode.escape(key) +
+                "=\"" +
+                XmlNode.escape(attr.values.get(c)) +
+                "\""
+        }
+        
+        return str + "?>"
+    }
 }
 
-func getXmlString(val?, depth)
+class XmlComment (text)
 {
-    if val is object
-            {
-                var xmlStr
-                if overridesSerialization(val)
-                {
-                    xmlStr = val.toXmlString(depth)
-                }
-                else
-                {
-                    const obj = XmlObject.fromObject(val)
-                    xmlStr = obj.toXmlString(depth)
-                }
-                return xmlStr
-            }
-            else
-            {
-                return escapeForXml(stringOf(val))
-            }
+    constructor(...);
+    
+    @Translator
+    func toString() => "<!--" + text + "-->"
 }
 
-func getValueType(value?)
+class XmlDoc (const row)
 {
-    var valtype
-    if value == null { valtype = "null" }
-            else { if value is bool { valtype = "bool" }
-            else { if value is number { valtype = "number" }
-            else { if value is char { valtype = "char" }
-            else { if value is function { valtype = "function" }
-            else { if value is object { valtype = (overridesSerialization(value) ? Type.get(value).fullName : "object") } } } } } }
-    return valtype
+    constructor(row)
+    {
+        if row is Array
+        {
+            if row.ofType(<XmlNode>).length() != 1
+            {
+                throw new Exception("an XML document must contain exactly 1 node (discluding processor instructions).")
+            }
+            this.row = row
+        }
+        else if row is XmlNode
+        {
+            const docSettings = new XmlProcInstr("xml")
+            docSettings.attr.set("version", "1.0")
+            docSettings.attr.set("encoding", "utf8")
+            this.row = [docSettings, row]
+        }
+        else
+        {
+            throw new Exception("XmlNode or std::Array were expected.")
+        }
+    }
+    
+    func getContent()
+    {
+        return row.first(func(i) => i is XmlNode)
+    }
+    
+    func toString()
+    {
+        var str = ""
+        foreach x in row
+        {
+            str += x + "\n"
+        }
+        return str
+    }
 }

@@ -1,4 +1,4 @@
-﻿using Exp.Spans;
+using Exp.Spans;
 using Microsoft.VisualBasic;
 using System;
 
@@ -23,22 +23,27 @@ static partial class Impl
     [Overrides(NS, null)]
     public static IValue Invoke(Instance _, IValue?[] args)
     {
+        ClassDefSpan? cls = null;
         Instance? input = null;
         string? fname = null;
         FuncDefSpan? f = null;
         Instance? _args = null;
-
+        
+        // get type
+        cls = args[0].Inst.GetClassFromExpTypeInstanceOrThrowRuntime(Interpreter.Activated);
+       
         // get instance
-        input = args[0]!.Inst;
+        input = args[2]?.Inst;
 
         // get func name
         fname = args[1]!.ToString();
 
         // get args
-        _args = args[2]!.Inst;
+        _args = args[3]!.Inst;
 
         // get func def
-        f = input.def.Funcs.FirstOrDefault(func1 => func1.Name == fname && func1.Args.Length == _args.ArrayValues.Length && func1 is not ConstructorDefSpan);
+        IEnumerable<FuncDefSpan> src = cls is null ? Interpreter.Activated.definations.OfType<FuncDefSpan>() : (IEnumerable<FuncDefSpan>)cls.Funcs;
+        f = src.FirstOrDefault(func1 => func1.Name == fname && func1.Args.Length == _args.ArrayValues.Length && func1 is not ConstructorDefSpan);
         if (f == null)
             Interpreter.Activated.ThrowRuntime($"function '{fname}(..{_args.ArrayValues.Length})' was not found.", RuntimeException.NOT_FOUND);
 

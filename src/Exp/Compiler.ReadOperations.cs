@@ -1,4 +1,4 @@
-﻿using Exp.Operations;
+using Exp.Operations;
 using Exp.Spans;
 using System;
 using System.Collections.Generic;
@@ -27,13 +27,13 @@ public partial class Interpreter
                 if (word is IfConditionSpan @if)
                 {
                     // it's an if condition
-                    var stmt = new IfStatement(@if, ReadReadingOperation(@if.Condition), ReadOperations(@if.InnerSource, @if));
+                    var stmt = new IfStatement(this, @if, ReadReadingOperation(@if.Condition), ReadOperations(@if.InnerSource, @if));
 
                     // check else statement
                     if (Spoiler() is ElseConditionSpan)
                     {
                         var els = Read<ElseConditionSpan>();
-                        stmt.Else = new ElseStatement(els, ReadOperations(els.InnerSource, els));
+                        stmt.Else = new ElseStatement(this, els, ReadOperations(els.InnerSource, els));
                     }
 
                     operation = stmt;
@@ -162,9 +162,9 @@ public partial class Interpreter
 
                     operation = new TryStatement(trw, tryBody, catc, finaly);
                 }
-                else if (word is ThrowWordSpan)
+                else if (word is ThrowWordSpan throwWord)
                 {
-                    operation = new Throwing(ReadReadingOperation());
+                    operation = new Throwing(ReadReadingOperation(), throwWord);
                 }
                 else if (word is SetWordSpan or ConstWordSpan)
                 {
@@ -336,7 +336,7 @@ public partial class Interpreter
         if (ops == null || ops.Length == 0 || ops.Length >= 2)
         {
             Error($"1 Operation was expected, but {ops?.Length ?? 0} read.");
-            return new Throwing(ConstValueReadingOperation.For("Execution reached a syntax error.".ToExpString()));
+            return new Throwing(ConstValueReadingOperation.For("Execution reached a syntax error.".ToExpString()), spans?.LastOrDefault());
         }
         return ops[0];
     }

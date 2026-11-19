@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Exp.Spans;
 using static Exp.Interpreter;
 
@@ -48,6 +48,9 @@ static partial class Impl
 
     private static void ThrowOutOfRange(Interpreter interpreter, int i, int length)
     {
-        interpreter.ThrowRuntime($"Index [{i}] is out of range. Must be 0 <= index < {length}.", RuntimeException.INDEX_OUT_OF_RANGE);
+        string err = length == 0 ?
+            "The array was empty." :
+            $"Must be 0 <= index < {length}.";
+        interpreter.ThrowRuntime($"Index [{i}] is out of range. {err}" , RuntimeException.INDEX_OUT_OF_RANGE);
     }
 }
