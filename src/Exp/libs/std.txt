@@ -1,10 +1,16 @@
-﻿namespace std:
+namespace std:
 
 @AllowFor(classes: true, props: false, funcs: false, ctors: false, attr: false)
-@ExpectFunc("it_hasNext", 0, sttc: false)
-@ExpectFunc("it_next"   , 0, sttc: false)
-@ExpectFunc("it_reset"  , 0, sttc: false)
+@ExpectFunc("getValue", 0, sttc: false)
+@ExpectFunc("next"    , 0, sttc: false)
+attribute Iterator()
+
+@AllowFor(classes: true, props: false, funcs: false, ctors: false, attr: false)
+@ExpectFunc("getIterator", 0, sttc: false)
 attribute Iterable()
+
+@AllowFor(classes: false, props: false, funcs: true, ctors: true, attr: false)
+attribute StackTraceHidden()
 
 enum StaticRequirements
 {
@@ -13,6 +19,8 @@ enum StaticRequirements
     doNotRequire
 }
 
+func q(col) { return new linq::Query(col) }
+
 @Iterable
 //@xml::OverridesXmlSerialization
 class Array (const csType private, iteratorIndex) 
@@ -20,15 +28,30 @@ class Array (const csType private, iteratorIndex)
     @ExternImpl
     constructor(len) {}
     
+    @StackTraceHidden
     @ExternImpl
     func set(i, operator, val?) {}
     
+    @StackTraceHidden
     @ExternImpl
     func get(i) {}
     
     func length() 
     {
         return lenof this
+    }
+    
+    func shiftAndInsert(i, val?)
+    {
+        const len = lenof this
+        var j
+        for (j = 0; j < i; j++)
+            { this[j] = this[j + 1] }
+        
+        for (j++; j < len; j++)
+            { this[j] = this[j - 1] }
+            
+        this[i] = val
     }
     
     func map(mod) 
@@ -80,6 +103,15 @@ class Array (const csType private, iteratorIndex)
             return null
         }
         return this[0]
+    }
+    
+    func contains(val?)
+    {
+        foreach x in this
+        {
+            if x == val { return true }
+        }
+        return false
     }
     
     func findAll(cond) 
@@ -154,47 +186,32 @@ class Array (const csType private, iteratorIndex)
             action(item, i)
         }
     }
-    
-    /*
-    func toXmlString(depth)
-    {
-        var xml = ""
-        
-        foreach val in this
-        {
-            const obj = new xml::XmlObject("value")
-            obj.attr.set("type", xml::getValueType(val))
-            obj.values.add(xml::getXmlString(val, depth))
-            
-            xml += obj + "\n"
-        }
-        
-        return xml
-    }
-    
-    static func fromXmlString(xml)
-    {
-    
-    }
-    */
 
-    // @Iterator implementation.
-    // note that these functions won't actually be used when iterating over an array with foreach loop,
-    // because the interpreter would override this with a normal C# foreach loop.
-    // but the functions should work anyway, for case someone would manually call them.
-    func it_hasNext() => iteratorIndex < length() - 1
-
-    func it_next()
-    {
-        const item = this[iteratorIndex]
-        iteratorIndex++
-        return item
-    }
-
-    func it_reset() { iteratorIndex = 0 }
+    // @Iterable implementation.
+    // note that the interpreter actually optimizes the array iterations,
+    // but we still want the iterator logic to work as expected so users
+    // can use LINQ for example, so we will implement here
+    // ArrayIterator but it won't actually be used in foreach loops.
+    func getIterator() => new ArrayIterator(this)
 }
 
-//@xml::OverridesXmlSerialization
+@Iterator
+class ArrayIterator (arr, i)
+{
+    constructor(this.arr)
+    {
+        i = 0 - 1
+    }
+    
+    func next()
+    {
+        i++
+        return i < lenof arr
+    }
+    
+    func getValue() => arr[i]
+}
+
 class string (const chars private basearray) 
 {
     @Equalizer
@@ -367,12 +384,17 @@ class string (const chars private basearray)
 
         return result * sign
     }
+}
+
+class StringComparer ()
+{
+    private constructor() {}
     
-    /*
-    func toXmlString(depth) => xml::escapeForXml(this)
+    @ExternImpl
+    static func ordinal(a?, b?) {}
     
-    static func fromXmlString(xml) => xml::unescapeXml(xml)
-    */
+    @ExternImpl
+    static func ordinalIgnoreCase(a?, b?) {}
 }
 
 class Exception (msg, type, const source, const line, const col, data)
@@ -387,11 +409,11 @@ class Exception (msg, type, const source, const line, const col, data)
     static const DIVIDE_BY_ZERO          = "DIVIDE_BY_ZERO"
     static const STACK_OVERFLOW          = "STACK_OVERFLOW"
     
-    constructor (this.type, this.msg);
+    constructor (this.type?, this.msg);
 
     constructor(this.msg);
 
-    constructor(this.type, this.msg, this.data);
+    constructor(this.type?, this.msg, this.data?);
 }
 
 class ExternTypeValue ()
@@ -406,14 +428,40 @@ class ExternTypeValue ()
     }
 }
 
+#If XMLLIB
+@OverridesXmlSerialization
+#EndIf
 class Type (const name, const fullName, const def private)
 {
+    static const all // initialized by the interpreter
+    
     private constructor() {}
 
     @ExternImpl
     static func get(obj) {}
+    
+#If XMLLIB
+    func toXmlNode()
+    {
+        const node = new XmlNode("std::Type")
+        node.attr.set("fullName", fullName)
+        return node
+    }
+    
+    static func fromXmlNode(node)
+    {
+        const fullName = node.attr.get("fullName")
+        const type = all.firstOrNull(func(t) => t.fullName == fullName)
+        if type == null
+        {
+            throw new Exception(Exception.NOT_FOUND, "The type " + fullName + " is not declared.")
+        }
+        return type
+    }
+#EndIf
 }
 
+@Iterable
 class List (array private basearray) 
 {
     constructor (arr) 
@@ -426,6 +474,8 @@ class List (array private basearray)
         array = []
     }
     
+    func getIterator() => array.getIterator()
+    
     func add(val?) 
     {
         const n = new Array(array.length() + 1)
@@ -437,17 +487,61 @@ class List (array private basearray)
         array = n
     }
     
-    func remove(index) 
+    func addRange(arr)
     {
-        const n = new Array (array.length() - 1) 
-        const len = array.length() 
-        for (var i = 0; i < index; i++)
+        const n = new Array(array.length() + arr.length())
+        const oldCount = count()
+        for (var i = 0; i < oldCount; i++)
         {
             n[i] = array[i]
         }
-        for (var i = index + 1 ; i < len ; i++)
+        foreach x in arr : counter c
         {
-            n[i - 1] = array[i]
+            n[oldCount + c] = x
+        }
+        array = n
+    }
+    
+    func insert(i, val?)
+    {
+        insertRange(i, [val])
+    }
+    
+    func insertRange(i, range)
+    {
+        const oldLen = lenof array, rangeLen = q(range).count()
+        const newLen = oldLen + rangeLen
+        if i < 0 | i > oldLen
+        {
+            throw new Exception(
+                Exception.INDEX_OUT_OF_RANGE,
+                "Argument 'i' was " + i + " while the valid range was 0-" + oldLen)
+        }
+        
+        const n = new Array(newLen)
+        for (var j = 0; j < i; j++)
+            { n[j] = array[j] }
+        foreach x in range : counter c
+            { n[i + c] = x }
+        for (var j = i + rangeLen; j < newLen; j++)
+            { n[j] = array[j - rangeLen] }
+            
+        array = n
+    }
+    
+    func removeAt(index) 
+    {
+        const len = array.length() 
+        const n = new Array(len - 1)
+        var i
+        
+        for (i = 0; i < index; i++)
+        {
+            n[i] = array[i]
+        }
+        for (; i < len - 1; i++)
+        {
+            n[i] = array[i + 1]
         }
         
         array = n
@@ -460,10 +554,6 @@ class List (array private basearray)
     
     func get(i) 
     {
-        if i is not number | i > count() - 1 | i < 0
-        {
-            throw new Exception("Argument out of range.") 
-        }
         return array[i] 
     }
 
@@ -535,6 +625,7 @@ class KeyValuePair (key, @NullableArg value)
     constructor(...);
 }
 
+@Iterable
 class Dictionary (const keys private, const values private basearray)
 {
     constructor()
@@ -542,6 +633,8 @@ class Dictionary (const keys private, const values private basearray)
         keys = new List()
         values = new List()
     }
+    
+    func getIterator() => values.getIterator()
 
     func set(key, val?)
     {
@@ -598,6 +691,13 @@ class Dictionary (const keys private, const values private basearray)
     }
 }
 
+enum Primitive
+{
+    _bool,
+    _char,
+    _number,
+    _func
+}
 
 class Date (year, month, day, hour, minute, sec, millis, nanos)
 {

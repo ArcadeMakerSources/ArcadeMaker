@@ -1,11 +1,13 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using Exp.Spans;
 
 namespace Exp;
 
-public class Instance : IVarSystem, IValue, IExpItem
+public class Instance : IVarSystem, IValue, IExpItem, IEnumerable<IValue>
 {
     public static string ItemName { get; } = "object";
 
@@ -37,29 +39,53 @@ public class Instance : IVarSystem, IValue, IExpItem
         }
     }
 
-    /// <summary>
-    /// Returns the array on which a foreach loop would iterate, or throws a runtime exception if the <see cref="Instance"/> is not an array and hasn't a basearray property.
-    /// </summary>
-    /// <returns>The array on which a foreach loop would iterate.</returns>
-    internal Instance GetBasearray(bool orNull = true)
+    internal bool GetBasearray([NotNullWhen(true)] out Instance? basearr)
     {
         if (IsArray)
-            return this;
-
-        var basearr = def.Props.FirstOrDefault(p => p.BaseArray);
-        if (basearr == null)
         {
-            if (orNull)
-                return null;
-            Interpreter.Activated.ThrowRuntime($"{((IDefination)def).FullName} does not contain a property which is marked as basearray.", RuntimeException.INVALID_OPERATION);
+            basearr = this;
+            return true;
         }
-        Instance val = Vars.FirstOrDefault(v => v.Name == basearr.Name)?.Value?.Inst;
-        if (val == null)
-            Interpreter.Activated.ThrowRuntime($"Value of {basearr.Name} was null.", RuntimeException.INVALID_OPERATION);
-        else if (val == this)
-            Interpreter.Activated.ThrowRuntime($"Value of {basearr.Name} was a reference to the same instance in which it declared.", RuntimeException.INVALID_OPERATION);
 
-        return val.GetBasearray();
+        var basearrProp = def.Props.FirstOrDefault(p => p.BaseArray);
+        if (basearrProp == null)
+        {
+            basearr = null;
+            return false;
+        }
+        basearr = Vars.FirstOrDefault(v => v.Name == basearrProp.Name)?.Value?.Inst;
+        if (basearr == null)
+            Interpreter.Activated.ThrowRuntime($"Value of {def.GetExpTypeName(false)}.{basearrProp.Name} was null.", RuntimeException.INVALID_OPERATION);
+        else if (basearr == this)
+            Interpreter.Activated.ThrowRuntime($"Value of {def.GetExpTypeName(false)}.{basearrProp.Name} was a reference to the same instance in which it was declared.", RuntimeException.INVALID_OPERATION);
+
+        return true;
+    }
+    
+    internal static void StartIteration(ForEachLoopSpan loopSpan)
+    {
+        _enumeratorReqLoop = loopSpan;
+    }
+    
+    private static ForEachLoopSpan? _enumeratorReqLoop;
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    public virtual IEnumerator<IValue> GetEnumerator()
+    {
+        var loopSpan = _enumeratorReqLoop;
+        _enumeratorReqLoop = null;
+        
+        var inter = Interpreter.Activated;
+        
+        if (!def.HasTag(AttributeDefSpan.IterableAttr))
+        {
+            if (GetBasearray(out var basearr))
+                return basearr.GetEnumerator();
+            inter.ThrowRuntime("An attempt to iterate over a non-iterable object. In order to execute a foreach loop on an instance, mark its class as @Iterable.", RuntimeException.INVALID_OPERATION);
+        }
+        
+        var getIter = def.Funcs.First(f => f is { Name: "getIterator", Args.Length: 0, Static: false });
+        var iterator = inter.FuncCall(this, getIter, null, out bool _, [], loopSpan).Inst;
+        return new ForEachLoopSpan.Enumerator(inter, iterator, loopSpan);
     }
 
     public override string ToString()
@@ -122,6 +148,8 @@ public class ArrayInstance : Instance
     internal const string ITERATOR_INDEX_PNAME = "iteratorIndex";
     public override bool IsArray => true;
     public override IValue?[] ArrayValues { get; }
+    
+    public override IEnumerator<IValue> GetEnumerator() => (ArrayValues as IEnumerable<IValue>).GetEnumerator();
 }
 
 public class ExternTypeInstance : Instance

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using Exp.Spans;
@@ -48,7 +48,7 @@ public partial class Interpreter
                 //value = new ReadingOperation(new FuncPntr(func, null));
                 // this way we get FuncPntr with Instance property set:
                 value = GetPointingOrFuncCallForLocalFunc(func);
-                
+
                 // functions are created with Static = true by default
                 if (func.IsDeclaredInsideInstanceFunc(out var _))
                     func.Static = false;
@@ -82,7 +82,7 @@ public partial class Interpreter
                 if (init.DefName == null)
                     Error("Class name was expected.", init);
                 else if (init.DefName.Class != null)
-                    value = new InitOperation(init.DefName.Class, ReadParamListOps());
+                    value = new InitOperation(init.DefName.Class, ReadParamListOps(), init);
                 else if (init.DefName.Extern != null)
                     value = new ExternTypeInitOperation(init.DefName.Extern, ReadParamListOps());
                 else if (init.DefName.Defination == null)
@@ -101,7 +101,7 @@ public partial class Interpreter
                 {
                     if (!allowThrow)
                         Error("Throwing is not allowed where a value is expected unless it's a boolean selection ('?') or the right side of a '??' symbol.");
-                    value = new Throwing(ReadReadingOperation());
+                    value = new Throwing(ReadReadingOperation(), thr);
                 }
                 else
                 {
@@ -416,6 +416,7 @@ public partial class Interpreter
 
     internal INamedValue? GetNamedValueItem(IVarSystem vs, string name, Span span, bool first, int argsNum, string? nsSpec = null, bool throwIfFoundButItIsNotNamedValue = true)
     {
+        List<FuncDefSpan> funcLs = [];
         if (nsSpec == null)
         {
             // if it's a var
@@ -428,7 +429,6 @@ public partial class Interpreter
             }
 
             // if it's a function
-            var funcLs = new List<FuncDefSpan>();
             if (first)
                 funcLs.AddRange(UsedFuncs(span));
 
@@ -436,16 +436,6 @@ public partial class Interpreter
             {
                 funcLs.AddRange(inst.def.Funcs.Where(f => (!f.Static) || first));
             }
-
-            var matchFuncs = funcLs.Where(f => f.Name == name && (argsNum < 0 || argsNum == f.Args.Length));
-            if (matchFuncs.Count() > 1)
-            {
-                if (argsNum < 0)
-                    ThrowRuntime($"More than 1 functions named '{name}' were found, specify number of parameters.", RuntimeException.INVALID_SYNTAX, span);
-                return matchFuncs.FirstOrDefault(f => f.Args.Length == argsNum) ?? ThrowRuntime<INamedValue>($"No function named '{name}' and taking {argsNum} parameters was found.", RuntimeException.INVALID_SYNTAX, span);
-            }
-            else
-                return matchFuncs.FirstOrDefault();
         }
         else
         {
@@ -453,7 +443,9 @@ public partial class Interpreter
             {
                 if (def.Namespace == nsSpec && def.Name == name)
                 {
-                    if (def is INamedValue result)
+                    if (def is FuncDefSpan func)
+                        funcLs.Add(func);
+                    else if (def is INamedValue result)
                         return result;
                     else if (throwIfFoundButItIsNotNamedValue)
                         ThrowRuntime($"A function or variable was expected, but {def.FullName} read.", RuntimeException.INVALID_SYNTAX, span);
@@ -461,6 +453,18 @@ public partial class Interpreter
                 }
             }
         }
+
+        var matchFuncs = funcLs.Where(f => f.Name == name && (argsNum < 0 || argsNum == f.Args.Length));
+        if (matchFuncs.Count() > 1)
+        {
+            if (argsNum < 0)
+                ThrowRuntime($"More than 1 functions named '{name}' were found, specify number of parameters.", RuntimeException.INVALID_SYNTAX, span);
+            return matchFuncs.FirstOrDefault(f => f.Args.Length == argsNum) ?? ThrowRuntime<INamedValue>($"No function named '{name}' and taking {argsNum} parameters was found.", RuntimeException.INVALID_SYNTAX, span);
+        }
+        else
+            return matchFuncs.FirstOrDefault();
+
+
         return null;
     }
 
@@ -476,7 +480,7 @@ public partial class Interpreter
             isCall = false; // keep it inside the while, or expect a bug in extern class static property set
             var word = firstWord ?? ReadWord();
             firstWord = null;
-            var name = word.FullText;
+            var name = word?.FullText ?? "<<missing name>>";
             string nsSpec = null;
             vs ??= word.GetVS();
             IEnumerable<INamedValue> possibilities = null;
@@ -583,7 +587,7 @@ public partial class Interpreter
 
                         // get the static member
                         INamedValue[]? members = defname?.Class?.Vars.Where(v => v.Name == name).ToArray();
-                        if (members is not { Length: >= 1})
+                        if (members is not { Length: >= 1 })
                             members = defname?.Class?.Funcs.Where(f => f.Static && f.Name == name && (numOfParams == null || f.Args.Length == (argLists.FirstOrDefault()?.Length ?? argsCounter?.Count))).ToArray();
 
                         if (members?.Length >= 2)

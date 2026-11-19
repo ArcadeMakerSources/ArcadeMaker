@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using Exp.Spans;
@@ -859,7 +859,7 @@ public partial class Interpreter
         return FuncCall(inst, func, context, out isFuncCall, parameters);
     }
 
-    internal IValue FuncCall(Instance? inst, FuncDefSpan func, IContext? useless_delete_it, out bool isFuncCall, IEnumerable<IValue?> parameters)
+    internal IValue FuncCall(Instance? inst, FuncDefSpan func, IContext? useless_delete_it, out bool isFuncCall, IEnumerable<IValue?> parameters, Span? callSpan = null)
     {
         ArgumentNullException.ThrowIfNull(func);
 
@@ -876,7 +876,7 @@ public partial class Interpreter
             if (i < func.ParamVariables.Length)
             {
                 if (func.Args[i].NotNull && param is null)
-                    ThrowRuntime($"Argument '{func.Args[i].Name}' cannot be null.", RuntimeException.ARGUMENT_NULL);
+                    ThrowRuntime($"Argument '{func.Args[i].Name}' of function {func.GetExpTypeName(false)} cannot be null.", RuntimeException.ARGUMENT_NULL);
                 func.ParamVariables[i++].Value = param;
             }
         }
@@ -894,6 +894,12 @@ public partial class Interpreter
         {
             // run func (or handle built-in function)
             RunOps(func.Operations);
+        }
+        catch (RuntimeException ex)
+        {
+            GetLocLine(false, out int line, out int col, out string src, callSpan ?? func);
+            ex.StackTrace.Add(new(func, src, line, col));
+            throw;
         }
         finally
         {
@@ -1145,16 +1151,14 @@ public partial class Interpreter
         RunOps(operations);
         Task.WaitAll(Tasks);
         RunOpsRunning = false;
-        "\n--- RunOps END-----".Println();
+        "\n--- RunOps END ---".Println();
     }
 
     internal bool toReturn;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void RunOps(IOperation[] ops)
     {
-        if (ops == null)
-            _ = 0;
-
-        ArgumentNullException.ThrowIfNull(ops);
+        //System.Diagnostics.Debug.Assert(ops is not null);
 
         Activated = this;
         foreach (var op in ops)
@@ -1166,6 +1170,7 @@ public partial class Interpreter
     }
 
     public IOperation lastOp = null;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void RunOp(IOperation op)
     {
         lastOp = op;

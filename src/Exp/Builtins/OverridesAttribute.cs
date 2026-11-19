@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Exp.Operations;
@@ -71,6 +71,6 @@ class OverridesAttribute(string? ns, string? cls, string? func = null) : Attribu
 
         // if there are still functions without C# implementations, make a build-time error
         foreach (FuncDefSpan func in interpreter.FuncsThatMustBeImplementedExternally)
-            interpreter.Error($"No extern implementation found for function {func.GetExpTypeName(false)}.");
+            interpreter.Error($"No extern implementation found for function {func.GetExpTypeName(false)}.", func);
     }
 }

@@ -1,8 +1,12 @@
-﻿using System;
+using Exp.Operations;
+using Exp.Spans;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Exp.Spans;
+using System.Reflection.Metadata;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Exp;
 
@@ -101,9 +105,9 @@ public static class Extensions
     {
         ArgumentNullException.ThrowIfNull(arr, nameof(arr));
 
-        var objs = new IValue[arr.Length];
-        Array.Copy(arr, objs, arr.Length);
-        return new ArrayInstance(ClassDefSpan.ExpArrayDef, objs);
+        //var objs = new IValue[arr.Length];
+        //Array.Copy(arr, objs, arr.Length);
+        return new ArrayInstance(ClassDefSpan.ExpArrayDef, arr);
     }
 
     public static Instance ToExpString(this string str)
@@ -308,5 +312,99 @@ public static class Extensions
                      !Filter.Keywords.Contains(name);
 
         return valid;
+    }
+
+    private static void ValidateCount(object[] args, int expected)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        if (args.Length < expected)
+            throw new ArgumentException($"This function takes {expected} arguments.");
+    }
+
+    public static T1 ValidateArguments<T1>(this object[] args)
+    {
+        ValidateCount(args, 1);
+        return (GetArgument<T1>(args, 0));
+    }
+
+    public static (T1, T2) ValidateArguments<T1, T2>(this object[] args)
+    {
+        ValidateCount(args, 2);
+        return (GetArgument<T1>(args, 0), GetArgument<T2>(args, 1));
+    }
+
+    public static (T1, T2, T3) ValidateArguments<T1, T2, T3>(this object[] args)
+    {
+        ValidateCount(args, 3);
+        return (GetArgument<T1>(args, 0), GetArgument<T2>(args, 1), GetArgument<T3>(args, 2));
+    }
+
+    public static (T1, T2, T3, T4) ValidateArguments<T1, T2, T3, T4>(this object[] args)
+    {
+        ValidateCount(args, 4);
+        return (GetArgument<T1>(args, 0), GetArgument<T2>(args, 1), GetArgument<T3>(args, 2), GetArgument<T4>(args, 3));
+    }
+
+    public static (T1, T2, T3, T4, T5) ValidateArguments<T1, T2, T3, T4, T5>(this object[] args)
+    {
+        ValidateCount(args, 5);
+        return (GetArgument<T1>(args, 0), GetArgument<T2>(args, 1), GetArgument<T3>(args, 2), GetArgument<T4>(args, 3), GetArgument<T5>(args, 4));
+    }
+
+    public static (T1, T2, T3, T4, T5, T6) ValidateArguments<T1, T2, T3, T4, T5, T6>(this object[] args)
+    {
+        ValidateCount(args, 6);
+        return (GetArgument<T1>(args, 0), GetArgument<T2>(args, 1), GetArgument<T3>(args, 2), GetArgument<T4>(args, 3), GetArgument<T5>(args, 4), GetArgument<T6>(args, 5));
+    }
+
+    public static (T1, T2, T3, T4, T5, T6, T7) ValidateArguments<T1, T2, T3, T4, T5, T6, T7>(this object[] args)
+    {
+        ValidateCount(args, 7);
+        return (GetArgument<T1>(args, 0), GetArgument<T2>(args, 1), GetArgument<T3>(args, 2), GetArgument<T4>(args, 3), GetArgument<T5>(args, 4), GetArgument<T6>(args, 5), GetArgument<T7>(args, 6));
+    }
+
+    public static (T1, T2, T3, T4, T5, T6, T7, T8) ValidateArguments<T1, T2, T3, T4, T5, T6, T7, T8>(this object[] args)
+    {
+        ValidateCount(args, 8);
+        return (
+            GetArgument<T1>(args, 0), GetArgument<T2>(args, 1), GetArgument<T3>(args, 2), GetArgument<T4>(args, 3),
+            GetArgument<T5>(args, 4), GetArgument<T6>(args, 5), GetArgument<T7>(args, 6), GetArgument<T8>(args, 7)
+        );
+    }
+
+    public static (T1, T2, T3, T4, T5, T6, T7, T8, T9) ValidateArguments<T1, T2, T3, T4, T5, T6, T7, T8, T9>(this object[] args)
+    {
+        ValidateCount(args, 9);
+        return (
+            GetArgument<T1>(args, 0), GetArgument<T2>(args, 1), GetArgument<T3>(args, 2), GetArgument<T4>(args, 3),
+            GetArgument<T5>(args, 4), GetArgument<T6>(args, 5), GetArgument<T7>(args, 6), GetArgument<T8>(args, 7), GetArgument<T9>(args, 8)
+        );
+    }
+
+    public static (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) ValidateArguments<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(this object[] args)
+    {
+        ValidateCount(args, 10);
+        return (
+            GetArgument<T1>(args, 0), GetArgument<T2>(args, 1), GetArgument<T3>(args, 2), GetArgument<T4>(args, 3),
+            GetArgument<T5>(args, 4), GetArgument<T6>(args, 5), GetArgument<T7>(args, 6), GetArgument<T8>(args, 7),
+            GetArgument<T9>(args, 8), GetArgument<T10>(args, 9)
+        );
+    }
+
+    public static void ValidateArguments(this object[] args, params Type[] types)
+    {
+        ArgumentNullException.ThrowIfNull(args, nameof(args));
+        ArgumentNullException.ThrowIfNull(types, nameof(types));
+
+        if (types.Length != args.Length)
+            throw new ArgumentException($"{args.Length} arguments were given, but validation list contains {types.Length} types.");
+
+        int i = 0;
+        foreach (Type type in types)
+        {
+            if (args[i].GetType() != type)
+                throw new ArgumentException($"Argument {i} must be of type {type.FullName}.");
+            i++;
+        }
     }
 }

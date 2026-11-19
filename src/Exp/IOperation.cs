@@ -1,4 +1,4 @@
-﻿using Exp.Spans;
+using Exp.Spans;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -108,7 +108,7 @@ interface ILoopStatement : IOperationWithInnerSource
     ILoopContext LoopContext { get; }
 }
 
-class IfStatement(IfConditionSpan ctx, IReadingOperation cond, IOperation[] innerOps) : IConditionalStatement
+class IfStatement(Interpreter interpreter, IfConditionSpan ctx, IReadingOperation cond, IOperation[] innerOps) : IConditionalStatement
 {
     public IContext Context => ctx;
     public bool IsRunning { get; set; }
@@ -120,21 +120,23 @@ class IfStatement(IfConditionSpan ctx, IReadingOperation cond, IOperation[] inne
     {
         bool? condition = cond.Read()?.Bool;
         if (condition == true)
+            //interpreter.RunOps(InnerOperations);
             foreach (var op in InnerOperations) op.Make();
         else if (condition == false)
             (Else as IOperation)?.Make();
         else
-            Interpreter.Activated.ThrowRuntime($"The result of an \"if\" condition was null.", RuntimeException.INVALID_OPERATION, ctx);
+            interpreter.ThrowRuntime($"The result of an \"if\" condition was null.", RuntimeException.INVALID_OPERATION, ctx);
     }
 }
 
-class ElseStatement(ElseConditionSpan ctx, IOperation[] innerOps) : IOperationWithInnerSource
+class ElseStatement(Interpreter interpreter, ElseConditionSpan ctx, IOperation[] innerOps) : IOperationWithInnerSource
 {
     public IContext Context => ctx;
     public bool IsRunning { get; set; }
     public IOperation[] InnerOperations => innerOps;
     public void Run()
     {
+        //interpreter.RunOps(InnerOperations);
         foreach (var op in InnerOperations) op.Make();
     }
 }
@@ -237,77 +239,37 @@ class ForeachStatement(ForEachLoopSpan ctx, Variable var, IReadingOperation read
     public ILoopContext LoopContext => ctx ?? throw new ArgumentNullException();
     public void Run()
     {
+        var inter = Interpreter.Activated;
         int index = 0;
         IValue counterNum = 0d.ToExp();
         counter?.SetSkippingConstant(counterNum);
-        var iter = ReadingOperation.Read()?.Inst;
-        if (iter?.GetBasearray() is ArrayInstance array)
+        var inst =
+            ReadingOperation.Read()?.Inst ??
+            inter.ThrowRuntime<Instance>("An attempt to iterate over null.", RuntimeException.NULL_REFERENCE, ctx);
+        Instance.StartIteration(ctx);
+        foreach (var item in inst)
         {
-            Variable iteratorIndexProperty = array.Vars.First(v => v.Name == ArrayInstance.ITERATOR_INDEX_PNAME);
-            foreach (var item in array.ArrayValues)
+            Var.SetSkippingConstant(item);
+            foreach (var op in InnerOperations)
             {
-                Var.SetSkippingConstant(item);
-                foreach (var op in InnerOperations)
+                op.Make();
+                if (LoopContext.Break)
                 {
-                    op.Make();
-                    if (LoopContext.Break)
-                    {
-                        LoopContext.Break = false;
-                        goto break_fe;
-                    }
-                    if (LoopContext.Continue)
-                    {
-                        LoopContext.Continue = false;
-                        goto continue_fe;
-                    }
+                    LoopContext.Break = false;
+                    goto break_fe;
                 }
-
-            continue_fe:
-                counterNum = (++index).ToExp();
-                counter?.SetSkippingConstant(counterNum);
-                iteratorIndexProperty.Value = counterNum;
-            }
-        break_fe:;
-        }
-        else if (iter?.def.HasTag(AttributeDefSpan.IterableAttr) == true)
-        {
-            var hasNextFunc = iter.def.Funcs.First(f => f.Name == ForEachLoopSpan.IterableFunc_HasNext);
-            var nextFunc = iter.def.Funcs.First(f => f.Name == ForEachLoopSpan.IterableFunc_Next);
-            var resetFunc = iter.def.Funcs.First(f => f.Name == ForEachLoopSpan.IterableFunc_Reset);
-
-            Interpreter.Activated.FuncCall(iter, resetFunc, null, out bool _, []);
-            while (Interpreter.Activated.FuncCall(iter, hasNextFunc, null, out bool _, [])?.Bool == true)
-            {
-                Var.SetSkippingConstant(Interpreter.Activated.FuncCall(iter, nextFunc, null, out bool _, []));
-                foreach (var op in InnerOperations)
+                if (LoopContext.Continue)
                 {
-                    op.Make();
-                    if (LoopContext.Break)
-                    {
-                        LoopContext.Break = false;
-                        goto break_fe;
-                    }
-                    if (LoopContext.Continue)
-                    {
-                        LoopContext.Continue = false;
-                        goto continue_fe;
-                    }
-                }
-
-            continue_fe:
-                if (counter != null)
-                {
-                    counterNum = (counterNum.Number + 1).ToExp();
-                    counter.SetSkippingConstant(counterNum);
+                    LoopContext.Continue = false;
+                    goto continue_fe;
                 }
             }
+
+        continue_fe:
+            counterNum = (++index).ToExp();
+            counter?.SetSkippingConstant(counterNum);
+        }
         break_fe:;
-        }
-        else
-        {
-            string err = iter == null ? "The object to iterate over was null" : $"The object to iterate over was not an array, basearray-setter or an instance of a class containg a tag of attribute '{AttributeDefSpan.IterableAttr.GetExpTypeName(false)}', but it was of type '{Extensions.GetExpTypeName(iter, false)}'";
-            Interpreter.Activated.ThrowRuntime($"Foreach loop failed: {err}.", RuntimeException.INVALID_OPERATION, ctx);
-        }
     }
 }
 
@@ -415,6 +377,8 @@ class ReturnStatement(FuncDefSpan func, IReadingOperation readingOperation, Retu
         Span span = rword;
         while (span != null)
         {
+            if (span is FuncDefSpan)
+                break;
             if (span is ILoopContext loopctx)
             {
                 loopctx.Break = true;
@@ -497,11 +461,14 @@ class InitOperation : IReadingOperation
     internal ClassDefSpan Def;
     internal IReadingOperation[] Args;
     internal ConstructorDefSpan? Constructor { get; }
-    internal InitOperation(ClassDefSpan def, IReadingOperation[] args)
+    private Span? _newWord;
+    internal InitOperation(ClassDefSpan def, IReadingOperation[] args, Span? newWord = null)
     {
         this.Def = def ?? throw new ArgumentNullException(nameof(def));
         this.Args = args ?? throw new ArgumentNullException(nameof(args));
-
+        
+        _newWord = newWord;
+        
         // find the constructor with the given num of arguments
         var ctors = def.Funcs.Where(f => !f.Static && f.Args.Length == args.Length && f is ConstructorDefSpan).ToArray();
         if (ctors.Length == 0 && (def.Funcs.OfType<ConstructorDefSpan>().Any(ctor => !ctor.Static) || args.Length >= 1))
@@ -530,7 +497,7 @@ class InitOperation : IReadingOperation
         Instance inst;
         if (Constructor?.OverridesInit == true)
         {
-            if (Interpreter.Activated.FuncCall(null, Constructor, null, out bool _, Args.Select(a => a.Read())) is not Instance init || init.def != Def)
+            if (Interpreter.Activated.FuncCall(null, Constructor, null, out bool _, Args.Select(a => a.Read()), _newWord) is not Instance init || init.def != Def)
             {
                 Interpreter.Activated.ThrowRuntime($"Constructor did not return an instance of its class ({Def.GetExpTypeName(false)}).", RuntimeException.EXTERN_OPERATION_FAILED);
                 throw null;
@@ -550,7 +517,7 @@ class InitOperation : IReadingOperation
                 inst = new Instance(Def);
 
             if (Constructor != null)
-                Interpreter.Activated.FuncCall(inst, Constructor, null, out bool _, Args.Select(a => a.Read()));
+                Interpreter.Activated.FuncCall(inst, Constructor, null, out bool _, Args.Select(a => a.Read()), _newWord);
         }
 
         return inst;
@@ -665,7 +632,7 @@ class FinallyStatement(IOperation[] innerOps, FinallyWordSpan ctx) : IOperationW
     }
 }
 
-class Throwing(IReadingOperation exread) : IOperation, IReadingOperation
+class Throwing(IReadingOperation exread, Span? throwWord) : IOperation, IReadingOperation
 {
     public void Make()
     {
@@ -681,7 +648,7 @@ class Throwing(IReadingOperation exread) : IOperation, IReadingOperation
         if (ex.def != ClassDefSpan.ExpExceptionDef)
             Interpreter.Activated.ThrowRuntime($"Only instances of type {ClassDefSpan.ExpExceptionDef.GetExpTypeName(false)} can be thrown, but the given value was of type {ex.def.GetExpTypeName(false)}.", RuntimeException.INVALID_ARGUMENT);
 
-        Interpreter.Activated.ThrowRuntime(ex);
+        Interpreter.Activated.ThrowRuntime(ex, throwWord);
         throw null;
     }
 }
@@ -862,7 +829,7 @@ class PointingOrFuncCall(bool isOperationButNotReadingOperation, string name, IE
             foreach (var ls in argLists)
             {
                 instance ??= func == FuncDefSpan.ExternInvoker || func == FuncDefSpan.ExternPropGetSet ? null : (first ? Interpreter.FindParentVarSystem<Instance>(vs) : VS as Instance);
-                val = Interpreter.Activated.FuncCall(instance, func!, null, out bool _, ls.Map(a => a?.Read()));
+                val = Interpreter.Activated.FuncCall(instance, func!, null, out bool _, ls.Select(a => a?.Read()), span);
                 func = val as FuncDefSpan;
             }
             return val;

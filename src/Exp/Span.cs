@@ -1,4 +1,4 @@
-﻿
+
 using Exp.Operations;
 using System;
 using System.Collections.Generic;
@@ -958,6 +958,40 @@ class ForEachLoopSpan : WordSpan, ILoopContext, IKeyword, IExpItem
         get;
         set { field = value; SetContainer(ArrReadText, value); }
     }
+    
+    internal class Enumerator : IEnumerator<IValue>
+    {
+        public Interpreter Interpreter { get; }
+        public Instance ExpIterator { get; }
+        public ForEachLoopSpan? RequestingLoopSpan { get; }
+        
+        private FuncDefSpan _next, _getValue;
+        
+        public Enumerator(Interpreter interpreter, Instance iterator, ForEachLoopSpan? requesting)
+        {
+            this.Interpreter = interpreter;
+            ExpIterator = iterator;
+            RequestingLoopSpan = requesting;
+            
+            if (!iterator.def.HasTag(AttributeDefSpan.IteratorAttr, out var _))
+                interpreter.ThrowRuntime($"getIterator() returned {iterator.def.GetExpTypeName(false)} which is not marked as @Iterator.", RuntimeException.INVALID_OPERATION);
+            
+            _next     = iterator.def.Funcs.First(f => f is { Name: "next", Args.Length: 0, Static: false });
+            _getValue = iterator.def.Funcs.First(f => f is { Name: "getValue", Args.Length: 0, Static: false });
+        }
+        
+        public bool MoveNext() =>
+            Interpreter.FuncCall(ExpIterator, _next, null, out bool _, [], RequestingLoopSpan).Bool;
+            
+        public IValue Current =>
+            Interpreter.FuncCall(ExpIterator, _getValue, null, out bool _, [], RequestingLoopSpan);
+        
+        object System.Collections.IEnumerator.Current => Current;
+        
+        public void Reset() => throw new NotSupportedException();
+            
+        public void Dispose() { }
+    }
 }
 
 class RangeLoopSpan : WordSpan, ILoopContext, IKeyword, IExpItem
@@ -1182,8 +1216,33 @@ public class FuncDefSpan : WordSpan, IContext, IDefination, IKeyword, IClassMemb
         return false;
     }
 
-    string IDefination.FullName => (DefinedAt != null ? (DefinedAt.GetExpTypeName(false) + ".") : (Namespace == null ? "" : (Namespace + NamespaceSpecificationSpan.Symbol))) + Name + (Args.Length == 0 ? "()" : ("(.." + Args.Length + ")"));
+    string IDefination.FullName => FullNameWithoutParamsCount + (Args.Length == 0 ? "()" : ("(.." + Args.Length + ")"));
     public override string ToString() => Keyword + " " + ((IDefination)this).FullName;
+    
+    private string FullNameWithoutParamsCount =>
+        (DefinedAt != null ? (DefinedAt.GetExpTypeName(false) + ".") : (Namespace == null ? "" : (Namespace + NamespaceSpecificationSpan.Symbol))) + Name;
+    
+    public string FullSignature
+    {
+        get
+        {
+            string str = FullNameWithoutParamsCount + "(";
+            int i = -1;
+            foreach (var p in Args)
+            {
+                i++;
+                
+                str += p.Name;
+                if (!p.NotNull)
+                    str += '?';
+                if (i < Args.Length - 1)
+                    str += ", ";
+            }
+            str += ")";
+            
+            return str;
+        }
+    }
 }
 
 public class ConstructorDefSpan : FuncDefSpan, IKeyword, IExpItem
@@ -1447,7 +1506,7 @@ public class ClassDefSpan : WordSpan, IDefination, IVarSystem, IKeyword, ICanSet
             {
                 _expType = new Instance(ExpTypeDef ?? throw new Exception("Trying to get type instance before Type def was collected."));
                 _expType.Vars[0].SetSkippingConstant(Interpreter.StringToExpString(Name));
-                _expType.Vars[1].SetSkippingConstant(Interpreter.StringToExpString(Namespace + NamespaceSpecificationSpan.Symbol + Name));
+                _expType.Vars[1].SetSkippingConstant(Interpreter.StringToExpString(this.GetExpTypeName(false)));
                 _expType.Vars[2].SetSkippingConstant(SpecialValue.From(this));
             }
             return _expType;
@@ -1726,12 +1785,19 @@ class AttributeDefSpan : WordSpan, IDefination, IKeyword, ICanSetAttr, IExpItem
 
     internal static AttributeDefSpan IterableAttr { get; set; } /*= new("Iterable", [])
     { AllowFor_Class = true, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false, AllowFor_Attr = false }*/
+    
+    internal static AttributeDefSpan IteratorAttr { get; set; } /*= new("Iterable", [])
+    { AllowFor_Class = true, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false, AllowFor_Attr = false }*/
+    
+    internal static AttributeDefSpan StackTraceHiddenAttr { get; set; } /*= new("Iterable", [])
+    { AllowFor_Class = true, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = false, AllowFor_Attr = false }*/
+    
     internal static AttributeDefSpan DisplayNameAttr { get; } = new("DisplayName", [new((Interpreter.STD_NAMESPACE, "string"), "name")])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = true, AllowFor_Attr = false, Namespace = Interpreter.STD_NAMESPACE };
 
     internal static AttributeDefSpan NullableArgAttr { get; } = new("NullableArg", [])
     { AllowFor_Class = false, AllowFor_Constructor = false, AllowFor_Func = false, AllowFor_Property = true, AllowFor_Attr = false, Namespace = Interpreter.STD_NAMESPACE };
-
+    
     public static string Keyword { get; } = "attribute";
     public static string ItemName { get; } = "attribute";
     public string Name { get; }
