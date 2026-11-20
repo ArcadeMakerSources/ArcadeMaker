@@ -69,12 +69,33 @@ class VariablesDeclaration(Dictionary<Variable, IReadingOperation> decs) : IOper
     }
 }
 
-interface IOperationWithInnerSource : IOperation
+abstract class OperationWithInnerSource : IOperation
 {
-    IOperation[] InnerOperations { get; }
-    IContext Context { get; }
+    internal IOperation[] InnerOperations { get; init; }
+    internal IContext Context { get; init; }
     bool IsRunning { get; set; }
-    void Run();
+
+    public OperationWithInnerSource(IOperation[] innerSource, IContext context)
+    {
+        this.InnerOperations = innerSource;
+        this.Context = context;
+    }
+
+    internal abstract void Run();
+
+    protected void ExecuteInnerSource()
+    {
+        IContext ctx = Context;
+        foreach (IOperation op in InnerOperations)
+        {
+            op.Make();
+            if (ctx.Break)
+            {
+                ctx.Break = false;
+                break;
+            }
+        }
+    }
 
     void IOperation.Make()
     {
@@ -97,31 +118,27 @@ interface IOperationWithInnerSource : IOperation
     }
 }
 
-interface IConditionalStatement : IOperationWithInnerSource
+interface IConditionalStatement
 {
     ConditionSpan ConditionSpan { get; }
     IReadingOperation ConditionReading { get; }
 }
 
-interface ILoopStatement : IOperationWithInnerSource
+interface ILoopStatement
 {
     ILoopContext LoopContext { get; }
 }
 
-class IfStatement(Interpreter interpreter, IfConditionSpan ctx, IReadingOperation cond, IOperation[] innerOps) : IConditionalStatement
+class IfStatement(Interpreter interpreter, IfConditionSpan ctx, IReadingOperation cond, IOperation[] innerOps) : OperationWithInnerSource(innerOps, ctx), IConditionalStatement
 {
-    public IContext Context => ctx;
-    public bool IsRunning { get; set; }
-    public ConditionSpan ConditionSpan => ctx ?? throw new ArgumentNullException();
-    public IReadingOperation ConditionReading => cond ?? throw new ArgumentNullException();
-    public IOperation[] InnerOperations { get => innerOps; set => innerOps = value; }
-    public ElseStatement Else { get; set; }
-    public void Run()
+    public ConditionSpan ConditionSpan => ctx;
+    public IReadingOperation ConditionReading => cond;
+    public ElseStatement? Else { get; set; }
+    internal override void Run()
     {
         bool? condition = cond.Read()?.Bool;
         if (condition == true)
-            //interpreter.RunOps(InnerOperations);
-            foreach (var op in InnerOperations) op.Make();
+            ExecuteInnerSource();
         else if (condition == false)
             (Else as IOperation)?.Make();
         else
@@ -129,30 +146,23 @@ class IfStatement(Interpreter interpreter, IfConditionSpan ctx, IReadingOperatio
     }
 }
 
-class ElseStatement(Interpreter interpreter, ElseConditionSpan ctx, IOperation[] innerOps) : IOperationWithInnerSource
+class ElseStatement(Interpreter interpreter, ElseConditionSpan ctx, IOperation[] innerOps) : OperationWithInnerSource(innerOps, ctx)
 {
-    public IContext Context => ctx;
-    public bool IsRunning { get; set; }
-    public IOperation[] InnerOperations => innerOps;
-    public void Run()
-    {
-        //interpreter.RunOps(InnerOperations);
-        foreach (var op in InnerOperations) op.Make();
-    }
+    internal override void Run() => ExecuteInnerSource();
 }
 
-class WhileStatement(WhileConditionSpan ctx, IReadingOperation cond, IOperation[] innerOps, Variable counter) : ILoopStatement, IConditionalStatement
+class WhileStatement(WhileConditionSpan ctx, IReadingOperation cond, IOperation[] innerOps, Variable counter) : OperationWithInnerSource(innerOps, ctx), ILoopStatement, IConditionalStatement
 {
-    public IContext Context => ctx;
-    public bool IsRunning { get; set; }
-    public ConditionSpan ConditionSpan => ctx ?? throw new ArgumentNullException();
-    public ILoopContext LoopContext => ctx ?? throw new ArgumentNullException();
-    public IReadingOperation ConditionReading => cond ?? throw new ArgumentNullException();
-    public IOperation[] InnerOperations => innerOps;
-    public void Run()
+    public ConditionSpan ConditionSpan => ctx;
+    public ILoopContext LoopContext => ctx;
+    public IReadingOperation ConditionReading => cond;
+    internal override void Run()
     {
         IValue counterNum = 0d.ToExp();
         counter?.SetSkippingConstant(counterNum);
+
+        WhileConditionSpan LoopContext = ctx; // optimize
+        IOperation[] InnerOperations = base.InnerOperations;
 
         while (cond.Read().Bool)
         {
@@ -182,22 +192,21 @@ class WhileStatement(WhileConditionSpan ctx, IReadingOperation cond, IOperation[
     }
 }
 
-class ForStatement(ForLoopSpan ctx, IOperation init, IReadingOperation cond, IOperation step, IOperation[] innerOps, Variable counter) : ILoopStatement, IConditionalStatement
+class ForStatement(ForLoopSpan ctx, IOperation init, IReadingOperation cond, IOperation step, IOperation[] innerOps, Variable counter) : OperationWithInnerSource(innerOps, ctx), ILoopStatement, IConditionalStatement
 {
-    public IContext Context => ctx;
-    public bool IsRunning { get; set; }
-    public ConditionSpan ConditionSpan => ctx ?? throw new ArgumentNullException();
-    public ILoopContext LoopContext => ctx ?? throw new ArgumentNullException();
+    public ConditionSpan ConditionSpan => ctx;
+    public ILoopContext LoopContext => ctx;
     internal IOperation Init => init;
-    public IReadingOperation ConditionReading => cond ?? throw new ArgumentNullException();
+    public IReadingOperation ConditionReading => cond;
     internal IOperation Step => step;
-    public IOperation[] InnerOperations => innerOps ?? throw new ArgumentNullException();
 
-    public void Run()
+    internal override void Run()
     {
         // set counter
         IValue counterNum = 0d.ToExp();
         counter?.SetSkippingConstant(counterNum);
+
+        ForLoopSpan LoopContext = ctx; // optimizes
 
         for (init?.Make(); cond.Read().Bool; step?.Make())
         {
@@ -229,16 +238,14 @@ class ForStatement(ForLoopSpan ctx, IOperation init, IReadingOperation cond, IOp
 }
 
 
-class ForeachStatement(ForEachLoopSpan ctx, Variable var, IReadingOperation readingOperation, IOperation[] innerOps, Variable counter) : ILoopStatement
+class ForeachStatement(ForEachLoopSpan ctx, Variable var, IReadingOperation readingOperation, IOperation[] innerOps, Variable counter) : OperationWithInnerSource(innerOps, ctx), ILoopStatement
 {
-    public IContext Context => ctx;
-    public bool IsRunning { get; set; }
-    internal Variable Var => var ?? throw new ArgumentNullException();
-    internal IReadingOperation ReadingOperation => readingOperation ?? throw new ArgumentNullException();
-    public IOperation[] InnerOperations => innerOps;
-    public ILoopContext LoopContext => ctx ?? throw new ArgumentNullException();
-    public void Run()
+    internal Variable Var => var;
+    internal IReadingOperation ReadingOperation => readingOperation;
+    public ILoopContext LoopContext => ctx;
+    internal override void Run()
     {
+        var LoopContext = ctx; // optimizes the next references to LoopContext
         var inter = Interpreter.Activated;
         int index = 0;
         IValue counterNum = 0d.ToExp();
@@ -273,15 +280,13 @@ class ForeachStatement(ForEachLoopSpan ctx, Variable var, IReadingOperation read
     }
 }
 
-class RangeLoopStatement(RangeLoopSpan ctx, Variable var, IReadingOperation fromReadingOperation, IReadingOperation toReadingOperation, IOperation[] innerOps, Variable counter) : ILoopStatement
+// TODO: delete this feature
+class RangeLoopStatement(RangeLoopSpan ctx, Variable var, IReadingOperation fromReadingOperation, IReadingOperation toReadingOperation, IOperation[] innerOps, Variable counter) : OperationWithInnerSource(innerOps, ctx), ILoopStatement
 {
-    public IContext Context => ctx;
-    public bool IsRunning { get; set; }
-    internal Variable Var => var ?? throw new ArgumentNullException();
-    internal IReadingOperation ToReadingOperation => toReadingOperation ?? throw new ArgumentNullException();
-    public IOperation[] InnerOperations => innerOps;
+    internal Variable Var => var;
+    internal IReadingOperation ToReadingOperation => toReadingOperation;
     public ILoopContext LoopContext => ctx ?? throw new ArgumentNullException();
-    public void Run()
+    internal override void Run()
     {
         var from = fromReadingOperation?.Read().Number ?? 0d;
         var to = ToReadingOperation.Read().Number;
@@ -289,6 +294,7 @@ class RangeLoopStatement(RangeLoopSpan ctx, Variable var, IReadingOperation from
 
         IValue counterNum = 0d.ToExp();
         counter?.SetSkippingConstant(counterNum);
+        var LoopContext = ctx; // optimizes
         for (var.SetSkippingConstant(from.ToExp()); toIsHigh ? var.Value.Number < to : var.Value.Number > to; var.Value = toIsHigh ? (var.Value.Number + 1).ToExp() : (var.Value.Number - 1).ToExp())
         {
             foreach (var op in InnerOperations)
@@ -329,11 +335,11 @@ class BreakStatement(BreakWordSpan bword, ILoopContext loop) : IOperation
         Span span = bword;
         while (true)
         {
-            if (span is ILoopContext loopctx)
+            if (span is IContext ctx)
             {
-                loopctx.Break = true;
+                ctx.Break = true;
 
-                if (loopctx == this.Loop)
+                if (ctx == this.Loop)
                     return;
             }
             else if (span == null)
@@ -379,15 +385,14 @@ class ReturnStatement(FuncDefSpan func, IReadingOperation readingOperation, Retu
         {
             if (span is FuncDefSpan)
                 break;
-            if (span is ILoopContext loopctx)
+            if (span is IContext ctx)
             {
-                loopctx.Break = true;
+                ctx.Break = true;
             }
             span = span.Container;
         }
         func.Returns = readingOperation.Read();
         func.Return = true;
-        Interpreter.Activated.toReturn = true;
     }
 }
 
@@ -571,18 +576,13 @@ class ExternFuncInvocationOperation(FuncDefSpan invoker, ExternFunc externFunc) 
     }
 }
 
-class TryStatement(TryWordSpan ctx, IOperation[] body, CatchStatement catc, FinallyStatement finaly) : IOperationWithInnerSource
+class TryStatement(TryWordSpan ctx, IOperation[] body, CatchStatement catc, FinallyStatement finaly) : OperationWithInnerSource(body, ctx)
 {
-    public IContext Context => ctx;
-    public bool IsRunning { get; set; }
-    public IOperation[] InnerOperations => body;
-
-    public void Run()
+    internal override void Run()
     {
         try
         {
-            foreach (var op in InnerOperations)
-                op.Make();
+            ExecuteInnerSource();
         }
         catch (RuntimeException ex) //when (catc != null && (catc.When == null || (catc.When.Read() ?? OnWhenReturnsNull()).Bool)) // when returns null handling is not working this way
         {
@@ -607,29 +607,21 @@ class TryStatement(TryWordSpan ctx, IOperation[] body, CatchStatement catc, Fina
     }
 }
 
-class CatchStatement(IOperation[] body, IReadingOperation when, CatchWordSpan word) : IOperationWithInnerSource
+class CatchStatement : OperationWithInnerSource
 {
-    public IContext Context => word;
-    public bool IsRunning { get; set; }
-    public IOperation[] InnerOperations => body;
-    internal IReadingOperation When => when;
-    internal CatchWordSpan Word => word;
-    public void Run()
+    internal IReadingOperation When { get; }
+    internal CatchWordSpan Word => (CatchWordSpan)Context;
+    internal override void Run() => ExecuteInnerSource();
+
+    public CatchStatement(IOperation[] body, IReadingOperation when, CatchWordSpan word) : base(body, word)
     {
-        foreach (var op in InnerOperations)
-            op.Make();
+        this.When = when;
     }
 }
 
-class FinallyStatement(IOperation[] innerOps, FinallyWordSpan ctx) : IOperationWithInnerSource
+class FinallyStatement(IOperation[] innerOps, FinallyWordSpan ctx) : OperationWithInnerSource(innerOps, ctx)
 {
-    public IContext Context => ctx;
-    public bool IsRunning { get; set; }
-    public IOperation[] InnerOperations => innerOps;
-    public void Run()
-    {
-        foreach (var op in InnerOperations) op.Make();
-    }
+    internal override void Run() => ExecuteInnerSource();
 }
 
 class Throwing(IReadingOperation exread, Span? throwWord) : IOperation, IReadingOperation

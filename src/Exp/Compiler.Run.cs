@@ -892,8 +892,15 @@ public partial class Interpreter
 
         try
         {
-            // run func (or handle built-in function)
-            RunOps(func.Operations);
+            // run func
+            foreach (var op in func.Operations)
+            {
+                op.Make();
+                if (func.Return)
+                {
+                    break;
+                }
+            }
         }
         catch (RuntimeException ex)
         {
@@ -904,7 +911,6 @@ public partial class Interpreter
         finally
         {
             // if its recursion, restore previous var values
-            toReturn = false;
             func.Parent = prevParent;
             if (backup != null)
                 funcAsVs.RestoreValues(backup);
@@ -1154,18 +1160,13 @@ public partial class Interpreter
         "\n--- RunOps END ---".Println();
     }
 
-    internal bool toReturn;
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void RunOps(IOperation[] ops)
     {
-        //System.Diagnostics.Debug.Assert(ops is not null);
-
         Activated = this;
         foreach (var op in ops)
         {
             RunOp(op);
-            if (toReturn)
-                break;
         }
     }
 
