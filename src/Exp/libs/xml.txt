@@ -581,7 +581,7 @@ class XmlReader (stream, prev, line, col)
         {
             // parse children or content
             const row = new List()
-            var currValNode = "", ret = false
+            var currValNode = ""
             while stream.hasNext()
             {
                 var nxt = read()
@@ -595,7 +595,7 @@ class XmlReader (stream, prev, line, col)
                         foreach c in name { expect(c) }
                         expect('>')
                         const node = new XmlNode(name, attr, row)
-                        ret = true return node
+                        return node
                     }
                     else
                     {
@@ -609,8 +609,7 @@ class XmlReader (stream, prev, line, col)
                     currValNode += nxt
                 }
             }
-            if !ret
-            {err("Missing closing tag for '" + name + "'")}
+            err("Missing closing tag for '" + name + "'")
         }
     }
     

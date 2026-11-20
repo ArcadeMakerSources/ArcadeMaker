@@ -502,6 +502,7 @@ namespace Exp
             public List<Variable> Vars { get; } = [];
             public Span[] InnerSource { get; set; }
             public IOperation[] Operations { get; set; }
+            public bool Break { get; set; }
         }
 
         private Span[]? ReadInnerSource(bool readOpener = true, bool allowSingleCmd = false, bool singleCmd = false)

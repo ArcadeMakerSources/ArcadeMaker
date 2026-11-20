@@ -750,7 +750,7 @@ public interface IVarSystem
     internal List<Variable> Vars { get; }
     internal IVarSystem Parent { get; set; }
 
-    internal IEnumerable<IValue?> BackupValues() => Vars.Map(v => v.Value);
+    internal IEnumerable<IValue?> BackupValues() => Vars.Select(v => v.Value).ToArray();
     internal void RestoreValues(IEnumerable<IValue> values)
     {
         int i = 0;
@@ -764,12 +764,12 @@ public interface IContext : IVarSystem
     //IVarSystem OuterVarSystem { get; }
     Span[] InnerSource { get; set; }
     IOperation[] Operations { get; set; }
+    bool Break { get; set; } // non-loop contexts can also be breaken - when their loop / func container is breaken
     //IContext Context { get; set; }
 }
 
 interface ILoopContext : IContext
 {
-    bool Break { get; set; }
     bool Continue { get; set; }
     string Counter { get; set; }
     string Id { get; set; }
@@ -784,6 +784,7 @@ public interface IDefination
 
 abstract class ConditionSpan : WordSpan, IContext
 {
+    public bool Break { get; set; }
     public List<Variable> Vars { get; } = [];
     public IVarSystem Parent { get; set; }
     public IVarSystem OuterVarSystem { get; }
@@ -817,6 +818,7 @@ class ElseConditionSpan : WordSpan, IContext, IKeyword, IExpItem
 {
     public static string Keyword { get; } = "else";
     public static string ItemName { get; } = "else statement";
+    public bool Break { get; set; }
     public List<Variable> Vars { get; } = []; public IVarSystem Parent { get; set; }
     public IVarSystem OuterVarSystem { get; }
     public Span[] InnerSource { get; set { field = value; SetContainer(value); } }
@@ -1135,6 +1137,7 @@ public class FuncDefSpan : WordSpan, IContext, IDefination, IKeyword, IClassMemb
     public static string Keyword { get; } = "func";
     public static string ItemName { get; } = "function";
     public string Namespace { get; set; }
+    bool IContext.Break { get; set; }
     public List<Variable> Vars { get; } = [];
     public IVarSystem Parent { get; set; } //= Interpreter.Activated.ParentVs;
     public IVarSystem OuterVarSystem { get; set; }
@@ -1629,6 +1632,7 @@ class TryWordSpan : WordSpan, IContext, IKeyword, IExpItem
     public static string Keyword { get; } = "try";
     public static string ItemName { get; } = "try block";
     public IContext Context { get; set; }
+    public bool Break { get; set; }
     public List<Variable> Vars { get; } = [];
     public IVarSystem Parent
     {
@@ -1660,6 +1664,7 @@ class CatchWordSpan : WordSpan, IContext, IKeyword, IExpItem
     public static string Keyword { get; } = "catch";
     public static string ItemName { get; } = "catch block";
     public IContext Context { get; set; }
+    public bool Break { get; set; }
     public List<Variable> Vars { get; set; } = [];
     public IVarSystem Parent { get; set; }
     public IVarSystem OuterVarSystem { get; }
@@ -1695,6 +1700,7 @@ class FinallyWordSpan : WordSpan, IContext, IKeyword, IExpItem
 {
     public static string Keyword { get; } = "finally";
     public static string ItemName { get; } = "finally block";
+    public bool Break { get; set; }
     public IContext Context { get; set; }
     public List<Variable> Vars { get; set; } = [];
     public IVarSystem Parent { get; set; }
@@ -1726,6 +1732,7 @@ class SectionWordSpan : WordSpan, IContext, IKeyword, IExpItem
 {
     public static string Keyword { get; } = "section";
     public static string ItemName { get; } = "section block";
+    public bool Break { get; set; }
     public IContext Context { get; set; }
     public List<Variable> Vars { get; } = []; public IVarSystem Parent { get; set; }
     public IVarSystem OuterVarSystem { get; }
