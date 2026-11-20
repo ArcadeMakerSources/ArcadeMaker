@@ -3,9 +3,9 @@ The language used by this engine for scripting is a custom language whose protot
 The language is inspired by many others, including JS, C++, and of course C#.  
 It is dynamically typed, even though I’m usually against this kind of programming. However, I decided to make it this way because I wanted the language to be beginner‑friendly, and I have to admit that dynamic typing removes a lot of complexity.
 
-Not because writing the variable type is complex or less readable—I don’t think it is—but because with a dynamically typed architecture you don’t need interfaces, generics, or many other similar constructs.
+Not because writing the variable type is complex or less readable - I don’t think it is - but because with a dynamically typed architecture you don’t need interfaces, generics, or many other similar constructs.
 
-Local variables
+## Local variables
 In Exp, you declare a local variable using the `var` or `const` keywords:
 ```
 var x = 0
