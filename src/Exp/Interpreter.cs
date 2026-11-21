@@ -1159,6 +1159,7 @@ namespace Exp
         
         public string ReadStackTrace(bool clear = true, bool includeHiddens = false)
         {
+            // TODO: spot long recursive cycles and mark them ("The last 3 nodes were repeated 5342 times")
             try
             {
                 System.Text.StringBuilder text = new();
