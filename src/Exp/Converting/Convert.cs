@@ -45,7 +45,7 @@ public static class Convert
             if (property.IsStatic)
                 staticProps.Add(new(name, null, null, null));
             else
-                instanceProps.Add(new(null, false, name, false, false));
+                instanceProps.Add(new(null, false, name, false));
         }
 
         // create the class

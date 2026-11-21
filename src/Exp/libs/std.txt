@@ -1,8 +1,9 @@
 namespace std:
 
-@AllowFor(classes: true, props: false, funcs: false, ctors: false, attr: false)
+@AllowFor(classes: true, props: true, funcs: false, ctors: false, attr: false)
 @ExpectFunc("getValue", 0, sttc: false)
 @ExpectFunc("next"    , 0, sttc: false)
+@OneInClass
 attribute Iterator()
 
 @AllowFor(classes: true, props: false, funcs: false, ctors: false, attr: false)
@@ -22,7 +23,6 @@ enum StaticRequirements
 func q(col) { return new linq::Query(col) }
 
 @Iterable
-//@xml::OverridesXmlSerialization
 class Array (const csType private, iteratorIndex) 
 {
     @ExternImpl
@@ -154,26 +154,6 @@ class Array (const csType private, iteratorIndex)
         return n.toArray()
     }
     
-    /*
-    func orderBy(getNum)
-    {
-        const n = copy()
-        const nums = new List()
-        foreach item in this : counter i
-        {
-            var num = getNum(item)
-            nums.add(num)
-            var ind = i
-            while ind > 0 & nums.get(ind - 1) > num
-            {
-                var x = this[ind - 1]
-                this[ind - 1] = item
-                this[ind] = 
-            }
-        }
-    }
-    */
-    
     func copy() 
     {
         return map(func(item?) => item) 
@@ -212,7 +192,8 @@ class ArrayIterator (arr, i)
     func getValue() => arr[i]
 }
 
-class string (const chars private basearray) 
+@Iterable
+class string (@Iterator const chars private) 
 {
     @Equalizer
     func equals(obj?)
@@ -252,6 +233,8 @@ class string (const chars private basearray)
     { 
         chars = new Array(0)
     }
+
+    func getIterator() => chars.getIterator()
     
     func charAt(index) 
     {
@@ -273,7 +256,8 @@ class string (const chars private basearray)
         return str
     }
 
-    @ReadOnly func remove(start, count)
+    @ReadOnly
+    func remove(start, count)
     {
         var str = ""
 
@@ -288,7 +272,8 @@ class string (const chars private basearray)
         return str
     }
     
-    @ReadOnly func replace(fromm, too)
+    @ReadOnly
+    func replace(fromm, too)
     {
         var str = ""
         for (var i = 0; i < length(); i++)
@@ -462,7 +447,7 @@ class Type (const name, const fullName, const def private)
 }
 
 @Iterable
-class List (array private basearray) 
+class List (@Iterator array private) 
 {
     constructor (arr) 
     {
@@ -626,7 +611,7 @@ class KeyValuePair (key, @NullableArg value)
 }
 
 @Iterable
-class Dictionary (const keys private, const values private basearray)
+class Dictionary (const keys private, @Iterator const values private)
 {
     constructor()
     {

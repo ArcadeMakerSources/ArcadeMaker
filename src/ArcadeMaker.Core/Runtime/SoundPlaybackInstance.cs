@@ -33,8 +33,8 @@ public static class SoundPlaybackInstance
     public const string PanPName    = "pan";
     public const string PitchPName  = "pitch";
     public static ClassDefSpan Class { get; } = new("SoundPlayback", [
-        new(null, false, VolumePName, false, false),
-        new(null, false, PanPName,    false, false),
-        new(null, false, PitchPName,  false, false)
+        new(null, false, VolumePName, false),
+        new(null, false, PanPName,    false),
+        new(null, false, PitchPName,  false)
     ], []);
 }

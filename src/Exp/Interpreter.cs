@@ -36,18 +36,16 @@ namespace Exp
         public string Name { get; }
         internal bool Const { get; }
         internal bool Private { get; }
-        internal bool BaseArray { get; }
         internal Span[] InitValueReadText;
         public Instance[] AttrInfo { get; set; }
         public List<Span[]> TagsCode { get; set; }
         public ClassDefSpan Def { get; set; }
 
-        public Property(ClassDefSpan def, bool cons, string name, bool prvt, bool baseArr, Span[] initVal = null, List<Span[]> tagsCode = null)
+        public Property(ClassDefSpan def, bool cons, string name, bool prvt, Span[] initVal = null, List<Span[]> tagsCode = null)
         {
             this.Const = cons;
             this.Name = name;
             this.Private = prvt;
-            this.BaseArray = baseArr;
             this.InitValueReadText = initVal;
             this.TagsCode = tagsCode ?? [];
             this.Def = def;
@@ -302,10 +300,10 @@ namespace Exp
             FuncDefSpan.ArrayIndexGetter.Name = "array.get";
             FuncDefSpan.ArrayIndexSetter.Name = "array.set";
 
-            // attributes (use ??=)
-            AttributeDefSpan.IterableAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "Iterable");
-            AttributeDefSpan.IteratorAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "Iterator");
-            AttributeDefSpan.StackTraceHiddenAttr ??= Catch<AttributeDefSpan>(STD_NAMESPACE, "StackTraceHidden");
+            // attributes
+            AttributeDefSpan.IterableAttr = Catch<AttributeDefSpan>(STD_NAMESPACE, "Iterable");
+            AttributeDefSpan.IteratorAttr = Catch<AttributeDefSpan>(STD_NAMESPACE, "Iterator");
+            AttributeDefSpan.StackTraceHiddenAttr = Catch<AttributeDefSpan>(STD_NAMESPACE, "StackTraceHidden");
             
             ClassDefSpan CatchClass(string? ns, string name) => Catch<ClassDefSpan>(ns, name);
 
@@ -805,6 +803,8 @@ namespace Exp
                     }
                 }
 
+                taggedItem.AttrInfo[counter++] = CreateAttrInfo(attr, args.ToArray());
+
                 // if it's @AllowFor set AllowFor_X properties
                 if (attr == AttributeDefSpan.AllowFor)
                 {
@@ -846,10 +846,8 @@ namespace Exp
                     }
                 }
 
-                taggedItem.AttrInfo[counter++] = CreateAttrInfo(attr, args.ToArray());
-
                 // if it's @Translator attr, set this func as toString func
-                if (attr == AttributeDefSpan.ToString)
+                else if (attr == AttributeDefSpan.ToString)
                 {
                     if (taggedItem is FuncDefSpan { Static: false, Name: not null, Args.Length: 0, DefinedAt: not null } func)
                     {
@@ -862,7 +860,7 @@ namespace Exp
                 }
 
                 // if it's @Equalizer attr, set this func as equalizer func
-                if (attr == AttributeDefSpan.EqualizerAttr)
+                else if (attr == AttributeDefSpan.EqualizerAttr)
                 {
                     if (taggedItem is FuncDefSpan { Static: false, Args.Length: 1, DefinedAt: not null } func)
                     {
@@ -871,7 +869,7 @@ namespace Exp
                 }
 
                 // if it's @ReadOnly attr, set this func as read-only func
-                if (attr == AttributeDefSpan.ReadOnlyAttr)
+                else if (attr == AttributeDefSpan.ReadOnlyAttr)
                 {
                     if (taggedItem is FuncDefSpan func)
                     {
@@ -880,7 +878,7 @@ namespace Exp
                 }
 
                 // if it's @ExternImpl attr, add this to the list
-                if (attr == AttributeDefSpan.ExternImplAttr)
+                else if (attr == AttributeDefSpan.ExternImplAttr)
                 {
                     if (taggedItem is FuncDefSpan func)
                     {
@@ -888,9 +886,21 @@ namespace Exp
                     }
                 }
 
+                // if it's @Iterator attr set to a property, mark it as base array
+                else if (attr == AttributeDefSpan.IteratorAttr)
+                {
+                    if (taggedItem is Property prop)
+                    {
+                        int pindex = prop.Def.Props.IndexOf(prop);
+                        prop.Def.BaseArrayPropIndex = pindex;
+                    }
+                    else if (taggedItem is ClassStaticVar staticProp)
+                        Error($"The {attr.GetExpTypeName(false)} attribute cannot be set for static properties.", attr);
+                }
+
                 // if it's @DisplayName attr, validate that it's set to an enum value and set its
                 // "EnumValueSpan.CustomDisplayName" property
-                if (attr == AttributeDefSpan.DisplayNameAttr)
+                else if (attr == AttributeDefSpan.DisplayNameAttr)
                 {
                     // taggedItem is now ClassStaticVar which its SettingSpan property is the EnumDefSpan
                     // that the class was generated from, so try to get the EnumValueSpan from it

@@ -20,7 +20,7 @@ namespace Exp
         {
             bool throwingAttached = throwing != null;
             throwing ??= lastSpan;
-            if (!throwingAttached)
+            if (!throwingAttached && lastOp != null)
             {
                 if (RunOpsRunning)
                 {

@@ -254,7 +254,39 @@ class ForeachStatement(ForEachLoopSpan ctx, Variable var, IReadingOperation read
             ReadingOperation.Read()?.Inst ??
             inter.ThrowRuntime<Instance>("An attempt to iterate over null.", RuntimeException.NULL_REFERENCE, ctx);
         Instance.StartIteration(ctx);
-        foreach (var item in inst)
+
+        // optimize for arrays
+        IValue?[]? arr = inst is ArrayInstance arrInst ?
+            arrInst.ArrayValues :
+            (inst.def.BaseArrayPropIndex is >= 0 and int pindex ? (inst.Vars[pindex].Value as ArrayInstance)?.ArrayValues : null);
+        if (arr is not null)
+        {
+            // compiler or jit or someone will heavily optimize it
+            foreach (IValue? item in arr)
+            {
+                Var.SetSkippingConstant(item);
+                foreach (var op in InnerOperations)
+                {
+                    op.Make();
+                    if (LoopContext.Break)
+                    {
+                        LoopContext.Break = false;
+                        goto break_fe_arr;
+                    }
+                    if (LoopContext.Continue)
+                    {
+                        LoopContext.Continue = false;
+                        goto continue_fe;
+                    }
+                }
+
+            continue_fe:
+                counterNum = (++index).ToExp();
+                counter?.SetSkippingConstant(counterNum);
+            }
+        break_fe_arr:;
+        }
+        else foreach (var item in inst)
         {
             Var.SetSkippingConstant(item);
             foreach (var op in InnerOperations)

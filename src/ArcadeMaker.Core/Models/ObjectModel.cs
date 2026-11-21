@@ -56,14 +56,14 @@ namespace ArcadeMaker.Core.Models
             List<Property> props = [];
             foreach (var property in Runtime.Instance.csProperties)
             {
-                props.Add(new(def: null /*(assigned at ClassDefSpan's ctor)*/, false, property.Key.Name.StartWithLowerCase(), false, false));
+                props.Add(new(def: null /*(assigned at ClassDefSpan's ctor)*/, false, property.Key.Name.StartWithLowerCase(), false));
             }
             foreach (var property in extraProps)
             {
-                props.Add(new(def: null /*(assigned at ClassDefSpan's ctor)*/, property.Constant, property.Name, property.Private, false));
+                props.Add(new(def: null /*(assigned at ClassDefSpan's ctor)*/, property.Constant, property.Name, property.Private));
             }
 
-            return new ClassDefSpan(name, [..props], []);
+            return new ClassDefSpan(name, [.. props], []) { Namespace = ExpSrc.ExpSrc.GameNamespace };
         }
 
         /// <summary>
