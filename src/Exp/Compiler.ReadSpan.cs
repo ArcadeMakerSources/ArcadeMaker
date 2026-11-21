@@ -434,7 +434,6 @@ public partial class Interpreter
             }
             else if (text == ClassDefSpan.Keyword)
             {
-                bool basearrSet = false;
                 List<Property> props = [];
                 List<FuncDefSpan> funcs = [];
 
@@ -452,7 +451,7 @@ public partial class Interpreter
                     while (true)
                     {
                         List<Span[]> tagCode = [];
-                        bool prvt = false, basearr = false, cons = false;
+                        bool prvt = false, cons = false;
 
                         // before pname
                         while (propsp is TagSpan tag)
@@ -479,15 +478,6 @@ public partial class Interpreter
                             prvt = true;
                             propsp = ReadWord();
                         }
-                        if (propsp is BaseArrayWordSpan)
-                        {
-                            if (basearrSet)
-                                Error("Only 1 property can be marked as basearray.");
-                            else
-                                basearrSet = true;
-                            basearr = true;
-                            propsp = ReadWord();
-                        }
 
                         Span[] val = null;
                         if (propsp is SetSymbolSpan)
@@ -496,7 +486,7 @@ public partial class Interpreter
                             propsp = ReadWord();
                         }
 
-                        props.Add(new Property(null, cons, pname, prvt, basearr, val, tagCode));
+                        props.Add(new Property(null, cons, pname, prvt, val, tagCode));
 
                         if (propsp is CommaSpan)
                         {
@@ -868,8 +858,6 @@ public partial class Interpreter
                 span = new StaticWordSpan();
             else if (text == PrivateWordSpan.Keyword)
                 span = new PrivateWordSpan();
-            else if (text == BaseArrayWordSpan.Keyword)
-                span = new BaseArrayWordSpan();
             else if (text == IsWordSpan.Keyword)
                 span = new IsWordSpan();
             else if (text == WhenWordSpan.Keyword)

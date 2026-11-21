@@ -3,26 +3,22 @@ using math
 namespace linq:
 
 @Iterable
-@Iterator
-class Query (col, it, expr, end, current, lastExpr)
+class Query (col, it, expr, end, lastExpr)
 {
     constructor(this.col)
     {
-        it = col.getIterator()
         expr = new List()
         end = new QueryEndResult()
         lastExpr = this
     }
+
+    func reset() { it = col.getIterator() }
     
-    func getIterator() => this
-    
-    func next()
+    func getIterator()
     {
-        current = lastExpr.exec()
-        return current != end
+        reset()
+        return new QueryIterator(lastExpr, end)
     }
-    
-    func getValue() => current
     
     func exec() => it.next() ? it.getValue() : end
     
@@ -114,6 +110,8 @@ class Query (col, it, expr, end, current, lastExpr)
     
     func toList()
     {
+        reset()
+
         const ls = new List(), next = lastExpr
         while true
         {
@@ -133,6 +131,8 @@ class Query (col, it, expr, end, current, lastExpr)
             if col is List  { return lenof col.array }
             if col is Dictionary { return lenof col.keys.array }
         }
+
+        reset()
         
         const nxt = lastExpr
         while true : counter c
@@ -143,6 +143,8 @@ class Query (col, it, expr, end, current, lastExpr)
     
     func count(d)
     {
+        reset()
+
         const nxt = lastExpr
         var c = 0
         while true
@@ -153,10 +155,16 @@ class Query (col, it, expr, end, current, lastExpr)
         }
     }
     
-    func any() => lastExpr.exec() != end
+    func any()
+    {
+        reset()
+        return lastExpr.exec() != end
+    }
     
     func any(d)
     {
+        reset()
+        
         const e = lastExpr
         while true
         {
@@ -170,6 +178,8 @@ class Query (col, it, expr, end, current, lastExpr)
     
     func first()
     {
+        reset()
+        
         const item = lastExpr.exec()
         if item == end
             { throw new Exception("The collection was empty.", Exception.INVALID_OPERATION) }
@@ -178,6 +188,8 @@ class Query (col, it, expr, end, current, lastExpr)
     
     func firstOrNull()
     {
+        reset()
+        
         const item = lastExpr.exec()
         if item == end
             { return null }
@@ -186,6 +198,8 @@ class Query (col, it, expr, end, current, lastExpr)
     
     func first(d)
     {
+        reset()
+        
         const e = lastExpr
         while true
         {
@@ -199,6 +213,8 @@ class Query (col, it, expr, end, current, lastExpr)
     
     func firstOrNull(d)
     {
+        reset()
+        
         const e = lastExpr
         while true
         {
@@ -215,6 +231,8 @@ class Query (col, it, expr, end, current, lastExpr)
     
     func indexOf(val?)
     {
+        reset()
+        
         const nxt = lastExpr
         while true : counter c
         {
@@ -226,6 +244,8 @@ class Query (col, it, expr, end, current, lastExpr)
     
     func min()
     {
+        reset()
+        
         const nxt = lastExpr
         var minVal, first = true
         while true
@@ -242,6 +262,8 @@ class Query (col, it, expr, end, current, lastExpr)
     
     func max()
     {
+        reset()
+        
         const nxt = lastExpr
         var maxVal, first = true
         while true
@@ -258,6 +280,8 @@ class Query (col, it, expr, end, current, lastExpr)
     
     func sum()
     {
+        reset()
+        
         var s = 0
         
         const nxt = lastExpr
@@ -271,6 +295,8 @@ class Query (col, it, expr, end, current, lastExpr)
     
     func average()
     {
+        reset()
+        
         var s = 0, cnt = 0
         
         const nxt = lastExpr
@@ -301,6 +327,8 @@ class Query (col, it, expr, end, current, lastExpr)
             if col is Dictionary { return col.values.array[i] }
         }
         
+        reset()
+        
         const nxt = lastExpr
         while true : counter c
         {
@@ -320,6 +348,20 @@ class Query (col, it, expr, end, current, lastExpr)
 }
 
 class QueryEndResult () {}
+
+@Iterator
+class QueryIterator (expr, end, current)
+{
+    constructor(this.expr, this.end);
+
+    func next()
+    {
+        current = expr.exec()
+        return current != end
+    }
+
+    func getValue() => current
+}
 
 class SelectExpr (next, end, d)
 {

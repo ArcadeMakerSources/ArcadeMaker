@@ -708,12 +708,6 @@ class PrivateWordSpan : WordSpan, IKeyword
     internal PrivateWordSpan() : base(Keyword) { }
 }
 
-class BaseArrayWordSpan : WordSpan, IKeyword
-{
-    public static string Keyword { get; } = "basearray";
-    internal BaseArrayWordSpan() : base(Keyword) { }
-}
-
 class ConstWordSpan : WordSpan, IKeyword
 {
     public static string Keyword { get; } = "const";
@@ -906,7 +900,7 @@ class ForLoopSpan : ConditionSpan, ILoopContext, IKeyword, IExpItem
     }
 }
 
-class ForEachLoopSpan : WordSpan, ILoopContext, IKeyword, IExpItem
+public class ForEachLoopSpan : WordSpan, ILoopContext, IKeyword, IExpItem
 {
     public static string Keyword { get; } = "foreach";
     public static string ItemName { get; } = "foreach loop";
@@ -961,7 +955,7 @@ class ForEachLoopSpan : WordSpan, ILoopContext, IKeyword, IExpItem
         set { field = value; SetContainer(ArrReadText, value); }
     }
     
-    internal class Enumerator : IEnumerator<IValue>
+    public ref struct Enumerator : IEnumerator<IValue>
     {
         public Interpreter Interpreter { get; }
         public Instance ExpIterator { get; }
@@ -1486,8 +1480,8 @@ public class ClassDefSpan : WordSpan, IDefination, IVarSystem, IKeyword, ICanSet
         return n;
     }
 
-    public static ClassDefSpan ExpArrayDef { get; internal set; } = new("Array", [new(null, false, ArrayInstance.ITERATOR_INDEX_PNAME, false, false)]);
-    public static ClassDefSpan ExpStringDef { get; internal set; } = Create("string", [new Property(null, true, "chars", true, true)]);
+    public static ClassDefSpan ExpArrayDef { get; internal set; } = new("Array", [new(null, false, ArrayInstance.ITERATOR_INDEX_PNAME, false)]);
+    public static ClassDefSpan ExpStringDef { get; internal set; } = Create("string", [new Property(null, true, "chars", true)]);
     public static ClassDefSpan ExpExceptionDef { get; internal set; } = new("Exception", []);
     public static ClassDefSpan ExternTypeValueDef { get; internal set; } = new("ExternTypeValue", []);
     public static ClassDefSpan ExpTypeDef { get; internal set; } = new("Type", []);
@@ -1500,6 +1494,7 @@ public class ClassDefSpan : WordSpan, IDefination, IVarSystem, IKeyword, ICanSet
     public List<Variable> Vars { get; } = []; // static props
     public IVarSystem Parent { get; set; }
     public Property[] Props { get; }
+    internal int BaseArrayPropIndex { get; set; } = -1;
     public FuncDefSpan[] Funcs { get; set; }
     public Instance ExpType
     {

@@ -1,8 +1,9 @@
 namespace std:
 
-@AllowFor(classes: true, props: false, funcs: false, ctors: false, attr: false)
+@AllowFor(classes: true, props: true, funcs: false, ctors: false, attr: false)
 @ExpectFunc("getValue", 0, sttc: false)
 @ExpectFunc("next"    , 0, sttc: false)
+@OneInClass
 attribute Iterator()
 
 @AllowFor(classes: true, props: false, funcs: false, ctors: false, attr: false)
@@ -22,7 +23,6 @@ enum StaticRequirements
 func q(col) { return new linq::Query(col) }
 
 @Iterable
-//@xml::OverridesXmlSerialization
 class Array (const csType private, iteratorIndex) 
 {
     @ExternImpl
@@ -53,130 +53,16 @@ class Array (const csType private, iteratorIndex)
             
         this[i] = val
     }
-    
-    func map(mod) 
-    {
-        const n = new Array(lenof this)
-        foreach i in this : counter ind
-        {
-            n[ind] = mod(i)
-        }
-        return n
-    }
-    
-    func first(cond) 
-    {
-        if cond is not function
-        {
-            throw new Exception("This function takes a function as parameter.") 
-        }
-        foreach item in this
-        {
-            if cond(item) == true
-            {
-                return item
-            }
-        }
-        throw new Exception("No element in the array has matched the given condition.")
-    }
 
-    func firstOrNull(cond)
-    {
-        if cond is not function
-        {
-            throw new Exception("This function takes a function as parameter.") 
-        }
-        foreach item in this
-        {
-            if cond(item) == true // check if it's true for case the function did not return a boolean
-            {
-                return item
-            }
-        }
-        return null
-    }
-
-    func firstOrNull()
-    {
-        if length() == 0
-        {
-            return null
-        }
-        return this[0]
-    }
-    
-    func contains(val?)
-    {
-        foreach x in this
-        {
-            if x == val { return true }
-        }
-        return false
-    }
-    
-    func findAll(cond) 
-    {
-        if cond is not function
-        {
-            throw new Exception ("This function takes a function as parameter.") 
-        }
-        const all = new List() 
-        foreach item in this
-        {
-            if cond(item) == true
-            {
-                all.add(item) 
-            }
-        }
-        return all
-    }
-
-    func select(selector)
-    {
-        const n = new Array(length())
-        foreach x in this : counter i
-        {
-            n[i] = selector(x)
-        }
-        return n
-    }
-
-    func ofType(type)
-    {
-        const n = new List()
-        foreach x in this
-        {
-            if (x != null & Type.get(x) == type)
-            {
-                n.add(x)
-            }
-        }
-        return n.toArray()
-    }
-    
-    /*
-    func orderBy(getNum)
-    {
-        const n = copy()
-        const nums = new List()
-        foreach item in this : counter i
-        {
-            var num = getNum(item)
-            nums.add(num)
-            var ind = i
-            while ind > 0 & nums.get(ind - 1) > num
-            {
-                var x = this[ind - 1]
-                this[ind - 1] = item
-                this[ind] = 
-            }
-        }
-    }
-    */
     
     func copy() 
     {
-        return map(func(item?) => item) 
+        const cpy = new Array(lenof this)
+        foreach x in this : counter c
+        {
+            cpy[c] = x
+        }
+        return cpy
     }
 
     func forEach(action)
@@ -191,7 +77,7 @@ class Array (const csType private, iteratorIndex)
     // note that the interpreter actually optimizes the array iterations,
     // but we still want the iterator logic to work as expected so users
     // can use LINQ for example, so we will implement here
-    // ArrayIterator but it won't actually be used in foreach loops.
+    // ArrayIterator but it won't actually be used in direct foreach loops.
     func getIterator() => new ArrayIterator(this)
 }
 
@@ -212,7 +98,8 @@ class ArrayIterator (arr, i)
     func getValue() => arr[i]
 }
 
-class string (const chars private basearray) 
+@Iterable
+class string (@Iterator const chars private) 
 {
     @Equalizer
     func equals(obj?)
@@ -252,6 +139,8 @@ class string (const chars private basearray)
     { 
         chars = new Array(0)
     }
+
+    func getIterator() => chars.getIterator()
     
     func charAt(index) 
     {
@@ -273,7 +162,8 @@ class string (const chars private basearray)
         return str
     }
 
-    @ReadOnly func remove(start, count)
+    @ReadOnly
+    func remove(start, count)
     {
         var str = ""
 
@@ -288,7 +178,8 @@ class string (const chars private basearray)
         return str
     }
     
-    @ReadOnly func replace(fromm, too)
+    @ReadOnly
+    func replace(fromm, too)
     {
         var str = ""
         for (var i = 0; i < length(); i++)
@@ -451,7 +342,7 @@ class Type (const name, const fullName, const def private)
     static func fromXmlNode(node)
     {
         const fullName = node.attr.get("fullName")
-        const type = all.firstOrNull(func(t) => t.fullName == fullName)
+        const type = q(all).firstOrNull(func(t) => t.fullName == fullName)
         if type == null
         {
             throw new Exception(Exception.NOT_FOUND, "The type " + fullName + " is not declared.")
@@ -462,7 +353,7 @@ class Type (const name, const fullName, const def private)
 }
 
 @Iterable
-class List (array private basearray) 
+class List (@Iterator array private) 
 {
     constructor (arr) 
     {
@@ -557,27 +448,13 @@ class List (array private basearray)
         return array[i] 
     }
 
-    func first(cond)
-    {
-        return this.array.first(cond)
-    }
-
-    func contains(val?)
-    {
-        return first(func(v) => v == val) != null
-    }
-
-    func findAll(cond)
-    {
-        return this.array.findAll(cond)
-    }
-
     func clear()
     {
         array = []
     }
     
-    @ReadOnly func toArray()
+    @ReadOnly
+    func toArray()
     {
         return array.copy()
     }
@@ -585,18 +462,6 @@ class List (array private basearray)
     func count() 
     {
         return lenof array
-    }
-
-    func indexOf(val?)
-    {
-        foreach x in this : counter c
-        {
-            if (x == val)
-            {
-                return c
-            }
-        }
-        return 0 - 1
     }
     
     @Translator
@@ -626,7 +491,7 @@ class KeyValuePair (key, @NullableArg value)
 }
 
 @Iterable
-class Dictionary (const keys private, const values private basearray)
+class Dictionary (const keys private, @Iterator const values private)
 {
     constructor()
     {
@@ -638,8 +503,8 @@ class Dictionary (const keys private, const values private basearray)
 
     func set(key, val?)
     {
-        const index = keys.indexOf(key)
-        if (index >= 0)
+        const index = q(keys).indexOf(key)
+        if (index != null)
         {
             values.setAt(index, val)
         }
@@ -652,8 +517,8 @@ class Dictionary (const keys private, const values private basearray)
 
     func get(key)
     {
-        const index = keys.indexOf(key)
-        if (index < 0)
+        const index = q(keys).indexOf(key)
+        if (index == null)
         {
             throw new Exception(Exception.NOT_FOUND, "The specified key was not found.")
         }
@@ -662,7 +527,7 @@ class Dictionary (const keys private, const values private basearray)
 
     func containsKey(key)
     {
-        return keys.contains(key)
+        return q(keys).contains(key)
     }
     
     func pairs()

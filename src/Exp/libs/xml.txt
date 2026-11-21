@@ -204,18 +204,6 @@ class XmlSerializer (settings, allTypeNames private)
                 }
             }
             
-            /*
-            if attr.firstOrNull(func(a) => a.type == <XmlIgnore>) != null
-            {
-                println("continued")
-                continue
-            }
-            
-            const pname =
-                //attr.firstOrNull(func(a) => a.type == <XmlName>)?.values[0] ??
-                prop.name
-            */
-            
             if asAttr
             {
                 node.attr.set(pname, prop.value)
@@ -234,7 +222,7 @@ class XmlSerializer (settings, allTypeNames private)
     func serArr(arr)
     {
         const main = new XmlNode("array")
-        main.content.addRange(arr.select(func(i) => this.serialize(i)))
+        main.content.addRange(q(arr).select(func(i) => this.serialize(i)).toArr())
         
         return main
     }
@@ -296,7 +284,7 @@ class XmlSerializer (settings, allTypeNames private)
                 {
                     err("The target type for " + type.fullName + '.' + prop.name + " was not specified.")
                 }
-                const keyInd = node.attr.keys.indexOf(pname)
+                const keyInd = q(node.attr.keys).indexOf(pname)
                 if keyInd != null & keyInd >= 0
                 {
                     value = node.attr.values.get(keyInd)
@@ -341,12 +329,12 @@ class XmlSerializer (settings, allTypeNames private)
                         }
                         else if explType != null
                         {
-                            value = strToPrim(propNode.content.array.firstOrNull() ?? "", explType)
+                            value = strToPrim(q(propNode.content.array).firstOrNull() ?? "", explType)
                         }
                         else if settings.primitivesIdentifying == XmlPrimitivesIdefntifyingStrategy.stringByDefault
                               //settings.primitivesIdentifying == XmlPrimitivesIdefntifyingStrategy.requireExplicitTypeInTarget
                         {
-                            value = propNode.content.array.firstOrNull() ?? ""
+                            value = q(propNode.content.array).firstOrNull() ?? ""
                         }
                         else
                         {
@@ -781,7 +769,7 @@ class XmlDoc (const row)
     {
         if row is Array
         {
-            if row.ofType(<XmlNode>).length() != 1
+            if q(row).ofType(<XmlNode>).count() != 1
             {
                 throw new Exception("an XML document must contain exactly 1 node (discluding processor instructions).")
             }
@@ -802,7 +790,7 @@ class XmlDoc (const row)
     
     func getContent()
     {
-        return row.first(func(i) => i is XmlNode)
+        return q(row).first(func(i) => i is XmlNode)
     }
     
     func toString()

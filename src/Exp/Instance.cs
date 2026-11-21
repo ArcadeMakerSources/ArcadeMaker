@@ -7,7 +7,7 @@ using Exp.Spans;
 
 namespace Exp;
 
-public class Instance : IVarSystem, IValue, IExpItem, IEnumerable<IValue>
+public class Instance : IVarSystem, IValue, IExpItem //, IEnumerable<IValue>
 {
     public static string ItemName { get; } = "object";
 
@@ -39,28 +39,28 @@ public class Instance : IVarSystem, IValue, IExpItem, IEnumerable<IValue>
         }
     }
 
-    internal bool GetBasearray([NotNullWhen(true)] out Instance? basearr)
-    {
-        if (IsArray)
-        {
-            basearr = this;
-            return true;
-        }
+    //internal bool GetBasearray([NotNullWhen(true)] out Instance? basearr)
+    //{
+    //    if (IsArray)
+    //    {
+    //        basearr = this;
+    //        return true;
+    //    }
 
-        var basearrProp = def.Props.FirstOrDefault(p => p.BaseArray);
-        if (basearrProp == null)
-        {
-            basearr = null;
-            return false;
-        }
-        basearr = Vars.FirstOrDefault(v => v.Name == basearrProp.Name)?.Value?.Inst;
-        if (basearr == null)
-            Interpreter.Activated.ThrowRuntime($"Value of {def.GetExpTypeName(false)}.{basearrProp.Name} was null.", RuntimeException.INVALID_OPERATION);
-        else if (basearr == this)
-            Interpreter.Activated.ThrowRuntime($"Value of {def.GetExpTypeName(false)}.{basearrProp.Name} was a reference to the same instance in which it was declared.", RuntimeException.INVALID_OPERATION);
+    //    var basearrProp = def.Props.FirstOrDefault(p => p.BaseArray);
+    //    if (basearrProp == null)
+    //    {
+    //        basearr = null;
+    //        return false;
+    //    }
+    //    basearr = Vars.FirstOrDefault(v => v.Name == basearrProp.Name)?.Value?.Inst;
+    //    if (basearr == null)
+    //        Interpreter.Activated.ThrowRuntime($"Value of {def.GetExpTypeName(false)}.{basearrProp.Name} was null.", RuntimeException.INVALID_OPERATION);
+    //    else if (basearr == this)
+    //        Interpreter.Activated.ThrowRuntime($"Value of {def.GetExpTypeName(false)}.{basearrProp.Name} was a reference to the same instance in which it was declared.", RuntimeException.INVALID_OPERATION);
 
-        return true;
-    }
+    //    return true;
+    //}
     
     internal static void StartIteration(ForEachLoopSpan loopSpan)
     {
@@ -68,8 +68,8 @@ public class Instance : IVarSystem, IValue, IExpItem, IEnumerable<IValue>
     }
     
     private static ForEachLoopSpan? _enumeratorReqLoop;
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    public virtual IEnumerator<IValue> GetEnumerator()
+    //IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    public ForEachLoopSpan.Enumerator GetEnumerator()
     {
         var loopSpan = _enumeratorReqLoop;
         _enumeratorReqLoop = null;
@@ -78,8 +78,8 @@ public class Instance : IVarSystem, IValue, IExpItem, IEnumerable<IValue>
         
         if (!def.HasTag(AttributeDefSpan.IterableAttr))
         {
-            if (GetBasearray(out var basearr))
-                return basearr.GetEnumerator();
+            //if (GetBasearray(out var basearr))
+            //    return basearr.GetEnumerator();
             inter.ThrowRuntime("An attempt to iterate over a non-iterable object. In order to execute a foreach loop on an instance, mark its class as @Iterable.", RuntimeException.INVALID_OPERATION);
         }
         
@@ -149,7 +149,7 @@ public class ArrayInstance : Instance
     public override bool IsArray => true;
     public override IValue?[] ArrayValues { get; }
     
-    public override IEnumerator<IValue> GetEnumerator() => (ArrayValues as IEnumerable<IValue>).GetEnumerator();
+    //public override IEnumerator<IValue> GetEnumerator() => (ArrayValues as IEnumerable<IValue>).GetEnumerator();
 }
 
 public class ExternTypeInstance : Instance

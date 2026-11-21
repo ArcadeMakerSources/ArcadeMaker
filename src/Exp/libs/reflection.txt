@@ -43,7 +43,7 @@ func getProperties(inst) {}
 
 func getProperty(inst, name)
 {
-	return getProperties(inst).first(func(p) => p.name == name)
+	return q(getProperties(inst)).first(func(p) => p.name == name)
 }
 
 @ExternImpl
@@ -55,7 +55,7 @@ func getFunctions(type) {}
 func getFunction(type, name, paramsCount)
 {
 	const fs = getFunctions(type)
-	return fs.first(func(i) => i.name == name & i.params.length() == paramsCount)
+	return q(fs).first(func(i) => i.name == name & i.params.length() == paramsCount)
 }
 
 @ExternImpl
@@ -64,7 +64,7 @@ func getConstructors(type) {}
 func getConstructor(type, paramsCount)
 {
 	const ctors = getConstructors(type)
-	return ctors.first(func(i) => i.params.length() == paramsCount)
+	return q(ctors).first(func(i) => i.params.length() == paramsCount)
 }
 
 @ExternImpl
