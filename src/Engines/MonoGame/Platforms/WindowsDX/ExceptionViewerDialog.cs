@@ -22,7 +22,7 @@ namespace ArcadeMaker.Engines.MonoGame.Platforms.WindowsDX
         {
             InitializeComponent();
 
-            this.textBox.Text = $"Exception thrown from {ex.source}({ex.line}, {ex.col}):\n\n{ex.Message}";
+            this.textBox.Text = $"Exception thrown from {ex.source}({ex.line}, {ex.col}):\n\n{ex.Message}\n\n{ex.ReadStackTrace()}";
         }
 
         private void abortBtn_Click(object sender, EventArgs e)
