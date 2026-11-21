@@ -494,7 +494,7 @@ public partial class Interpreter
         {
             var span = firstTime ? (firstSpan ?? ReadWord()) : ReadWord();
 
-            string word = span.FullText;
+            string word = span?.FullText;
 
             // namespace specification
             if (!nsSpec && Spoiler() is NamespaceSpecificationSpan)
