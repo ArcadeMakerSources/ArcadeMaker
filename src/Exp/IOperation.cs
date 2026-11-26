@@ -814,7 +814,7 @@ class PointingOrFuncCall(bool isOperationButNotReadingOperation, string name, IE
                     // invoke extern method
                     var csInst = (inst as ExternTypeInstance)?.ExternInstance;
                     var args = Next.ArgLists.FirstOrDefault();
-                    value = Interpreter.Activated.FuncCall(null, FuncDefSpan.ExternInvoker, null, out bool _, [SpecialValue.From(csInst.GetType()), false.ToExp(), SpecialValue.From(Next.Name), SpecialValue.From(csInst), SpecialValue.From(Next.ArgLists.FirstOrDefault()) /*.Select(.Read()) is done in the builtin func code*/]);
+                    value = Interpreter.Activated.FuncCall(null, FuncDefSpan.ExternInvoker, null, out bool _, [SpecialValue.From(csInst.GetType()), false.ToExp(), SpecialValue.From(Next.Name), new SpecialValue(csInst), SpecialValue.From(Next.ArgLists.FirstOrDefault()) /*.Select(.Read()) is done in the builtin func code*/]);
                     goto Return;
                 }
             }
