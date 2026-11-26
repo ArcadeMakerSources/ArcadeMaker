@@ -42,7 +42,8 @@ namespace ArcadeMaker.Core.ExpSrc
                 }
 
                 // create the initializer script document
-                InstanceScriptDocument initializerDoc = new(model.Name + ".PropertiesInitializer", model.Class, initializerScript);
+                InstanceScriptDocument initializerDoc = new(model.Name + ".PropertiesInitializer", model.Class, isCtor: true, initializerScript);
+                initializerDoc.Runner?.Private = true;
                 initializerDoc.TryPrepare(runner.Interpreter, out var errors);
                 InitializersErrors.AddRange(errors);
 
@@ -236,7 +237,7 @@ namespace ArcadeMaker.Core.ExpSrc
 
         public static InstanceScriptDocument CreateInstanceScriptDocument(string name, ClassDefSpan def, string script, params string[] args)
         {
-            InstanceScriptDocument doc = new(name, def, script, args);
+            InstanceScriptDocument doc = new(name, def, false, script, args);
             doc.Namespace = GameNamespace;
             doc.Usings.AddRange(GlobalUsings);
             return doc;
