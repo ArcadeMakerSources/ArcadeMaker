@@ -167,7 +167,8 @@ public sealed class GameRunner<TGame> where TGame : IGame // we COULD use a non-
             // move path
             if (instance.CurrentPathDrive != null)
             {
-                if (!instance.CurrentPathDrive.Move(out double hsp, out double vsp, out bool updated))
+                bool updated = false;
+                if (!instance.CurrentPathDrive.Move(out double hsp, out double vsp, ref updated))
                     instance.CurrentPathDrive = null;
                 else if (updated)
                 {

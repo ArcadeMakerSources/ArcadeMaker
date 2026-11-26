@@ -24,11 +24,10 @@ internal class PathDrive(Instance inst, Resources.Path path, double speed, PathE
     /// </summary>
     private int stepLength = 1;
 
-    internal bool Move(out double hsp, out double vsp, out bool updated)
+    internal bool Move(out double hsp, out double vsp, ref bool updated)
     {
         hsp = currentHspeed;
         vsp = currentVspeed;
-        updated = false;
 
         if (--stepLength <= 0)
         {
