@@ -1159,8 +1159,42 @@ public class FuncDefSpan : WordSpan, IContext, IDefination, IKeyword, IClassMemb
     public Instance[] AttrInfo { get; set; }
 
     internal static FuncDefSpan ArrayIndexGetter, ArrayIndexSetter;
-    internal static FuncDefSpan ExternInvoker = new("extern.invoker", [new ArgumentSpan("extrn", notNull: true), new ArgumentSpan("statc", notNull: true), new ArgumentSpan("memberName", true), new ArgumentSpan("inst"), new ArgumentSpan("args", notNull: true)], [], null);
-    internal static FuncDefSpan ExternPropGetSet = new("extern.pgetset", [new ArgumentSpan("extrn", notNull: true), new ArgumentSpan("pinfo", true), new ArgumentSpan("inst"), new ArgumentSpan("value", notNull: false), new ArgumentSpan("set", notNull: true)], [], null);
+
+    // operated at the static ctor of this class:
+    internal static readonly FuncDefSpan ExternInvoker = new("extern.invoker", [new ArgumentSpan("extrn", notNull: true), new ArgumentSpan("statc", notNull: true), new ArgumentSpan("memberName", true), new ArgumentSpan("inst"), new ArgumentSpan("args", notNull: true)], [], null);
+    internal static readonly FuncDefSpan ExternPropGetSet = new("extern.pgetset", [new ArgumentSpan("extrn", notNull: true), new ArgumentSpan("pinfo", true), new ArgumentSpan("inst"), new ArgumentSpan("value", notNull: false), new ArgumentSpan("set", notNull: true)], [], null);
+
+    static FuncDefSpan()
+    {
+        // operate extern invokers
+        ExternInvoker.Operations = [new ReturnStatement(ExternInvoker, new CustomReadingOperation<IValue?>(() =>
+        {
+            Type type = ((SpecialValue<Type>)ExternInvoker.ParamVariables[0].Value!).Value!;
+            bool sttc = ExternInvoker.ParamVariables[1].Value!.Bool;
+            string mname = ExternInvoker.ParamVariables[2].Value!.ToString()!;
+            object? inst = (ExternInvoker.ParamVariables[3].Value as SpecialValue)?.Value;
+            IReadingOperation[] args = ((SpecialValue<IReadingOperation[]>)ExternInvoker.ParamVariables[4].Value!).Value!;
+            return Interpreter.InvokeExtern(type, sttc, inst, mname, args);
+        }), null)];
+        ExternPropGetSet.Operations = [new ReturnStatement(ExternPropGetSet, new CustomReadingOperation<IValue?>(() =>
+        {
+            //Type type = ((SpecialValue<Type>)ExternPropGetSet.ParamVariables[0].Value!).Value!;
+            PropertyInfo pinfo = ((SpecialValue<PropertyInfo>)ExternPropGetSet.ParamVariables[1].Value!).Value!;
+            object? inst = (ExternPropGetSet.ParamVariables[2].Value as SpecialValue)?.Value;
+            IValue? value = ExternPropGetSet.ParamVariables[3].Value;
+            bool set = ExternPropGetSet.ParamVariables[4].Value!.Bool;
+
+            if (set)
+            {
+                pinfo.SetValue(inst, Interpreter.ExpValToCsVal(value));
+                return Void.Return;
+            }
+            else
+            {
+                return Interpreter.CsValToExpVal(pinfo.GetValue(inst));
+            }
+        }) , null)];
+    }
 
     internal Variable[] ParamVariables { get; private protected set; }
     internal FuncDefSpan(string name, ArgumentSpan[] args, Span[] innerSource, ClassDefSpan definedAt, string text = null) : base(text ?? Keyword)

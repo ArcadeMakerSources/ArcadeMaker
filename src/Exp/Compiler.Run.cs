@@ -8,6 +8,7 @@ using Exp.Operations;
 using System.Threading.Tasks;
 //using Exp.Compiler;
 using System.Threading;
+using System.Security.AccessControl;
 
 namespace Exp;
 
@@ -926,50 +927,64 @@ public partial class Interpreter
         return returns;
     }
 
-    internal static IValue InvokeExtern(Type type, bool sttc, object inst, string method, object[] args)
+    internal static IValue? InvokeExtern(Type type, bool sttc, object? inst, string method, IReadingOperation[] argsOps)
     {
         // naming rule violation: funcs starts with lowercase letters
         method = method[0].ToString().ToUpper() + method[1..];
 
-        MethodInfo methodi = null;
-        string typesStr = null;
+        MethodInfo? methodi;
+        string? typesStr = null;
         var flags = (sttc ? BindingFlags.Static : BindingFlags.Instance) | BindingFlags.Public;
 
+        object?[] args;
         try
         {
-            methodi = type.GetMethod(method, flags, GetArgTypesForExternInvocation(args, out typesStr)) ?? throw new Exception("Method not found");
+            var types_args = GetArgTypesForExternInvocation(argsOps, out typesStr);
+            args = types_args.args;
+            methodi = type.GetMethod(method, flags, types_args.types) ?? throw new Exception("Method not found");
         }
         catch (Exception ex)
         {
             Activated.ThrowRuntime($"Error occurred when searching external method '{type}.{method}{typesStr}' (Error message: {ex.Message}).", RuntimeException.NOT_FOUND);
+            throw null;
         }
 
         return InvokeExtern(inst, methodi, args);
     }
 
-    internal static IValue NewExtern(Type type, object[] args)
+    internal static IValue? NewExtern(Type type, IReadingOperation[] argsOps)
     {
-        ConstructorInfo ctor = null;
-        string typesStr = null;
+        ConstructorInfo ctor;
+        string? typesStr = null;
+
+        object?[] args;
         try
         {
-            ctor = type.GetConstructor(GetArgTypesForExternInvocation(args, out typesStr)) ?? throw new Exception("Constructor not found");
+            var (types, argsAsObjs) = GetArgTypesForExternInvocation(argsOps, out typesStr);
+            args = argsAsObjs;
+            ctor = type.GetConstructor(types) ?? throw new Exception("Constructor not found");
         }
         catch (Exception ex)
         {
             Activated.ThrowRuntime($"Could not find external constructor{typesStr} for type '{type}' (Error message: {ex.Message}).", RuntimeException.EXTERN_OPERATION_FAILED);
+            throw null;
         }
 
         return InvokeExtern(null, ctor, args);
     }
 
-    private static Type[] GetArgTypesForExternInvocation(object[] args, out string typesStr)
+    private static (Type[] types, object?[] args) GetArgTypesForExternInvocation(IReadingOperation[] argsOps, out string typesStr)
     {
-        typesStr = "(";
+        object?[] args = new object[argsOps.Length];
+        int ii = -1;
+        foreach (var op in argsOps)
+            args[++ii] = argsOps[ii].Read();
+
+        System.Text.StringBuilder typesStrB = new('(');
         Type[] types = new Type[args.Length];
         for (int i = 0; i < types.Length; i++)
         {
-            static void Convert(object[] args, Type[] types, int i)
+            static void Convert(object?[] args, Type[] types, int i)
             {
                 types[i] = args[i]?.GetType() ?? typeof(object);
                 if (args[i] is IValue expval)
@@ -988,12 +1003,12 @@ public partial class Interpreter
                             for (int j = 0; j < expinst.ArrayValues.Length; j++)
                                 Convert(expinst.ArrayValues, _, j);
                             args[i] = CSBasicTypes.MinArray(arrinst);
-                            types[i] = args[i].GetType();
+                            types[i] = args[i]!.GetType();
                         }
                         else if (expinst is ExternTypeInstance extrn)
                         {
                             args[i] = extrn.ExternInstance;
-                            types[i] = args[i].GetType();
+                            types[i] = args[i]!.GetType();
                         }
                     }
                     else if (expval.IsBool)
@@ -1015,21 +1030,22 @@ public partial class Interpreter
             }
 
             Convert(args, types, i);
-            typesStr += types[i].ToString() + (i < args.Length - 1 ? ", " : "");
+            typesStrB.Append(types[i].ToString() + (i < args.Length - 1 ? ", " : ""));
         }
 
-        typesStr += ")";
-        return types;
+        typesStrB.Append(')');
+        typesStr = typesStrB.ToString();
+        return (types, args);
     }
 
-    private static IValue InvokeExtern(object inst, MethodBase method, object[] args)
+    private static IValue? InvokeExtern(object? inst, MethodBase method, object?[] args)
     {
         ArgumentNullException.ThrowIfNull(method);
 
         try
         {
             // invoke
-            object result = method is ConstructorInfo ctor ? ctor.Invoke(args) : method.Invoke(inst, args);
+            object? result = method is ConstructorInfo ctor ? ctor.Invoke(args) : method.Invoke(inst, args);
 
             return CsValToExpVal(result);
         }
@@ -1041,7 +1057,7 @@ public partial class Interpreter
         }
     }
 
-    internal static IValue CsValToExpVal(object val)
+    internal static IValue? CsValToExpVal(object? val)
     {
         IValue result;
         if (val is null)
@@ -1076,7 +1092,7 @@ public partial class Interpreter
         return result;
     }
 
-    internal static object ExpValToCsVal(IValue val)
+    internal static object? ExpValToCsVal(IValue? val)
     {
         object result;
         if (val is null)

@@ -430,13 +430,13 @@ class ContinueStatement(ContinueWordSpan cword, ILoopContext loop) : IOperation
     }
 }
 
-class ReturnStatement(FuncDefSpan func, IReadingOperation readingOperation, ReturnWordSpan rword) : IOperation
+class ReturnStatement(FuncDefSpan func, IReadingOperation readingOperation, ReturnWordSpan? rword) : IOperation
 {
     internal FuncDefSpan Func => func ?? throw new ArgumentNullException();
     public void Make()
     {
         // break any loop until getting to the function, and return
-        Span span = rword;
+        Span? span = rword;
         while (span != null)
         {
             if (span is FuncDefSpan)
@@ -602,9 +602,9 @@ class ExternTypeInitOperation : IReadingOperation
             Interpreter.Activated.Error($"Extern class '{extrn.GetExpTypeName(false)}' does not contain a constructor taking {Args.Length} parameters.");
     }
 
-    public IValue Read()
+    public IValue? Read()
     {
-        return Interpreter.NewExtern(Extern.Type, [.. Args.Map(a => a.Read())]);
+        return Interpreter.NewExtern(Extern.Type, Args);
     }
 }
 
@@ -616,7 +616,7 @@ class ExternInvocationOperation(ExternClassDefSpan extrn, object inst, string me
     public IValue Read()
     {
         bool statc = false ? false : throw new NotImplementedException();
-        return Interpreter.InvokeExtern(Extern.Type, statc, inst, method, [.. args.Select(a => a.Read())]);
+        return Interpreter.InvokeExtern(Extern.Type, statc, inst, method, args);
     }
 }
 
