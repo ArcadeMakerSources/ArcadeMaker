@@ -426,10 +426,10 @@ public class ScriptDocument
     public override string ToString() => Name;
 }
 
-public class InstanceScriptDocument(string name, ClassDefSpan def, string script, params string[] args) : ScriptDocument(script, name)
+public class InstanceScriptDocument(string name, ClassDefSpan def, bool isCtor, string script, params string[] args) : ScriptDocument(script, name)
 {
     public ClassDefSpan Def { get; set; } = def;
-    internal FuncDefSpan? Runner { get; private set; }
+    public FuncDefSpan? Runner { get; private set; }
     public string[] Args => args;
 
     public override bool TryPrepare(Interpreter compiler, out ExpError[] errors)
@@ -440,7 +440,9 @@ public class InstanceScriptDocument(string name, ClassDefSpan def, string script
 
         CodeSpans = compiler.GetCodeSpans(TextSpans);
         var argSpans = args.Map(a => new ArgumentSpan(a));
-        Runner = new FuncDefSpan(Name + ".runner", [..argSpans], CodeSpans, Def) { Static = false, Document = this };
+        Runner = isCtor ?
+            new ConstructorDefSpan([.. argSpans], CodeSpans, Def, compiler) { Static = false, Document = this } :
+            new FuncDefSpan(Name + ".runner", [..argSpans], CodeSpans, Def) { Static = false, Document = this };
         Def.Funcs = Def.Funcs.Append(Runner).ToArray();
         Runner.Operations = compiler.ReadOperations(CodeSpans, Runner);
 

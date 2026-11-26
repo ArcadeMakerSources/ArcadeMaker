@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Exp.Spans;
 using System.Collections;
+using Exp.Operations;
 //using Exp.Compiler;
 
 namespace Exp;
@@ -441,7 +442,7 @@ public partial class Interpreter
 
         // if extern invoke ctor
         if (ext != null)
-            return NewExtern(ext.Type, param);
+            return NewExtern(ext.Type, param.Select(ConstValueReadingOperation.For).ToArray());
 
         // if no constructor is defined, skip the ctor search
         if (cls.Funcs.OfType<ConstructorDefSpan>().Any())
@@ -515,7 +516,7 @@ public partial class Interpreter
             {
                 if (inst?.def == ClassDefSpan.ExternTypeValueDef && Spoiler() is OpeningBracketSpan)
                 {
-                    val = InvokeExtern(inst.Vars[1].Value.GetType(), false, inst.Vars[1].Value, word, ReadParamList());
+                    val = InvokeExtern(inst.Vars[1].Value.GetType(), false, inst.Vars[1].Value, word, ReadParamList().Select(ConstValueReadingOperation.For).ToArray());
                     isFunc = true;
                 }
                 else if (ext == null)
@@ -552,7 +553,7 @@ public partial class Interpreter
                 }
                 else
                 {
-                    val = InvokeExtern(ext.Type, true, null, word, ReadParamList());
+                    val = InvokeExtern(ext.Type, true, null, word, ReadParamList().Select(ConstValueReadingOperation.For).ToArray());
                     isFunc = true;
                     ext = null;
                 }

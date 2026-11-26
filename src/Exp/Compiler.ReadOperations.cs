@@ -9,7 +9,7 @@ public partial class Interpreter
 {
     internal Dictionary<IOperation, Span> OperationsSpanPair { get; } = [];
     private List<Span> readOps_codeRecord = null;
-    
+
     internal IOperation[] ReadOperations(Span[]? spans, IVarSystem vs, out Span[] src, bool @throw = false, bool breakAfter1 = false)
     {
         bool deleteRecord = readOps_codeRecord == null;
@@ -245,14 +245,24 @@ public partial class Interpreter
                             var spoiler = Spoiler();
                             if (spoiler is OperatorSpan { Action: true } opertor) // then it's an assignment
                             {
-                                // check if the variable is a known constant, so we can throw an error already at build time
-                                if (pointingOrFuncCall.Next == null && pointingOrFuncCall.Known is Variable { Const: true } var)
+                                // check if the variable is a known constant, so we can make an error already at build time
+                                bool isConstPropPntr = IsConstPropPntr(pointingOrFuncCall, vs, opertor, out var funcctx, out bool hasInitializer);
+                                if (isConstPropPntr)
+                                {
+                                    if (funcctx is not ConstructorDefSpan)
+                                        Error("The value of a constant property can only be set from within a constructor of the defining class.", opertor);
+                                    else if (hasInitializer)
+                                        Error("Constant properties with initializers cannot be set anywhere else.", opertor);
+                                }
+                                else if (pointingOrFuncCall.Next == null && pointingOrFuncCall.Known is Variable { Const: true } var)
                                     Error($"This variable ('{pointingOrFuncCall.Name}') is marked as constant and cannot be reset.", spoiler);
 
                                 // create the operation
                                 ReadSpan();
                                 var right = opertor.TwoSides ? ReadReadingOperation() : null;
-                                operation = new Assignment(pointingOrFuncCall, opertor, right);
+                                operation = isConstPropPntr ?
+                                    new Assignment.SkippingConstant(pointingOrFuncCall, opertor, right) :
+                                    new Assignment(pointingOrFuncCall, opertor, right);
                             }
                             else
                             {
@@ -339,5 +349,49 @@ public partial class Interpreter
             return new Throwing(ConstValueReadingOperation.For("Execution reached a syntax error.".ToExpString()), spans?.LastOrDefault());
         }
         return ops[0];
+    }
+
+    private bool IsConstPropPntr(PointingOrFuncCall pnt, IVarSystem vs, Span mark, out FuncDefSpan? funcctx, out bool hasInitializer)
+    {
+        hasInitializer = false;
+
+        // return if it's not inside a class func
+        ClassDefSpan? cls = null;
+        funcctx = FindParentContext<FuncDefSpan>(mark);
+        if (funcctx is not null)
+        {
+            cls = funcctx.DefinedAt;
+        }
+        if (cls is null)
+            return false;
+
+        if (funcctx is { Static: false })
+        {
+            // check if it's setting a constant instance property
+            if (pnt.Name == ThisWordSpan.Keyword)
+            {
+                if (pnt.Next is null) return false;
+                pnt = pnt.Next;
+            }
+
+            if (pnt.Known is null && pnt.Next is null && cls.Props.Any(p => p.Const && p.Name == pnt.Name))
+                return true;
+        }
+        else
+        {
+            // check if it's setting a constant static property
+            if
+            (
+                pnt.Next is null &&
+                pnt.Known is ClassStaticVar { Const: true } prop &&
+                cls.Vars.Contains(prop)
+            )
+            {
+                hasInitializer = prop.InitValueCode is { Length: >= 1 };
+                return true;
+            }
+        }
+
+        return false;
     }
 }

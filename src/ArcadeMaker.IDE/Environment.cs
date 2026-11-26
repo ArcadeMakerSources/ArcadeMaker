@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Resources;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -118,5 +119,17 @@ namespace ArcadeMaker.IDE
             string newDll = saveAs.Substring(0, saveAs.Length - 4) + ".dll";
             assembly.Write(newDll);
         }
+
+#if DEBUG
+        /// <summary>
+        /// To call this from within exp code:
+        /// <code>
+        /// extern class Env = "ArcadeMaker.IDE.Environment"
+        /// Env.allocConsole()
+        /// </code>
+        /// </summary>
+        [DllImport("kernel32.dll")]
+        public static extern bool AllocConsole();
+#endif
     }
 }

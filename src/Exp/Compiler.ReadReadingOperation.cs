@@ -523,9 +523,16 @@ public partial class Interpreter
             else while (Spoiler() is OpeningBracketSpan)
                 argLists.Add(ReadParamListOps());
 
+            // ctor calling ctor
+            /*if (nsSpec is null && name == ThisWordSpan.Keyword && argLists.Count >= 1)
+            {
+                newp = new PointingOrFuncCall(true, ...);
+                goto MightBeAnythingIncludingInstanceProperty;
+            }*/
+
             // if it is the first in the raw, then the var / func is already known (unless it's a property, in which case it will be read later as a pointing)
             var funcCtx = FindParentContext<FuncDefSpan>(word);
-            if (newp == null && !(funcCtx?.DefinedAt is { } cls && cls.Props.Any(p => p.Name == name))) // if it's not a property
+            if (newp == null && !((funcCtx?.Static is false) && funcCtx?.DefinedAt is { } cls && cls.Props.Any(p => p.Name == name) && GetPointer(name, vs, out var _) is null)) // if it's not a property
             {
                 // actually, it may still be a property, if it's a local function defined inside an instance function, and it references a property without the "this." prefix
                 if (funcCtx is not null)

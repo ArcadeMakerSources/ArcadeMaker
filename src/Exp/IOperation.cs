@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Exp.Operations;
 
@@ -41,22 +42,45 @@ class OperatorResultOperation(OperatorSpan opertor, IReadingOperation left, IRea
 
 class Assignment(PointingOrFuncCall pointing, OperatorSpan opertor, IReadingOperation? readingOperation) : IOperation
 {
-    public void Make()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static (Variable? variable, IValue? readingResult) GetVariable(PointingOrFuncCall pointing)
     {
         IValue? readingResult = null;
-        var known = pointing.Next == null ? pointing.KnownPointer : null;
-        if (known == null)
+        var known = pointing.Next is null ? pointing.KnownPointer : null;
+        if (known is null)
         {
             readingResult = pointing.Read();
             known = (readingResult as SpecialValue<INamedValue>)?.Value as Variable;
         }
 
-        if (known == Variable.Futile)
+        return (known, readingResult);
+    }
+
+    public void Make()
+    {
+        var (var, readingResult) = GetVariable(pointing);
+
+        if (var == Variable.Futile)
             return;
-        else if (known != null)
-            known.Value = opertor.Result(known.Value, readingOperation?.Read());
+        else if (var is not null)
+            var.Value = opertor.Result(var.Value, readingOperation?.Read());
         else
             throw new Exception($"Pointing did not return a variable but '{readingResult.GetExpTypeName(true)}'.");
+    }
+
+    public class SkippingConstant(PointingOrFuncCall pointing, OperatorSpan opertor, IReadingOperation? readingOperation) : IOperation
+    {
+        public void Make()
+        {
+            var (var, readingResult) = GetVariable(pointing);
+
+            if (var == Variable.Futile)
+                return;
+            else if (var is not null)
+                var.SetSkippingConstant(opertor.Result(var.Value, readingOperation?.Read()));
+            else
+                throw new Exception($"Pointing did not return a variable but '{readingResult.GetExpTypeName(true)}'.");
+        }
     }
 }
 
@@ -406,13 +430,13 @@ class ContinueStatement(ContinueWordSpan cword, ILoopContext loop) : IOperation
     }
 }
 
-class ReturnStatement(FuncDefSpan func, IReadingOperation readingOperation, ReturnWordSpan rword) : IOperation
+class ReturnStatement(FuncDefSpan func, IReadingOperation readingOperation, ReturnWordSpan? rword) : IOperation
 {
     internal FuncDefSpan Func => func ?? throw new ArgumentNullException();
     public void Make()
     {
         // break any loop until getting to the function, and return
-        Span span = rword;
+        Span? span = rword;
         while (span != null)
         {
             if (span is FuncDefSpan)
@@ -578,9 +602,9 @@ class ExternTypeInitOperation : IReadingOperation
             Interpreter.Activated.Error($"Extern class '{extrn.GetExpTypeName(false)}' does not contain a constructor taking {Args.Length} parameters.");
     }
 
-    public IValue Read()
+    public IValue? Read()
     {
-        return Interpreter.NewExtern(Extern.Type, [.. Args.Map(a => a.Read())]);
+        return Interpreter.NewExtern(Extern.Type, Args);
     }
 }
 
@@ -592,7 +616,7 @@ class ExternInvocationOperation(ExternClassDefSpan extrn, object inst, string me
     public IValue Read()
     {
         bool statc = false ? false : throw new NotImplementedException();
-        return Interpreter.InvokeExtern(Extern.Type, statc, inst, method, [.. args.Select(a => a.Read())]);
+        return Interpreter.InvokeExtern(Extern.Type, statc, inst, method, args);
     }
 }
 
@@ -790,7 +814,7 @@ class PointingOrFuncCall(bool isOperationButNotReadingOperation, string name, IE
                     // invoke extern method
                     var csInst = (inst as ExternTypeInstance)?.ExternInstance;
                     var args = Next.ArgLists.FirstOrDefault();
-                    value = Interpreter.Activated.FuncCall(null, FuncDefSpan.ExternInvoker, null, out bool _, [SpecialValue.From(csInst.GetType()), false.ToExp(), SpecialValue.From(Next.Name), SpecialValue.From(csInst), SpecialValue.From(Next.ArgLists.FirstOrDefault()) /*.Select(.Read()) is done in the builtin func code*/]);
+                    value = Interpreter.Activated.FuncCall(null, FuncDefSpan.ExternInvoker, null, out bool _, [SpecialValue.From(csInst.GetType()), false.ToExp(), SpecialValue.From(Next.Name), new SpecialValue(csInst), SpecialValue.From(Next.ArgLists.FirstOrDefault()) /*.Select(.Read()) is done in the builtin func code*/]);
                     goto Return;
                 }
             }

@@ -87,7 +87,6 @@ public class Instance : Exp.Instance
     public CustomVariable SpriteID { get; }
 
     public (int number, ObjectEvent? ev)[] Alarm { get; } = new (int, ObjectEvent)[NUMBER_OF_ALARMS];
-    private readonly List<Variable> propertiesToMakeConst = [];
 
     internal PathDrive? CurrentPathDrive { get; set; }
 
@@ -155,10 +154,6 @@ public class Instance : Exp.Instance
         // run extra properties initailizer
         Model.PropertiesInitializer?.Run(interpreter, this);
 
-        // make the variables of const extra properties const
-        foreach (var var in propertiesToMakeConst)
-            var.Const = true;
-
         // run create event
         if (Model.CreateEvent != null)
         {
@@ -209,10 +204,8 @@ public class Instance : Exp.Instance
                     typeName = "string"; break;
             }
 
-            Variable var = (typeName == null ? new Variable(property.Name, null, null, property.Private, false) : new TypeVariable(property.Name, null, typeChecker, typeName, property.Private, false, true));
+            Variable var = (typeName == null ? new Variable(property.Name, null, null, property.Private, cons: property.Constant) : new TypeVariable(property.Name, null, typeChecker, typeName, property.Private, false, true));
             Vars.Add(var);
-            if (property.Constant)
-                propertiesToMakeConst.Add(var);
         }
     }
 

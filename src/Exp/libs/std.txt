@@ -23,7 +23,7 @@ enum StaticRequirements
 func q(col) { return new linq::Query(col) }
 
 @Iterable
-class Array (const csType private, iteratorIndex) 
+class Array (const csType private) 
 {
     @ExternImpl
     constructor(len) {}
