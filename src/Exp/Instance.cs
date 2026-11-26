@@ -140,16 +140,10 @@ public class ArrayInstance : Instance
     public ArrayInstance(ClassDefSpan cls, IValue[] array, bool addProperties = true) : base(cls, addProperties)
     {
         ArrayValues = array;
-
-        // set iteratorIndex property to 0
-        Vars.First(v => v.Name == ITERATOR_INDEX_PNAME).Value = 0d.ToExp();
     }
 
-    internal const string ITERATOR_INDEX_PNAME = "iteratorIndex";
     public override bool IsArray => true;
     public override IValue?[] ArrayValues { get; }
-    
-    //public override IEnumerator<IValue> GetEnumerator() => (ArrayValues as IEnumerable<IValue>).GetEnumerator();
 }
 
 public class ExternTypeInstance : Instance

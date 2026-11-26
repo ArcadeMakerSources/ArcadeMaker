@@ -692,7 +692,7 @@ class XmlReader (stream, prev, line, col)
         while stream.hasNext()
         {
             const c = read()
-            if chr is Array ? chr.contains(c) : (c == chr) { return str }
+            if chr is Array ? q(chr).contains(c) : (c == chr) { return str }
             str += c
         }
         if chr is Array ? !chr.contains(null) : (chr != null)
