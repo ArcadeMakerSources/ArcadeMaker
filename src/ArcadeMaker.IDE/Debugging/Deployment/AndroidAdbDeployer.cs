@@ -21,7 +21,7 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
     {
         const string activityName = $"{DEBUGGER_APP_PACKAGE_NAME}.MainActivity";
 
-        string adbArguments = $"-s {serial} shell am start -n {DEBUGGER_APP_PACKAGE_NAME}/{activityName}";
+        string adbArguments = $"-s {serial} shell am start -S -n {DEBUGGER_APP_PACKAGE_NAME}/{activityName}";
 
         ProcessStartInfo startInfo = new()
         {
@@ -66,10 +66,29 @@ class AndroidAdbDeployer(string deviceName, string serial) : IDeployer
             // does, just relate to it as if it returned true.
         }
 
+        // get the app's process ID
+        //using Process getPid = new()
+        //{
+        //    StartInfo = new()
+        //    {
+        //        FileName = DeviceManager.AdbExePath,
+        //        Arguments =
+        //            $"shell \"while [ -z \"$(pidof -s {DEBUGGER_APP_PACKAGE_NAME})\" ]; do sleep 0.1; done && " +
+        //            $"pidof -s {DEBUGGER_APP_PACKAGE_NAME}\"",
+        //        RedirectStandardOutput = true,
+        //        UseShellExecute = false,
+        //        CreateNoWindow = true
+        //    }
+        //};
+        //getPid.Start();
+        //string pid_output = getPid.StandardOutput.ReadToEnd();
+        //getPid.WaitForExit();
+        //string PID = pid_output.Trim();
+
         ProcessStartInfo startInfo = new()
         {
             FileName = DeviceManager.AdbExePath,
-            Arguments = "logcat -s mono-stdout:V DOTNET:V",
+            Arguments = "logcat -s mono-stdout:V DOTNET:V",//$"logcat --pid={PID} -s mono-stdout:V DOTNET:V",
             RedirectStandardOutput = true,
             UseShellExecute = false,
             CreateNoWindow = true
