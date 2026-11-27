@@ -192,7 +192,7 @@ namespace Exp
 
             // builtin libs
             var importsLs = new List<ScriptDocument>(imports);
-            //importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("xml"), "xml.txt"));
+            importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("xml"), "xml.txt"));
             //importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("json"), "json.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("reflection"), "reflection.txt"));
             importsLs.Insert(0, ScriptDocument.FromString(Extensions.ReadLib("std"), "std.txt"));

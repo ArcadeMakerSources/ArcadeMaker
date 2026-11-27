@@ -79,17 +79,18 @@ public static class CSBasicTypes
     }
 }
 
+#if DEBUG
 public class Test : IDisposable
 {
     public void Dispose() { }
     public static void Met(double d) { }
-    public void Met(object[] i) => $"Great o[] {i.Length}".Print();
-    public static void Met(Test[] i) => $"Great t[] {i.Length}".Print();
+    public void Met(object[] i) => $"G o[] {i.Length}".Print();
+    public static void Met(Test[] i) => $"G t[] {i.Length}".Print();
     //public Test() { }
     public double D { get; set; } = 355;
     public static object Reado { get; } = 777;
-    public static object Writeo { set => $"setted to {value}".Println(); }
-    public override string ToString() => $"[Amazing Test where d = {D}]";
+    public static object Writeo { set => $"set to {value}".Println(); }
+    public override string ToString() => $"[Am Test where d = {D}]";
 }
 
 public class GTest<T>
@@ -108,3 +109,4 @@ public class GTest<T>
 }
 
 public static class StatCls;
+#endif

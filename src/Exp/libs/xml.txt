@@ -150,7 +150,8 @@ class XmlSerializer (settings, allTypeNames private)
         }
         else
         {
-            throw new Exception(Exception.INVALID_OPERATION, "This value could not be serialized.")
+            if val is object { err("primitive expected, but " + Type.get(val).fullName + " received") }
+            else { err("This value could not be serialized: " + val) }
         }
         
         const node = new XmlNode(nodeName)
@@ -695,7 +696,7 @@ class XmlReader (stream, prev, line, col)
             if chr is Array ? q(chr).contains(c) : (c == chr) { return str }
             str += c
         }
-        if chr is Array ? !chr.contains(null) : (chr != null)
+        if chr is Array ? !q(chr).contains(null) : (chr != null)
         {
             err(chr is Array ? "Unexpected end of file" : ("Missing " + chr))
         }

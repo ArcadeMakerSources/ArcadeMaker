@@ -129,7 +129,7 @@ public class Instance : IVarSystem, IValue, IExpItem //, IEnumerable<IValue>
     
     public ClassDefSpan GetClassFromExpTypeInstanceOrThrowRuntime(Interpreter interpreter)
     {
-        if (def != ClassDefSpan.ExpTypeDef)
+        if (def is not { Namespace: Interpreter.STD_NAMESPACE, Name: "Type" })
             interpreter.ThrowRuntime(ClassDefSpan.ExpTypeDef.GetExpTypeName(false) + " was expected, but " + def.GetExpTypeName(false) + " was received.", RuntimeException.INVALID_ARGUMENT);
         return ((SpecialValue<ClassDefSpan>)Vars[2].Value!).Value!;
     }
