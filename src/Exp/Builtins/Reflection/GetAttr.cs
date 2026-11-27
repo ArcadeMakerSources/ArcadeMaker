@@ -50,7 +50,7 @@ static partial class Impl
 
     private static void ThrowIfNotType(this Instance inst)
     {
-        if (inst.def != ClassDefSpan.ExpTypeDef)
+        if (inst.def is not { Namespace: Interpreter.STD_NAMESPACE, Name: "Type" })
             Interpreter.Activated.ThrowRuntime("Argument 'type' must be of type " + ClassDefSpan.ExpTypeDef.GetExpTypeName(false), RuntimeException.INVALID_ARGUMENT);
     }
 }
