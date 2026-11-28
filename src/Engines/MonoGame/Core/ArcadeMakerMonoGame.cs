@@ -788,6 +788,23 @@ namespace ArcadeMaker.Engines.MonoGame.Core
             return Exp.Void.Return;
         }
 
+        public Exp.Void DrawPartialSprite(Exp.Instance? _, IValue?[] args)
+        {
+            // parameters
+            Sprite sprite = Sprites.GetById((int)args[0].ThrowIfNull().Number);
+            double imageIndex = args[1].ThrowIfNull().Number;
+            Vector2 pos = new((float)args[2].ThrowIfNull().Number, (float)args[3].ThrowIfNull().Number);
+            Rectangle part = new((int)args[4].ThrowIfNull().Number, (int)args[5].ThrowIfNull().Number, (int)args[6].ThrowIfNull().Number, (int)args[7].ThrowIfNull().Number);
+
+            int angle = args.Length >= 9 ? (int)args[8].ThrowIfNull().Number : 0;
+            Color alpha = args.Length >= 10 ? new Color((uint)args[9].ThrowIfNull().Number) : Color.White;
+
+            // get the texture region for the sprite and draw only the requested part of it
+            MainTextureAtlas.GetRegion(sprite, (int)imageIndex)?.Draw(SpriteBatch, pos, part, alpha, (float)ArcadeMaker.Core.Math.Formulas.DegreesToRadians(angle), new(sprite.OriginX, sprite.OriginY), Vector2.One, SpriteEffects.None, 0);
+
+            return Exp.Void.Return;
+        }
+
         public Exp.Void DrawText(Exp.Instance? inst, IValue?[] args)
         {
             args.ValidateArgsNumber(3);

@@ -557,6 +557,24 @@ public partial interface IGame
     Exp.Void DrawSprite(Exp.Instance? _, IValue?[] args);
 
     /// <summary>
+    /// Draws a specific part of a subimage of a sprite.
+    /// </summary>
+    /// <param name="_">The calling EXP instance (unused).</param>
+    /// <param name="args">[spriteID, imageIndex, x, y, partX, partY, partWidth, partHeight, [angle, alphaColor]].</param>
+    [EngineFunc(8, 9, 10)]
+    [Param("spriteID", ParamType.Number, "The ID of the sprite which contains the image to draw. Use 'Sprites' enum for that, e.g. Sprites.SprEnemy")]
+    [Param("imageIndex", ParamType.Number, "The index of the image to draw.")]
+    [Param("x", ParamType.Number, "Drawing position's x.")]
+    [Param("y", ParamType.Number, "Drawing position's y.")]
+    [Param("partX", ParamType.Number, "The x-coordinate of the upper-left corner of the part to draw, relative to the sprite image.")]
+    [Param("partY", ParamType.Number, "The y-coordinate of the upper-left corner of the part to draw, relative to the sprite image.")]
+    [Param("partWidth", ParamType.Number, "The width, in pixels, of the part to draw.")]
+    [Param("partHeight", ParamType.Number, "The height, in pixels, of the part to draw.")]
+    [Param("angle", ParamType.Number, "The angle to draw the image in.", Optional = true)]
+    [Param("alphaColor", ParamType.Number, "The alpha color mask.", Optional = true)]
+    Exp.Void DrawPartialSprite(Exp.Instance? _, IValue?[] args);
+
+    /// <summary>
     /// Draws text to the screen using the current font and color settings.
     /// </summary>
     /// <param name="_">The calling EXP instance (unused).</param>

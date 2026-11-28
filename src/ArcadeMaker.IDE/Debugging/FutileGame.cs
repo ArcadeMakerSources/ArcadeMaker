@@ -59,6 +59,7 @@ internal sealed class FutileGame : ArcadeMaker.Core.IGame
     public ArrayInstance GetTouchCollection(Exp.Instance? _, IValue?[] args) => null!;
 
     public Exp.Void DrawSprite(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
+    public Exp.Void DrawPartialSprite(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
     public Exp.Void DrawText(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
     public (float, float) GetTextSize(string? text, int? fontId) => throw new NotImplementedException();
     public Exp.Void SetFont(Exp.Instance? _, IValue?[] args) => Exp.Void.Return;
