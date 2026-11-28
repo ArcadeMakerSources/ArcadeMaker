@@ -123,14 +123,14 @@ public class TextureRegion
     /// <param name="layerDepth">The depth of the layer to use when drawing this texture region on screen.</param>
     public void Draw(SpriteBatch spriteBatch, Vector2 position, Rectangle sourceRectangle, Color color, float rotation, Vector2 origin, Vector2 scale, SpriteEffects effects, float layerDepth)
     {
-            // The requested part is relative to this region; offset it into the texture atlas and clamp it to the region.
+        // The requested part is relative to this region; offset it into the texture atlas and clamp it to the region.
         Rectangle part = Rectangle.Intersect(
-                new Rectangle(SourceRectangle.X + sourceRectangle.X, SourceRectangle.Y + sourceRectangle.Y, sourceRectangle.Width, sourceRectangle.Height),
+            new Rectangle(SourceRectangle.X + sourceRectangle.X, SourceRectangle.Y + sourceRectangle.Y, sourceRectangle.Width, sourceRectangle.Height),
             SourceRectangle
         );
 
         spriteBatch.Draw(
-                Texture,
+            Texture,
             position,
             part,
             color,
@@ -140,5 +140,4 @@ public class TextureRegion
             effects,
             layerDepth
         );
-    }      
-}
+    }
