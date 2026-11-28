@@ -108,4 +108,38 @@ public class TextureRegion
             layerDepth
         );
     }
+
+    /// <summary>
+    /// Submit a specific part of this texture region for drawing in the current batch.
+    /// </summary>
+    /// <param name="spriteBatch">The spritebatch instance used for batching draw calls.</param>
+    /// <param name="position">The xy-coordinate location to draw this texture region on the screen.</param>
+    /// <param name="sourceRectangle">The rectangular part of this texture region to draw, relative to the region's upper-left corner.</param>
+    /// <param name="color">The color mask to apply when drawing this texture region on screen.</param>
+    /// <param name="rotation">The amount of rotation, in radians, to apply when drawing this texture region on screen.</param>
+    /// <param name="origin">The center of rotation, scaling, and position when drawing this texture region on screen.</param>
+    /// <param name="scale">The amount of scaling to apply to the x- and y-axes when drawing this texture region on screen.</param>
+    /// <param name="effects">Specifies if this texture region should be flipped horizontally, vertically, or both when drawing on screen.</param>
+    /// <param name="layerDepth">The depth of the layer to use when drawing this texture region on screen.</param>
+    public void Draw(SpriteBatch spriteBatch, Vector2 position, Rectangle sourceRectangle, Color color, float rotation, Vector2 origin, Vector2 scale, SpriteEffects effects, float layerDepth)
+    {
+            // The requested part is relative to this region; offset it into the texture atlas and clamp it to the region.
+        Rectangle part = Rectangle.Intersect(
+                new Rectangle(SourceRectangle.X + sourceRectangle.X, SourceRectangle.Y + sourceRectangle.Y, sourceRectangle.Width, sourceRectangle.Height),
+            SourceRectangle
+        );
+
+        spriteBatch.Draw(
+                Texture,
+            position,
+            part,
+            color,
+            rotation,
+            origin,
+            scale,
+            effects,
+            layerDepth
+        );
+    }
+        
 }
