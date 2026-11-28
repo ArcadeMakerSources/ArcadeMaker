@@ -140,4 +140,6 @@ public class TextureRegion
             effects,
             layerDepth
         );
-    }
+  }
+}
+}
